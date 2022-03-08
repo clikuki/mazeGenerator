@@ -1,174 +1,96 @@
 class Walker
 {
-	constructor(x, y)
+	constructor(i, j, grid)
 	{
-		this.x = x;
-		this.y = y;
-		this.colCnt = colCnt;
-		this.rowCnt = rowCnt;
+		this.x = i * cellSize;
+		this.y = j * cellSize;
+		this.index = j * rowCnt + i;
 		this.isComplete = false;
-		this.head = 0;
-		this.walked = [{
-			pos: [x, y],
-			tried: [],
-		}];
-		this.spots = Array.from({ length: rowCnt },
-			() => Array.from({ length: colCnt }, () => false)
-		)
-		this.spots[y][x] = true;
-	}
-
-	gridIsSplit()
-	{
-		const numOfEmptySpots = this.spots
-			.reduce((acc, row) =>
-			{
-				const rowLen = row
-					.filter(b => !b)
-					.length;
-
-				return acc + rowLen;
-			}, 0);
-
-		// if empty spots is 0, then path is complete
-		if (!numOfEmptySpots) return true;
-
-		// Locate an empty spot
-		let emptyX, emptyY;
-		findEmpty: for (let j = 0; j < this.spots.length; j++)
-		{
-			const row = this.spots[j];
-			for (let i = 0; i < row.length; i++)
-			{
-				if (!this.spots[j][i])
-				{
-					emptyX = i;
-					emptyY = j;
-					break findEmpty;
-				}
-			}
-		}
-
-		const visited = {}; // Prevents visiting already visited node
-		let nodeCnt = 0; // Actual node counting
-		const findEmptyBody = (x, y) =>
-		{
-			nodeCnt++;
-			visited[`${x}-${y}`] = true;
-			const neighbors = Walker.allDirOffsets
-				.map(([offsetX, offsetY]) =>
-				{
-					const newX = x + offsetX;
-					const newY = y + offsetY;
-					return [newX, newY];
-				})
-				.filter(([neighborX, neighborY]) =>
-				{
-					if ((
-						(neighborX < 0 || neighborX >= colCnt) ||
-						(neighborY < 0 || neighborY >= rowCnt))) return false;
-					if (this.spots[neighborY][neighborX]) return false;
-					return true;
-				})
-
-			if (!neighbors.length) return;
-			for (const [nx, ny] of neighbors)
-			{
-				if (!visited[`${nx}-${ny}`])
-				{
-					findEmptyBody(nx, ny);
-				}
-			}
-		}
-		findEmptyBody(emptyX, emptyY);
-		return nodeCnt === numOfEmptySpots;
+		this.head = -1;
+		this.walked = [];
+		this.grid = grid;
+		this.allDirOffsets = [-grid.colCnt, 1, grid.colCnt, -1];
 	}
 
 	walk()
 	{
 		if (this.isComplete) return;
+		if (this.head === -1)
+		{
+			this.head++;
+			this.walked.push({
+				index: this.index,
+				tried: [],
+			});
+			this.grid[this.index].visited = true;
+			return;
+		}
 
-		const dirOffSets = Walker.allDirOffsets
-			.filter(([offsetX, offsetY]) =>
+		const dirOffSets = this.allDirOffsets
+			.filter(offset =>
 			{
-				const newX = this.x + offsetX;
-				const newY = this.y + offsetY;
+				const newIndex = this.index + offset;
+				const cell = this.grid[newIndex];
 
-				// Check if spot is within grid
-				if ((
-					(newX < 0 || newX >= colCnt) ||
-					(newY < 0 || newY >= rowCnt))) return false;
+				// Check if cell is within grid
+				if (newIndex < 0 || newIndex >= colCnt * rowCnt) return false;
 
-				// Check if spot is empty
-				if (this.spots[newY][newX]) return false;
+				// Prevent Walker from going over left and right edges
+				if (abs(offset) === 1 && cell.y !== this.y) return false;
 
-				// Check if direction has been tried by current head
-				const tried = this.walked[this.head].tried;
-				for (const triedOffsetArr of tried)
+				// Check if cell is empty
+				if (cell.visited) return false;
+
+				// Check if direction has been tried before
+				for (const triedOffset of this.walked[this.head].tried)
 				{
-					const [triedOffsetX, triedOffsetY] = triedOffsetArr;
-					if (triedOffsetX === offsetX && triedOffsetY === offsetY) return false;
+					if (triedOffset === offset) return false;
 				}
 
-				// Check if move splits empty area into two
-				this.spots[newY][newX] = true;
-				const e = this.gridIsSplit();
-				this.spots[newY][newX] = false;
-				return e;
+				return true;
 			})
 
 		if (!dirOffSets.length)
 		{
-			const { prevPos } = this.walked.pop();
-			if (!prevPos)
-			{
-				this.isComplete = true;
-				return;
-			}
-			this.spots[this.y][this.x] = false;
-			[this.x, this.y] = prevPos;
+			this.grid[this.index].visited = false;
+			const { returnOffset } = this.walked.pop();
+			const cell = this.grid[this.index += returnOffset];
+			this.x = cell.x;
+			this.y = cell.y;
 			this.head--;
 		}
 		else
 		{
-			const [offsetX, offsetY] = random(dirOffSets);
-			this.walked[this.head].tried.push([offsetX, offsetY]);
+			const offset = random(dirOffSets);
+			const cell = this.grid[this.index += offset];
+			cell.visited = true;
+			this.x = cell.x;
+			this.y = cell.y;
+			this.walked[this.head++].tried.push(offset);
 			this.walked.push({
-				prevPos: [this.x, this.y],
-				pos: [this.x += offsetX, this.y += offsetY],
+				returnOffset: -offset,
+				index: this.index,
 				tried: [],
 			});
-			this.spots[this.y][this.x] = true;
-			if ((++this.head + 1) === colCnt * rowCnt)
-			{
-				this.isComplete = true;
-				return;
-			}
 		}
 	}
 
 	draw()
 	{
-		// Draw body
-		let prev;
-		for (const { pos } of this.walked)
-		{
-			const [x, y] = pos;
-			const canvasX = x * colSpace;
-			const canvasY = y * rowSpace;
-			if (prev)
-			{
-				stroke(255);
-				line(prev[0], prev[1], canvasX, canvasY);
-			}
+		if (this.head === -1) return;
 
-			prev = [canvasX, canvasY];
+		// Path
+		noStroke();
+		fill('#ff00007f');
+		for (let i = 0; i < this.head; i++)
+		{
+			const index = this.walked[i].index;
+			const cell = this.grid[index];
+			square(cell.x, cell.y, cellSize);
 		}
 
-		// Draw head
-		const { pos } = this.walked[this.head];
-		circle(pos[0] * colSpace, pos[1] * rowSpace, 20);
+		// Head
+		fill('#00ff007f');
+		square(this.x, this.y, cellSize);
 	}
-
-	static allDirOffsets = [[0, -1], [1, 0], [0, 1], [-1, 0]];
 }

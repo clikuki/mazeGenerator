@@ -1,11 +1,11 @@
 class Cell
 {
-	constructor(x, y, s, curGrid)
+	constructor(x, y, s)
 	{
 		this.x = x * s;
 		this.y = y * s;
 		this.s = s + 1;
-		this.curGrid = curGrid;
+		this.visited = false;
 		this.walls = [true, true, true, true];
 	}
 	draw()
@@ -45,18 +45,24 @@ class Cell
 	}
 }
 
-class Grid
+class Grid extends Array
 {
 	constructor(colCnt, rowCnt, cellSize)
 	{
-		this.cells = Array.from({ length: colCnt },
-			(_, j) => Array.from({ length: rowCnt },
-				(_, i) => new Cell(i, j, cellSize, this)))
-			.flat();
+		super();
+		this.colCnt = colCnt;
+		this.rowCnt = rowCnt;
+		for (let j = 0; j < rowCnt; j++)
+		{
+			for (let i = 0; i < colCnt; i++)
+			{
+				this[j * rowCnt + i] = new Cell(i, j, cellSize);
+			}
+		}
 	}
 	draw()
 	{
-		for (const cell of this.cells)
+		for (const cell of this)
 		{
 			cell.draw();
 		}
