@@ -2,11 +2,9 @@ class Walker
 {
 	constructor(grid)
 	{
-		this.grid = grid;
-
-		// Choose random cell as maze starting point
-		const starterIndex = this.getRandCellIndex();
-		const starterCell = this.grid[starterIndex];
+		// Choose center as maze starting point
+		const starterIndex = (grid.rowCnt ** 2 / 2) + (grid.colCnt / 2);
+		const starterCell = grid[starterIndex];
 		starterCell.visited = true;
 		this.index = starterIndex;
 		this.x = starterCell.x;
@@ -15,11 +13,7 @@ class Walker
 		this.isComplete = false;
 		this.phase = 0;
 		this.allDirOffsets = [-grid.colCnt, 1, grid.colCnt, -1];
-	}
-
-	getRandCellIndex()
-	{
-		return floor(random(0, this.grid.colCnt * this.grid.rowCnt));
+		this.grid = grid;
 	}
 
 	getRandUnvisitedCellIndex()
@@ -31,7 +25,7 @@ class Walker
 
 		while (true)
 		{
-			const randCellIndex = this.getRandCellIndex();
+			const randCellIndex = floor(random(0, this.grid.colCnt * this.grid.rowCnt));
 			if (!mazePartIndices.includes(randCellIndex))
 			{
 				return randCellIndex;
@@ -39,22 +33,20 @@ class Walker
 		}
 	}
 
-	/**
-	 * WILSON'S ALGORITHM STEPS
-	 * =========================================================   
-	 * 	1. Choose random cell and set it as a part of the body   
-	 * 	2. Choose another random cell   
-	 * 	3. Choose a random direction   
-	 * 	4. Set direction on current cell   
-	 * 	5. Walk in direction   
-	 * 	6. Repeat steps 3-6 until you hit a part of the maze   
-	 * 	7. Return to start / second random cell   
-	 * 	8. push cell as a part of the path   
-	 * 	9. Walk in direction written on cell   
-	 * 	10. Repeat steps 8-10 until you reach a part of the maze   
-	 * 	11. Remove walls in between paths to create corridors   
-	 * 	12. Repeat steps 2-12 until maze is completely generated   
-	 */
+	carveWall(prevCell, curCell, offset)
+	{
+		if (abs(offset) === 1)
+		{ // Left and Right
+			prevCell.walls[offset < 1 ? 3 : 1] = false;
+			curCell.walls[offset < 1 ? 1 : 3] = false;
+		}
+		else
+		{ // Up and Down
+			prevCell.walls[offset < 1 ? 0 : 2] = false;
+			curCell.walls[offset < 1 ? 2 : 0] = false;
+		}
+	}
+
 	walk()
 	{
 		if (this.isComplete) return;
@@ -78,24 +70,17 @@ class Walker
 		this.x = headCell.x;
 		this.y = headCell.y;
 
+		// Phase 1: Aldous-Broder algorithm
 		if (this.phase === 0)
 		{
 			const prevCell = this.grid[this.index - offset];
-
+			// If new cell is unvisited, then carve walls inbetween
 			if (!headCell.visited)
 			{
 				headCell.visited = true;
-				if (abs(offset) === 1)
-				{ // Left and Right
-					prevCell.walls[offset < 1 ? 3 : 1] = false;
-					headCell.walls[offset < 1 ? 1 : 3] = false;
-				}
-				else
-				{ // Up and Down
-					prevCell.walls[offset < 1 ? 0 : 2] = false;
-					headCell.walls[offset < 1 ? 2 : 0] = false;
-				}
+				this.carveWall(prevCell, headCell, offset);
 
+				// Switch to second phase when 1/3 of grid has been covered
 				const numOfVisitedCells = this.grid.filter(({ visited }) => visited).length;
 				if (numOfVisitedCells >= this.grid.rowCnt * this.grid.colCnt / 3)
 				{
@@ -109,36 +94,21 @@ class Walker
 				}
 			}
 		}
-		else
+		else // Phase 2: Wilson's algorithm
 		{
 			this.grid[this.index - offset].direction = offset;
 			this.walked.add(this.index - offset);
 			if (headCell.visited)
-			{
+			{ // Connect path back to body
 				let prevCell, prevOffset;
 				let pathIndex = this.startIndex;
 				while (true)
-				{
+				{ // Loop through paths using direction offsets
 					const curCell = this.grid[pathIndex];
 					const pathOffset = curCell?.direction;
-					if (!prevOffset && prevCell) break;
+					if (prevCell === headCell) break;
+					if (prevCell) this.carveWall(prevCell, curCell, prevOffset);
 					if (curCell) curCell.visited = true;
-
-					// Remove walls
-					if (prevCell)
-					{
-						if (abs(prevOffset) === 1)
-						{ // Left and Right
-							prevCell.walls[prevOffset < 1 ? 3 : 1] = false;
-							curCell.walls[prevOffset < 1 ? 1 : 3] = false;
-						}
-						else
-						{ // Up and Down
-							prevCell.walls[prevOffset < 1 ? 0 : 2] = false;
-							curCell.walls[prevOffset < 1 ? 2 : 0] = false;
-						}
-					}
-
 					pathIndex += pathOffset;
 					prevCell = curCell;
 					prevOffset = pathOffset;
@@ -150,7 +120,7 @@ class Walker
 					this.isComplete = true;
 				}
 				else
-				{
+				{ // Find new starting point for path
 					const randCellIndex = this.getRandUnvisitedCellIndex();
 					const cell = this.grid[randCellIndex];
 					this.startIndex = randCellIndex;
@@ -166,6 +136,7 @@ class Walker
 	{
 		if (this.isComplete) return;
 
+		// Path
 		for (const index of this.walked)
 		{
 			const cell = this.grid[index];
@@ -173,6 +144,7 @@ class Walker
 			square(cell.x, cell.y, cell.s - 2);
 		}
 
+		// Head
 		push();
 		translate(cellSize / 2, cellSize / 2);
 		noStroke();
