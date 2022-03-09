@@ -52,20 +52,39 @@ class Walker
 
 		if (!dirOffSets.length)
 		{
-			this.grid[this.index].visited = false;
 			const { returnOffset } = this.walked.pop();
-			const cell = this.grid[this.index += returnOffset];
-			this.x = cell.x;
-			this.y = cell.y;
+			const prevCell = this.grid[this.index += returnOffset];
+			if (!prevCell)
+			{
+				this.isComplete = true;
+				return;
+			}
+			this.x = prevCell.x;
+			this.y = prevCell.y;
 			this.head--;
 		}
 		else
 		{
 			const offset = random(dirOffSets);
-			const cell = this.grid[this.index += offset];
-			cell.visited = true;
-			this.x = cell.x;
-			this.y = cell.y;
+			const prevCell = this.grid[this.index];
+			const curCell = this.grid[this.index += offset];
+			curCell.visited = true;
+			this.x = curCell.x;
+			this.y = curCell.y;
+
+			// Remove walls
+			if (abs(offset) === 1)
+			{ // Left and Right
+				prevCell.walls[offset < 1 ? 3 : 1] = false;
+				curCell.walls[offset < 1 ? 1 : 3] = false;
+			}
+			else
+			{ // Up and Down
+				prevCell.walls[offset < 1 ? 0 : 2] = false;
+				curCell.walls[offset < 1 ? 2 : 0] = false;
+			}
+
+			// Push to queue
 			this.walked[this.head++].tried.push(offset);
 			this.walked.push({
 				returnOffset: -offset,
@@ -77,20 +96,30 @@ class Walker
 
 	draw()
 	{
-		if (this.head === -1) return;
+		if (this.isComplete || this.head === -1) return;
 
 		// Path
-		noStroke();
-		fill('#ff00007f');
-		for (let i = 0; i < this.head; i++)
+		let prev;
+		push();
+		translate(cellSize / 2, cellSize / 2);
+		stroke(0, 255, 0);
+		for (let i = 0; i < this.walked.length; i++)
 		{
 			const index = this.walked[i].index;
-			const cell = this.grid[index];
-			square(cell.x, cell.y, cellSize);
+			const { x, y } = this.grid[index];
+			if (prev)
+			{
+				const [prevX, prevY] = prev;
+				line(prevX, prevY, x, y);
+			}
+
+			prev = [x, y];
 		}
 
 		// Head
-		fill('#00ff007f');
-		square(this.x, this.y, cellSize);
+		noStroke();
+		fill(0, 255, 0);
+		circle(this.x, this.y, cellSize / 4);
+		pop();
 	}
 }

@@ -18,22 +18,22 @@ class Cell
 			{
 				switch (i)
 				{
-					case 0:
+					case 0: // Top
 						if (!this.y) break;
 						vertex(this.x, this.y);
 						vertex(this.x + this.s, this.y);
 						break;
-					case 1:
+					case 1: // Right
 						if (this.x >= width) break;
 						vertex(this.x + this.s, this.y);
 						vertex(this.x + this.s, this.y + this.s);
 						break;
-					case 2:
+					case 2: // Bottom
 						if (this.y >= height) break;
 						vertex(this.x + this.s, this.y + this.s);
 						vertex(this.x, this.y + this.s);
 						break;
-					case 3:
+					case 3: // Left
 						if (!this.x) break;
 						vertex(this.x, this.y + this.s);
 						vertex(this.x, this.y);
@@ -47,7 +47,7 @@ class Cell
 
 class Grid extends Array
 {
-	constructor(colCnt, rowCnt, cellSize)
+	constructor(colCnt, rowCnt, cellSize, startX, startY, endX, endY)
 	{
 		super();
 		this.colCnt = colCnt;
@@ -56,7 +56,8 @@ class Grid extends Array
 		{
 			for (let i = 0; i < colCnt; i++)
 			{
-				this[j * rowCnt + i] = new Cell(i, j, cellSize);
+				const cell = new Cell(i, j, cellSize);
+				this[j * rowCnt + i] = cell;
 			}
 		}
 	}
