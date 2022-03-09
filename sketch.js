@@ -1,4 +1,4 @@
-const cellSize = 50;
+const cellSize = 20;
 let colCnt, rowCnt, grid, walker;
 let noFire; // For testing
 function setup()

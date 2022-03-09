@@ -80,42 +80,36 @@ class Walker
 
 		if (headCell.visited)
 		{
-			let prevCell;
+			let prevCell, prevOffset;
 			let pathIndex = this.startIndex;
 			while (true)
 			{
 				const curCell = this.grid[pathIndex];
-				const pathOffset = curCell.direction;
-				if (!pathOffset) break;
-				curCell.visited = true;
+				const pathOffset = curCell?.direction;
+				if (!prevOffset && prevCell) break;
+				if (curCell) curCell.visited = true;
 
 				// Remove walls
 				if (prevCell)
 				{
-					console.log(prevCell, curCell);
-					if (abs(pathOffset) === 1)
+					if (abs(prevOffset) === 1)
 					{ // Left and Right
-						prevCell.walls[pathOffset < 1 ? 3 : 1] = false;
-						curCell.walls[pathOffset < 1 ? 1 : 3] = false;
+						prevCell.walls[prevOffset < 1 ? 3 : 1] = false;
+						curCell.walls[prevOffset < 1 ? 1 : 3] = false;
 					}
 					else
 					{ // Up and Down
-						prevCell.walls[pathOffset < 1 ? 0 : 2] = false;
-						curCell.walls[pathOffset < 1 ? 2 : 0] = false;
+						prevCell.walls[prevOffset < 1 ? 0 : 2] = false;
+						curCell.walls[prevOffset < 1 ? 2 : 0] = false;
 					}
 				}
 
 				pathIndex += pathOffset;
 				prevCell = curCell;
+				prevOffset = pathOffset;
 			}
-			console.log('done');
 
-			for (const index of this.walked)
-			{
-				this.grid[index].direction = null;
-			}
 			this.walked.clear();
-
 			if (this.grid.every(({ visited }) => visited))
 			{
 				this.isComplete = true;
