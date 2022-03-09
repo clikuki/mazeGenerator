@@ -1,4 +1,4 @@
-const cellSize = 30;
+const cellSize = 50;
 let colCnt, rowCnt, grid, walker;
 let noFire; // For testing
 function setup()
@@ -6,8 +6,8 @@ function setup()
 	createCanvas(600, 600);
 	colCnt = floor(width / cellSize);
 	rowCnt = floor(height / cellSize);
-	grid = new Grid(colCnt, rowCnt, cellSize, 0, 0, colCnt - 1, rowCnt - 1);
-	walker = new Walker(0, 0, grid);
+	grid = new Grid(colCnt, rowCnt, cellSize);
+	walker = new Walker(grid);
 }
 
 function draw()

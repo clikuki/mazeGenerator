@@ -1,15 +1,24 @@
 class Cell
 {
-	constructor(x, y, s)
+	constructor(i, j, s)
 	{
-		this.x = x * s;
-		this.y = y * s;
+		this.i = i;
+		this.j = j;
+		this.x = i * s;
+		this.y = j * s;
 		this.s = s + 1;
 		this.visited = false;
 		this.walls = [true, true, true, true];
 	}
 	draw()
 	{
+		if (!this.visited)
+		{
+			noStroke();
+			fill(70);
+			square(this.x, this.y, this.s);
+		}
+
 		stroke(255);
 		beginShape(LINES);
 		for (let i = 0; i < 4; i++)
@@ -42,18 +51,12 @@ class Cell
 			}
 		}
 		endShape();
-		if (!this.visited)
-		{
-			noStroke();
-			fill(70);
-			square(this.x, this.y, this.s);
-		}
 	}
 }
 
 class Grid extends Array
 {
-	constructor(colCnt, rowCnt, cellSize, startX, startY, endX, endY)
+	constructor(colCnt, rowCnt, cellSize)
 	{
 		super();
 		this.colCnt = colCnt;
