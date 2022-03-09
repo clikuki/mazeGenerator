@@ -42,6 +42,12 @@ class Cell
 			}
 		}
 		endShape();
+		if (!this.visited)
+		{
+			noStroke();
+			fill(70);
+			square(this.x, this.y, this.s);
+		}
 	}
 }
 
