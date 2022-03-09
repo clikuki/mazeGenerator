@@ -5,25 +5,15 @@ class Walker
 		this.grid = grid;
 
 		// Choose random cell as maze starting point
-		const starterCell = this.getRandCell();
+		const starterIndex = this.getRandCellIndex();
+		const starterCell = this.grid[starterIndex];
 		starterCell.visited = true;
-
-		// Choose random cell as walker starting point
-		while (true)
-		{
-			const randomCell = this.getRandCell();
-			if (randomCell !== starterCell)
-			{
-				this.startIndex = randomCell.j * grid.rowCnt + randomCell.i;
-				this.index = this.startIndex;
-				this.x = randomCell.x;
-				this.y = randomCell.y;
-				break;
-			}
-		}
-
+		this.index = starterIndex;
+		this.x = starterCell.x;
+		this.y = starterCell.y;
 		this.walked = new Set();
 		this.isComplete = false;
+		this.phase = 0;
 		this.allDirOffsets = [-grid.colCnt, 1, grid.colCnt, -1];
 	}
 
@@ -32,9 +22,21 @@ class Walker
 		return floor(random(0, this.grid.colCnt * this.grid.rowCnt));
 	}
 
-	getRandCell()
+	getRandUnvisitedCellIndex()
 	{
-		return this.grid[this.getRandCellIndex()];
+		const mazePartIndices = this.grid
+			.map((cell, i) => ({ ...cell, i, }))
+			.filter(({ visited }) => visited)
+			.map(({ i }) => i);
+
+		while (true)
+		{
+			const randCellIndex = this.getRandCellIndex();
+			if (!mazePartIndices.includes(randCellIndex))
+			{
+				return randCellIndex;
+			}
+		}
 	}
 
 	/**
@@ -72,67 +74,89 @@ class Walker
 			})
 
 		const offset = random(dirOffSets);
-		this.grid[this.index].direction = offset;
-		this.walked.add(this.index);
 		const headCell = this.grid[this.index += offset];
 		this.x = headCell.x;
 		this.y = headCell.y;
 
-		if (headCell.visited)
+		if (this.phase === 0)
 		{
-			let prevCell, prevOffset;
-			let pathIndex = this.startIndex;
-			while (true)
-			{
-				const curCell = this.grid[pathIndex];
-				const pathOffset = curCell?.direction;
-				if (!prevOffset && prevCell) break;
-				if (curCell) curCell.visited = true;
+			const prevCell = this.grid[this.index - offset];
 
-				// Remove walls
-				if (prevCell)
-				{
-					if (abs(prevOffset) === 1)
-					{ // Left and Right
-						prevCell.walls[prevOffset < 1 ? 3 : 1] = false;
-						curCell.walls[prevOffset < 1 ? 1 : 3] = false;
-					}
-					else
-					{ // Up and Down
-						prevCell.walls[prevOffset < 1 ? 0 : 2] = false;
-						curCell.walls[prevOffset < 1 ? 2 : 0] = false;
-					}
+			if (!headCell.visited)
+			{
+				headCell.visited = true;
+				if (abs(offset) === 1)
+				{ // Left and Right
+					prevCell.walls[offset < 1 ? 3 : 1] = false;
+					headCell.walls[offset < 1 ? 1 : 3] = false;
+				}
+				else
+				{ // Up and Down
+					prevCell.walls[offset < 1 ? 0 : 2] = false;
+					headCell.walls[offset < 1 ? 2 : 0] = false;
 				}
 
-				pathIndex += pathOffset;
-				prevCell = curCell;
-				prevOffset = pathOffset;
+				const numOfVisitedCells = this.grid.filter(({ visited }) => visited).length;
+				if (numOfVisitedCells >= this.grid.rowCnt * this.grid.colCnt / 3)
+				{
+					const randCellIndex = this.getRandUnvisitedCellIndex();
+					const cell = this.grid[randCellIndex];
+					this.startIndex = randCellIndex;
+					this.index = randCellIndex;
+					this.x = cell.x;
+					this.y = cell.y;
+					this.phase = 1;
+				}
 			}
-
-			this.walked.clear();
-			if (this.grid.every(({ visited }) => visited))
+		}
+		else
+		{
+			this.grid[this.index - offset].direction = offset;
+			this.walked.add(this.index - offset);
+			if (headCell.visited)
 			{
-				this.isComplete = true;
-			}
-			else
-			{
-				const mazePartIndices = this.grid
-					.map((cell, i) => ({ ...cell, i, }))
-					.filter(({ visited }) => visited)
-					.map(({ i }) => i);
-
+				let prevCell, prevOffset;
+				let pathIndex = this.startIndex;
 				while (true)
 				{
-					const randCellIndex = this.getRandCellIndex();
-					if (!mazePartIndices.includes(randCellIndex))
+					const curCell = this.grid[pathIndex];
+					const pathOffset = curCell?.direction;
+					if (!prevOffset && prevCell) break;
+					if (curCell) curCell.visited = true;
+
+					// Remove walls
+					if (prevCell)
 					{
-						const cell = this.grid[randCellIndex];
-						this.startIndex = randCellIndex;
-						this.index = randCellIndex;
-						this.x = cell.x;
-						this.y = cell.y;
-						break;
+						if (abs(prevOffset) === 1)
+						{ // Left and Right
+							prevCell.walls[prevOffset < 1 ? 3 : 1] = false;
+							curCell.walls[prevOffset < 1 ? 1 : 3] = false;
+						}
+						else
+						{ // Up and Down
+							prevCell.walls[prevOffset < 1 ? 0 : 2] = false;
+							curCell.walls[prevOffset < 1 ? 2 : 0] = false;
+						}
 					}
+
+					pathIndex += pathOffset;
+					prevCell = curCell;
+					prevOffset = pathOffset;
+				}
+
+				this.walked.clear();
+				if (this.grid.every(({ visited }) => visited))
+				{
+					this.isComplete = true;
+				}
+				else
+				{
+					const randCellIndex = this.getRandUnvisitedCellIndex();
+					const cell = this.grid[randCellIndex];
+					this.startIndex = randCellIndex;
+					this.index = randCellIndex;
+					this.x = cell.x;
+					this.y = cell.y;
 				}
 			}
 		}
