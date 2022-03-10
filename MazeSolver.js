@@ -81,6 +81,11 @@ class MazeSolver
 			{
 				if (!this.mazeIsPerfect)
 				{
+					for (const { index } of this.path)
+					{
+						const cell = this.grid[index];
+						cell.pathVisited = false;
+					}
 					this.isComplete = true;
 					return;
 				}
@@ -98,15 +103,16 @@ class MazeSolver
 				const prevCell = this.grid[this.index += returnOffset];
 				if (!prevCell)
 				{
-					this.isComplete = true;
 					for (let i = 0; i < this.grid.length; i++)
 					{
 						const cell = this.grid[i];
+						if (cell.pathVisited) cell.pathVisited = false;
 						if (!cell.filled && !this.truePath.includes(i))
 						{
 							cell.filled = true;
 						}
 					}
+					this.isComplete = true;
 					return;
 				}
 				this.x = prevCell.x;
