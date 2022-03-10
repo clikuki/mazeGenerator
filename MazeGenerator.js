@@ -47,7 +47,7 @@ class MazeGenerator
 		}
 	}
 
-	walk()
+	step()
 	{
 		if (this.isComplete) return;
 

@@ -8,14 +8,15 @@ class Cell
 		this.y = j * s;
 		this.s = s + 1;
 		this.visited = false;
+		this.filled = false;
 		this.walls = [true, true, true, true];
 	}
 	draw()
 	{
-		if (!this.visited)
+		if (!this.visited || this.filled)
 		{
-			noStroke();
 			fill(70);
+			noStroke();
 			square(this.x, this.y, this.s);
 		}
 
