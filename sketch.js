@@ -1,5 +1,5 @@
-const cellSize = 15;
-let colCnt, rowCnt, grid, walker;
+const cellSize = 50;
+let colCnt, rowCnt, grid, mazeGen;
 let noFire; // For testing
 function setup()
 {
@@ -7,15 +7,15 @@ function setup()
 	colCnt = floor(width / cellSize);
 	rowCnt = floor(height / cellSize);
 	grid = new Grid(colCnt, rowCnt, cellSize);
-	walker = new Walker(grid);
+	mazeGen = new MazeGenerator(grid);
 }
 
 function draw()
 {
 	background(0);
 	grid.draw();
-	walker.draw();
-	walker.walk();
+	mazeGen.draw();
+	mazeGen.walk();
 	// if (keyIsDown(32))
 	// {
 	// 	if (!noFire) walker.walk();

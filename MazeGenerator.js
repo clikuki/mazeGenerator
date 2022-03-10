@@ -1,4 +1,4 @@
-class Walker
+class MazeGenerator
 {
 	constructor(grid)
 	{
@@ -114,6 +114,10 @@ class Walker
 					prevOffset = pathOffset;
 				}
 
+				for (const cellIndex of this.walked)
+				{
+					delete this.grid[cellIndex].direction;
+				}
 				this.walked.clear();
 				if (this.grid.every(({ visited }) => visited))
 				{
