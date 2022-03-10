@@ -9,10 +9,11 @@ function setup()
 	rowCnt = floor(height / cellSize);
 	grid = new Grid(colCnt, rowCnt, cellSize);
 	mazeGen = new MazeGenerator(grid);
-	// while (!mazeGen.isComplete)
-	// {
-	// 	mazeGen.step();
-	// }
+	while (!mazeGen.isComplete)
+	{
+		mazeGen.step();
+	}
+	// frameRate(5);
 }
 
 function draw()
@@ -27,6 +28,7 @@ function draw()
 	else if (mazeSolver && !mazeSolver.isComplete)
 	{
 		mazeSolver.step();
+		mazeSolver.draw();
 	}
 }
 
