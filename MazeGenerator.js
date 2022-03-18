@@ -3,7 +3,8 @@ class MazeGenerator
 	constructor(grid)
 	{
 		// Choose center as maze starting point
-		const starterIndex = (grid.rowCnt ** 2 / 2) + (grid.colCnt / 2);
+		const starterIndex = (grid.rowCnt / 2 * grid.colCnt) + (grid.colCnt / 2);
+		// console.log((grid.rowCnt / 2 * grid.colCnt), (grid.colCnt / 2))
 		const starterCell = grid[starterIndex];
 		starterCell.visited = true;
 		this.index = starterIndex;
@@ -150,10 +151,10 @@ class MazeGenerator
 
 		// Head
 		push();
-		translate(cellSize / 2, cellSize / 2);
+		translate(this.grid.cellSize / 2, this.grid.cellSize / 2);
 		noStroke();
 		fill(0, 255, 0);
-		circle(this.x, this.y, cellSize / 4);
+		circle(this.x, this.y, this.grid.cellSize / 4);
 		pop();
 	}
 }

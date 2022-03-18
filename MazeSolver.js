@@ -129,7 +129,7 @@ class MazeSolver
 			if (cell.filled) return false;
 
 			// Check if cell is end or start point
-			const cellIndex = cell.j * this.grid.rowCnt + cell.i;
+			const cellIndex = cell.j * this.grid.colCnt + cell.i;
 			if (cellIndex === this.startIndex
 				|| cellIndex === this.endIndex) return false;
 
@@ -144,7 +144,7 @@ class MazeSolver
 		if (numOfWalls === 3) return false;
 
 		// Check if the number of filled neighbors and walls together equal 3
-		const cellIndex = cell.j * this.grid.rowCnt + cell.i;
+		const cellIndex = cell.j * this.grid.colCnt + cell.i;
 		let numOfFilledNeighbors = 0;
 		for (let i = 0; i < 4; i++)
 		{
@@ -179,10 +179,10 @@ class MazeSolver
 	draw()
 	{
 		push();
-		translate(cellSize / 2, cellSize / 2)
+		translate(this.grid.cellSize / 2, this.grid.cellSize / 2)
 		noStroke();
 		fill(0, 255, 0);
-		circle(this.x, this.y, cellSize / 4);
+		circle(this.x, this.y, this.grid.cellSize / 4);
 		pop();
 	}
 }

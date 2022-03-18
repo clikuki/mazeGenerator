@@ -1,10 +1,10 @@
-const cellSize = 40;
+const cellSize = 20;
 let colCnt, rowCnt, grid, mazeGen; // Maze creation
 let mazeSolver, startCellIndex = null; // Maze solving
 let noFire; // For testing
 function setup()
 {
-	createCanvas(600, 600);
+	createCanvas(1200, 600);
 	colCnt = floor(width / cellSize);
 	rowCnt = floor(height / cellSize);
 	grid = new Grid(colCnt, rowCnt, cellSize);

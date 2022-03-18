@@ -62,12 +62,13 @@ class Grid extends Array
 		super();
 		this.colCnt = colCnt;
 		this.rowCnt = rowCnt;
+		this.cellSize = cellSize;
 		for (let j = 0; j < rowCnt; j++)
 		{
 			for (let i = 0; i < colCnt; i++)
 			{
 				const cell = new Cell(i, j, cellSize);
-				this[j * rowCnt + i] = cell;
+				this[j * colCnt + i] = cell;
 			}
 		}
 	}
