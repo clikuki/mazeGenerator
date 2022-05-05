@@ -33,7 +33,7 @@ function mouseClicked()
 	{
 		const cellX = floor(mouseX / cellSize);
 		const cellY = floor(mouseY / cellSize);
-		const cellIndex = cellY * rowCnt + cellX;
+		const cellIndex = cellY * colCnt + cellX;
 
 		if (startCellIndex !== null && startCellIndex !== cellIndex)
 		{
