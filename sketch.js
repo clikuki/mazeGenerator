@@ -2,13 +2,25 @@ const cellSize = 15;
 let colCnt, rowCnt, grid, mazeGen; // Maze creation
 let mazeSolver, startCellIndex = null; // Maze solving
 let noFire; // For testing
+let skip = false;
 function setup()
 {
 	createCanvas(600, 600);
 	colCnt = floor(width / cellSize);
 	rowCnt = floor(height / cellSize);
 	grid = new Grid(colCnt, rowCnt, cellSize);
-	mazeGen = new MazeGenerator(grid, true);
+	mazeGen = new MazeGenerator(grid);
+
+	createSpan('Once the maze has finished generating, click on any two cells to find a path between them. ');
+	const restartBtn = createButton('Restart');
+	restartBtn.mouseClicked(() =>
+	{
+		grid = new Grid(colCnt, rowCnt, cellSize);
+		mazeGen = new MazeGenerator(grid);
+	})
+
+	const skipBtn = createButton('Skip to finished maze');
+	skipBtn.mouseClicked(() => skip = true)
 }
 
 function draw()
@@ -18,7 +30,11 @@ function draw()
 	if (!mazeGen.isComplete)
 	{
 		mazeGen.draw();
-		mazeGen.step();
+		do
+		{
+			mazeGen.step();
+		} while (skip && !mazeGen.isComplete);
+		skip = false;
 	}
 	else if (mazeSolver && !mazeSolver.isComplete)
 	{
