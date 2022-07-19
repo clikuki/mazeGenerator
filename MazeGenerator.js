@@ -207,7 +207,10 @@ class MazeGenerator {
 		const minSize = 10;
 		if (max(colCnt, rowCnt) > minSize) {
 			const oneToWalkerRatio = 100;
-			const numOfWalkers = Math.floor(grid.length / oneToWalkerRatio);
+			const numOfWalkers = Math.max(
+				Math.floor(grid.length / oneToWalkerRatio),
+				1,
+			);
 			for (let i = 0; i < numOfWalkers; i++) {
 				this.walkers[i] = new AldousBroderWalker(grid);
 			}
