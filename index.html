@@ -13,6 +13,37 @@
 	</head>
 
 	<body>
+		<div class="stuff">
+			<h1>Maze Generator</h1>
+			<p>
+				A maze generator that uses two algorthms, the Aldous-Broder
+				algorithm for the start and Wilsons algorithm to finish it off.
+			</p>
+			<p>
+				I'm not too sure about the uniformness of the maze when using
+				this method, but it looks nice enough and is pretty fast.
+			</p>
+			<p>
+				Once the maze has finished generating, click on any two cells to
+				find a path between them.
+			</p>
+			<div class="controls">
+				<div class="sizeControls column">
+					<p class="display">10</p>
+					<button class="decrease">Decrease</button>
+					<button class="increase">Increase</button>
+				</div>
+				<div class="sizeControls row">
+					<p class="display">10</p>
+					<button class="decrease">Decrease</button>
+					<button class="increase">Increase</button>
+				</div>
+				<div class="miscBtns">
+					<button class="restart">Restart</button>
+					<button class="fastForward">Fast Forward</button>
+				</div>
+			</div>
+		</div>
 		<script src="Grid.js"></script>
 		<script src="MazeGenerator.js"></script>
 		<script src="MazeSolver.js"></script>

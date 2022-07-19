@@ -204,11 +204,10 @@ class MazeGenerator {
 		this.isComplete = false;
 		this.walkers = [];
 
-		const areaSize = 10;
-		if (max(colCnt, rowCnt) >= areaSize) {
-			const areasColCnt = floor(grid.colCnt / areaSize);
-			const areasRowCnt = floor(grid.rowCnt / areaSize);
-			const numOfWalkers = areasColCnt * areasRowCnt;
+		const minSize = 10;
+		if (max(colCnt, rowCnt) > minSize) {
+			const oneToWalkerRatio = 100;
+			const numOfWalkers = Math.floor(grid.length / oneToWalkerRatio);
 			for (let i = 0; i < numOfWalkers; i++) {
 				this.walkers[i] = new AldousBroderWalker(grid);
 			}

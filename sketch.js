@@ -12,29 +12,50 @@ function setup() {
 	grid = new Grid(colCnt, rowCnt, cellWidth, cellHeight);
 	mazeGen = new MazeGenerator(grid);
 
-	createP(
-		'A maze generator that uses two algorthms, the Aldous-Broder algorithm for the start and Wilsons algorithm to finish it off.',
-	);
-	createP(
-		"I'm not too sure about the uniformness of the maze when using this method, but it looks nice enough and is pretty fast.",
-	);
-	createP(
-		'Once the maze has finished generating, click on any two cells to find a path between them.',
-	);
-
-	const restartBtn = document.createElement('button');
-	restartBtn.textContent = 'Restart';
+	const restartBtn = document.querySelector('.restart');
 	restartBtn.addEventListener('click', () => {
 		grid = new Grid(colCnt, rowCnt, cellWidth, cellHeight);
 		mazeGen = new MazeGenerator(grid);
 	});
 
-	const skipBtn = document.createElement('button');
-	skipBtn.textContent = 'Skip to finished maze';
-	skipBtn.addEventListener('click', () => (skip = true));
-	const div = document.createElement('div');
-	div.append(restartBtn, skipBtn);
-	document.body.append(div);
+	const skipBtn = document.querySelector('.fastForward');
+	skipBtn.addEventListener('click', () => {
+		if (!mazeGen.isComplete) skip = true;
+	});
+
+	const columnDisplay = document.querySelector(
+		'.sizeControls.column .display',
+	);
+	const decreaseColumns = document.querySelector(
+		'.sizeControls.column .decrease',
+	);
+	const increaseColumns = document.querySelector(
+		'.sizeControls.column .increase',
+	);
+	const rowDisplay = document.querySelector('.sizeControls.row .display');
+	const decreaseRows = document.querySelector('.sizeControls.row .decrease');
+	const increaseRows = document.querySelector('.sizeControls.row .increase');
+	decreaseColumns.addEventListener('click', getSizeUpdater(-1, true));
+	increaseColumns.addEventListener('click', getSizeUpdater(1, true));
+	decreaseRows.addEventListener('click', getSizeUpdater(-1));
+	increaseRows.addEventListener('click', getSizeUpdater(1));
+	function getSizeUpdater(change, cols = false) {
+		return () => {
+			const newSize = (cols ? colCnt : rowCnt) + change;
+			if (newSize < 3) return;
+			if (cols) {
+				colCnt = newSize;
+				columnDisplay.textContent = newSize;
+			} else {
+				rowCnt = newSize;
+				rowDisplay.textContent = newSize;
+			}
+			cellWidth = width / colCnt;
+			cellHeight = height / rowCnt;
+			grid = new Grid(colCnt, rowCnt, cellWidth, cellHeight);
+			mazeGen = new MazeGenerator(grid);
+		};
+	}
 }
 
 function draw() {
@@ -56,6 +77,7 @@ function mouseClicked() {
 	if (mazeGen.isComplete && (!mazeSolver || mazeSolver.isComplete)) {
 		const cellX = floor(mouseX / cellWidth);
 		const cellY = floor(mouseY / cellHeight);
+		if (cellX >= colCnt || cellY >= rowCnt) return;
 		const cellIndex = cellY * colCnt + cellX;
 
 		if (startCellIndex !== null && startCellIndex !== cellIndex) {
