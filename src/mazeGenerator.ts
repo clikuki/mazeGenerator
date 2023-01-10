@@ -1,8 +1,17 @@
-class MazeGeneratorWalkerBase {
+import { Cell, Grid } from './grid.js';
+import { randomItemInArray } from './utils.js';
+
+abstract class MazeGeneratorWalkerBase {
+	index: number;
+	x: number;
+	y: number;
+	isComplete = false;
+	allDirOffsets: [number, number, number, number];
+	grid: Grid;
 	constructor(
-		grid,
-		startX = floor(grid.colCnt / 2),
-		startY = floor(grid.rowCnt / 2),
+		grid: Grid,
+		startX = Math.floor(grid.colCnt / 2),
+		startY = Math.floor(grid.rowCnt / 2),
 	) {
 		const starterIndex = startY * grid.colCnt + startX;
 		const starterCell = grid[starterIndex];
@@ -22,8 +31,8 @@ class MazeGeneratorWalkerBase {
 			.map(({ i }) => i);
 
 		while (true) {
-			const randCellIndex = floor(
-				random(0, this.grid.colCnt * this.grid.rowCnt),
+			const randCellIndex = Math.floor(
+				Math.random() * this.grid.colCnt * this.grid.rowCnt,
 			);
 			if (!mazePartIndices.includes(randCellIndex)) {
 				return randCellIndex;
@@ -31,8 +40,8 @@ class MazeGeneratorWalkerBase {
 		}
 	}
 
-	carveWall(prevCell, curCell, offset) {
-		if (abs(offset) === 1) {
+	carveWall(prevCell: Cell, curCell: Cell, offset: number) {
+		if (Math.abs(offset) === 1) {
 			// Left and Right
 			prevCell.walls[offset < 1 ? 3 : 1] = false;
 			curCell.walls[offset < 1 ? 1 : 3] = false;
@@ -46,6 +55,9 @@ class MazeGeneratorWalkerBase {
 	checkIfComplete() {
 		return this.grid.every(({ visited }) => visited);
 	}
+
+	abstract step(): void;
+	abstract draw(ctx: CanvasRenderingContext2D): void;
 }
 
 class AldousBroderWalker extends MazeGeneratorWalkerBase {
@@ -61,11 +73,11 @@ class AldousBroderWalker extends MazeGeneratorWalkerBase {
 				return false;
 
 			// Prevent Walker from going over left and right edges
-			if (abs(offset) === 1 && cell.y !== this.y) return false;
+			if (Math.abs(offset) === 1 && cell.y !== this.y) return false;
 			return true;
 		});
 
-		const offset = random(dirOffSets);
+		const offset = randomItemInArray(dirOffSets);
 		const headCell = this.grid[(this.index += offset)];
 		this.x = headCell.x;
 		this.y = headCell.y;
@@ -81,24 +93,30 @@ class AldousBroderWalker extends MazeGeneratorWalkerBase {
 		}
 	}
 
-	draw() {
+	draw(ctx: CanvasRenderingContext2D) {
 		if (this.isComplete) return;
-		push();
-		translate(this.grid.cellWidth / 2, this.grid.cellHeight / 2);
-		noStroke();
-		fill(0, 255, 0);
-		ellipse(
+		ctx.save();
+		ctx.translate(this.grid.cellWidth / 2, this.grid.cellHeight / 2);
+		ctx.beginPath();
+		ctx.ellipse(
 			this.x,
 			this.y,
 			this.grid.cellWidth / 4,
 			this.grid.cellHeight / 4,
+			0,
+			0,
+			Math.PI * 2,
 		);
-		pop();
+		ctx.fillStyle = 'rgb(0, 255, 0)';
+		ctx.fill();
+		ctx.restore();
 	}
 }
 
 class WilsonWalker extends MazeGeneratorWalkerBase {
-	constructor(grid) {
+	startIndex: number;
+	walked = new Set<number>();
+	constructor(grid: Grid) {
 		super(grid);
 		const walkerStartIndex = this.getRandomUnvisitedCellIndex();
 		const walkerStartCell = this.grid[walkerStartIndex];
@@ -106,10 +124,9 @@ class WilsonWalker extends MazeGeneratorWalkerBase {
 		this.index = walkerStartIndex;
 		this.x = walkerStartCell.x;
 		this.y = walkerStartCell.y;
-		this.walked = new Set();
 		if (this.grid.every(({ visited }) => !visited)) {
 			const centerCellIndex =
-				floor(grid.rowCnt / 2) * grid.colCnt + floor(grid.colCnt / 2);
+				Math.floor(grid.rowCnt / 2) * grid.colCnt + Math.floor(grid.colCnt / 2);
 			this.grid[centerCellIndex].visited = true;
 		}
 	}
@@ -121,16 +138,15 @@ class WilsonWalker extends MazeGeneratorWalkerBase {
 			const cell = this.grid[newIndex];
 
 			// Check if cell is within grid
-			if (newIndex < 0 || newIndex >= this.grid.colCnt * this.grid.rowCnt)
-				return;
+			if (newIndex < 0 || newIndex >= this.grid.colCnt * this.grid.rowCnt) return;
 
 			// Prevent Walker from going over left and right edges
-			if (abs(offset) === 1 && cell.y !== this.y) return;
+			if (Math.abs(offset) === 1 && cell.y !== this.y) return;
 
 			return true;
 		});
 
-		const offset = random(dirOffSets);
+		const offset = randomItemInArray(dirOffSets);
 		const curCell = this.grid[this.index];
 		curCell.direction = offset;
 		this.walked.add(this.index);
@@ -140,14 +156,15 @@ class WilsonWalker extends MazeGeneratorWalkerBase {
 		this.y = newHeadCell.y;
 		if (newHeadCell.visited) {
 			// Connect path back to body
-			let prevCell, prevOffset;
+			let prevCell: Cell | undefined;
+			let prevOffset: number | undefined;
 			let pathIndex = this.startIndex;
 			while (true) {
 				// Loop through paths using direction offsets
 				const curCell = this.grid[pathIndex];
-				const pathOffset = curCell?.direction;
+				const pathOffset = curCell?.direction!;
 				if (prevCell === newHeadCell) break;
-				if (prevCell) this.carveWall(prevCell, curCell, prevOffset);
+				if (prevCell) this.carveWall(prevCell, curCell, prevOffset!);
 				curCell.visited = true;
 				pathIndex += pathOffset;
 				prevCell = curCell;
@@ -155,7 +172,7 @@ class WilsonWalker extends MazeGeneratorWalkerBase {
 			}
 
 			for (const cellIndex of this.walked) {
-				delete this.grid[cellIndex].direction;
+				this.grid[cellIndex].direction = null;
 			}
 			this.walked.clear();
 
@@ -172,45 +189,46 @@ class WilsonWalker extends MazeGeneratorWalkerBase {
 			}
 		}
 	}
-	draw() {
+	draw(ctx: CanvasRenderingContext2D) {
 		if (this.isComplete) return;
-
 		// Path
 		for (const index of this.walked) {
 			const cell = this.grid[index];
-			fill(255, 0, 0);
-			rect(cell.x, cell.y, cell.w - 2, cell.h - 2);
+			ctx.fillStyle = 'rgb(255, 0, 0)';
+			ctx.fillRect(cell.x, cell.y, cell.w - 2, cell.h - 2);
 		}
-
 		// Head
-		push();
-		translate(this.grid.cellWidth / 2, this.grid.cellHeight / 2);
-		noStroke();
-		fill(0, 255, 0);
-		ellipse(
+		ctx.save();
+		ctx.translate(this.grid.cellWidth / 2, this.grid.cellHeight / 2);
+		ctx.fillStyle = 'rgb(0, 255, 0)';
+		ctx.beginPath();
+		ctx.ellipse(
 			this.x,
 			this.y,
 			this.grid.cellWidth / 4,
 			this.grid.cellHeight / 4,
+			0,
+			0,
+			Math.PI * 2,
 		);
-		pop();
+		ctx.fillStyle = 'rgb(0, 255, 0)';
+		ctx.fill();
+		ctx.restore();
 	}
 }
 
-class MazeGenerator {
-	constructor(grid) {
+export class MazeGenerator {
+	grid: Grid;
+	phase = 0;
+	isComplete = false;
+	walkers: MazeGeneratorWalkerBase[] = [];
+	constructor(grid: Grid) {
 		this.grid = grid;
-		this.phase = 0;
-		this.isComplete = false;
-		this.walkers = [];
 
 		const minSize = 10;
-		if (max(colCnt, rowCnt) > minSize) {
+		if (Math.max(grid.colCnt, grid.rowCnt) > minSize) {
 			const oneToWalkerRatio = 100;
-			const numOfWalkers = Math.max(
-				Math.floor(grid.length / oneToWalkerRatio),
-				1,
-			);
+			const numOfWalkers = Math.max(Math.floor(grid.length / oneToWalkerRatio), 1);
 			for (let i = 0; i < numOfWalkers; i++) {
 				this.walkers[i] = new AldousBroderWalker(grid);
 			}
@@ -228,9 +246,7 @@ class MazeGenerator {
 		}
 
 		if (this.phase !== 0) return;
-		const numOfVisitedCells = this.grid.filter(
-			({ visited }) => visited,
-		).length;
+		const numOfVisitedCells = this.grid.filter(({ visited }) => visited).length;
 		if (numOfVisitedCells >= (this.grid.rowCnt * this.grid.colCnt) / 3) {
 			this.phase = 1;
 			this.walkers.length = 0;
@@ -238,8 +254,8 @@ class MazeGenerator {
 		}
 	}
 
-	draw() {
+	draw(ctx: CanvasRenderingContext2D) {
 		if (this.isComplete) return;
-		this.walkers.forEach((walker) => walker.draw());
+		this.walkers.forEach((walker) => walker.draw(ctx));
 	}
 }

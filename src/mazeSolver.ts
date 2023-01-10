@@ -1,5 +1,16 @@
-class MazeSolver {
-	constructor(grid, startIndex, endIndex) {
+import { Cell, Grid } from './grid.js';
+import { randomItemInArray } from './utils.js';
+
+export class MazeSolver {
+	grid: Grid;
+	startIndex: number;
+	endIndex: number;
+	isComplete = false;
+	allDirOffsets: [number, number, number, number];
+	phase = 0;
+	filledCells: Cell[] = [];
+	deadEndCells: Cell[];
+	constructor(grid: Grid, startIndex: number, endIndex: number) {
 		this.grid = grid;
 		this.startIndex = startIndex;
 		this.endIndex = endIndex;
@@ -9,6 +20,17 @@ class MazeSolver {
 		this.phase = 0;
 		this.deadEndCells = this.getDeadEnds();
 	}
+	index: number;
+	head: number;
+	x: number;
+	y: number;
+	path: {
+		returnOffset?: number;
+		index: number;
+		tried: number[];
+	}[] = [];
+	truePath: number[];
+	mazeIsPerfect: boolean;
 	step() {
 		if (this.isComplete) return;
 		if (this.phase === 0) {
@@ -38,12 +60,9 @@ class MazeSolver {
 				const cell = this.grid[newIndex];
 
 				if (this.index === this.endIndex) return false;
-				if (
-					newIndex < 0 ||
-					newIndex >= this.grid.colCnt * this.grid.rowCnt
-				)
+				if (newIndex < 0 || newIndex >= this.grid.colCnt * this.grid.rowCnt)
 					return false;
-				if (abs(offset) === 1 && cell.y !== this.y) return false;
+				if (Math.abs(offset) === 1 && cell.y !== this.y) return false;
 				if (cell.filled || cell.pathVisited) return false;
 				if (this.grid[this.index].walls[i]) return false;
 				if (this.head !== -1) {
@@ -57,7 +76,7 @@ class MazeSolver {
 
 			if (dirOffSets.length) {
 				if (dirOffSets.length > 1) this.mazeIsPerfect = false;
-				const offset = random(dirOffSets);
+				const offset = randomItemInArray(dirOffSets);
 				const curCell = this.grid[(this.index += offset)];
 				curCell.pathVisited = true;
 				this.x = curCell.x;
@@ -79,16 +98,13 @@ class MazeSolver {
 				}
 
 				if (this.index === this.endIndex) {
-					if (
-						!this.truePath ||
-						this.path.length < this.truePath.length
-					) {
+					if (!this.truePath || this.path.length < this.truePath.length) {
 						this.truePath = this.path.map(({ index }) => index);
 					}
 				}
 
 				this.grid[this.index].pathVisited = false;
-				const { returnOffset } = this.path.pop();
+				const returnOffset = this.path.pop()!.returnOffset!;
 				const prevCell = this.grid[(this.index += returnOffset)];
 				if (!prevCell) {
 					for (let i = 0; i < this.grid.length; i++) {
@@ -121,7 +137,7 @@ class MazeSolver {
 			return true;
 		});
 	}
-	cellIsJunction(cell) {
+	cellIsJunction(cell: Cell) {
 		// Check if it has 3 walls, as cells with three walls are deadends
 		const numOfWalls = cell.walls.filter((x) => x).length;
 		if (numOfWalls === 3) return false;
@@ -152,17 +168,19 @@ class MazeSolver {
 			}
 		}
 	}
-	draw() {
-		push();
-		translate(this.grid.cellWidth / 2, this.grid.cellHeight / 2);
-		noStroke();
-		fill(0, 255, 0);
-		ellipse(
+	draw(ctx: CanvasRenderingContext2D) {
+		ctx.save();
+		ctx.translate(this.grid.cellWidth / 2, this.grid.cellHeight / 2);
+		ctx.fillStyle = 'rgb(0, 255, 0)';
+		ctx.ellipse(
 			this.x,
 			this.y,
 			this.grid.cellWidth / 4,
 			this.grid.cellHeight / 4,
+			0,
+			0,
+			Math.PI,
 		);
-		pop();
+		ctx.restore();
 	}
 }

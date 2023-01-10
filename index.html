@@ -5,22 +5,23 @@
 		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
 		<title>Maze Generator</title>
 		<link rel="stylesheet" type="text/css" href="style.css" />
-		<script src="libraries/p5.min.js"></script>
+		<script src="dest/index.js" type="module"></script>
 	</head>
 	<body>
-		<div class="stuff">
+		<canvas></canvas>
+		<div class="ui">
 			<h1>Maze Generator</h1>
 			<p>
-				A maze generator that uses two algorthms, the Aldous-Broder
-				algorithm for the start and Wilsons algorithm to finish it off.
+				A maze generator that uses two algorthms, the Aldous-Broder algorithm for
+				the start and Wilsons algorithm to finish it off.
 			</p>
 			<p>
-				I'm not too sure about the uniformness of the maze when using
-				this method, but it looks nice enough and is pretty fast.
+				I'm not too sure about the uniformness of the maze when using this method,
+				but it looks nice enough and is pretty fast.
 			</p>
 			<p>
-				Once the maze has finished generating, click on any two cells to
-				find a path between them.
+				Once the maze has finished generating, click on any two cells to find a path
+				between them.
 			</p>
 			<div class="controls">
 				<div class="sizeControls column">
@@ -39,9 +40,5 @@
 				</div>
 			</div>
 		</div>
-		<script src="Grid.js"></script>
-		<script src="MazeGenerator.js"></script>
-		<script src="MazeSolver.js"></script>
-		<script src="sketch.js"></script>
 	</body>
 </html>
