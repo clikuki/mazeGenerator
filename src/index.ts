@@ -19,85 +19,136 @@ let grid = new Grid(
 let mazeSolver: MazeSolver | undefined;
 let startCellIndex: number | null = null;
 let mazeGen = new MazeGenerator(grid);
+let pause = false;
+const simulationSpeed = {
+	capped: false,
+	sps: 60,
+};
 
 // Controls and displays
-{
-	document.querySelector('.restart')!.addEventListener('click', () => {
-		grid = new Grid(grid.colCnt, grid.rowCnt, grid.cellWidth, grid.cellHeight);
-		mazeGen = new MazeGenerator(grid);
-		fastForwardBtn.disabled = false;
-	});
-
-	const fastForwardBtn = document.querySelector(
-		'.fastForward',
-	) as HTMLButtonElement;
-	fastForwardBtn.addEventListener('click', () => {
-		if (mazeGen && !mazeGen.isComplete) {
-			while (!mazeGen.isComplete) {
-				mazeGen.step();
-			}
-			fastForwardBtn.disabled = true;
-		}
-	});
-
-	const columnDisplay = document.querySelector(
-		'.sizeControls.column .display',
-	) as HTMLParagraphElement;
-	const decreaseColumns = document.querySelector(
-		'.sizeControls.column .decrease',
-	) as HTMLButtonElement;
-	const increaseColumns = document.querySelector(
-		'.sizeControls.column .increase',
-	) as HTMLButtonElement;
-	const rowDisplay = document.querySelector(
-		'.sizeControls.row .display',
-	) as HTMLParagraphElement;
-	const decreaseRows = document.querySelector(
-		'.sizeControls.row .decrease',
-	) as HTMLButtonElement;
-	const increaseRows = document.querySelector(
-		'.sizeControls.row .increase',
-	) as HTMLButtonElement;
-	decreaseColumns.addEventListener('click', getSizeUpdater(-1, true));
-	increaseColumns.addEventListener('click', getSizeUpdater(1, true));
-	decreaseRows.addEventListener('click', getSizeUpdater(-1));
-	increaseRows.addEventListener('click', getSizeUpdater(1));
-	function getSizeUpdater(change: number, cols = false) {
-		return () => {
-			const newSize = (cols ? grid.colCnt : grid.rowCnt) + change;
-			const newGridSize = {
-				width: cols ? newSize : grid.colCnt,
-				height: cols ? grid.rowCnt : newSize,
-			};
-			columnDisplay.textContent = String(newGridSize.width);
-			rowDisplay.textContent = String(newGridSize.height);
-			const newCellSize = {
-				width: canvas.width / newGridSize.width,
-				height: canvas.height / newGridSize.height,
-			};
-			if (newSize < 3) return;
-			grid = new Grid(
-				newGridSize.width,
-				newGridSize.height,
-				newCellSize.width,
-				newCellSize.height,
-			);
-			mazeGen = new MazeGenerator(grid);
-			fastForwardBtn.disabled = false;
-		};
-	}
+function restart({ colCnt = grid.colCnt, rowCnt = grid.colCnt }) {
+	grid = new Grid(colCnt, rowCnt, canvas.width / colCnt, canvas.height / rowCnt);
+	mazeGen = new MazeGenerator(grid);
+	mazeSolver = undefined;
+	pause = false;
+	pauseBtn.disabled = false;
+	stepBtn.disabled = false;
 }
 
-(function loop() {
-	requestAnimationFrame(loop);
-	grid.draw(canvas, ctx);
+document
+	.querySelector('.restart')!
+	.addEventListener('click', () => restart({}));
+
+const stepBtn = document.querySelector('.step') as HTMLButtonElement;
+stepBtn.addEventListener('click', () => {
 	if (!mazeGen.isComplete) {
-		if (!mazeGen.isComplete) {
-			mazeGen.step();
-		}
+		mazeGen.step();
 		mazeGen.draw(ctx);
 	} else if (mazeSolver && !mazeSolver.isComplete) {
 		mazeSolver.step();
+		mazeSolver.draw(ctx);
+	}
+});
+
+const pauseBtn = document.querySelector('.pause') as HTMLButtonElement;
+pauseBtn.addEventListener('click', () => {
+	pause = !pause;
+});
+
+const fastForwardBtn = document.querySelector(
+	'.fastForward',
+) as HTMLButtonElement;
+fastForwardBtn.addEventListener('click', () => {
+	if (!mazeGen.isComplete) {
+		while (!mazeGen.isComplete) {
+			mazeGen.step();
+		}
+	} else if (mazeSolver && !mazeSolver.isComplete) {
+		while (!mazeSolver.isComplete) {
+			mazeGen.step();
+		}
+	}
+	fastForwardBtn.disabled = true;
+});
+
+const columnInput = document.querySelector(
+	'.inputs .column',
+) as HTMLInputElement;
+columnInput.valueAsNumber = grid.colCnt;
+const rowInput = document.querySelector('.inputs .row') as HTMLInputElement;
+rowInput.valueAsNumber = grid.rowCnt;
+
+columnInput.addEventListener('change', () => {
+	const newVal = columnInput.valueAsNumber;
+	if (isNaN(newVal) || newVal < 3 || newVal > 100) {
+		columnInput.valueAsNumber = grid.colCnt;
+		return;
+	}
+	restart({ colCnt: newVal });
+});
+
+rowInput.addEventListener('change', () => {
+	const newVal = rowInput.valueAsNumber;
+	if (isNaN(newVal) || newVal < 3 || newVal > 100) {
+		rowInput.valueAsNumber = grid.colCnt;
+		return;
+	}
+	restart({ rowCnt: newVal });
+});
+
+const simulationSpeedCapBtn = document.querySelector(
+	'.stepsPerSecond button',
+) as HTMLButtonElement;
+const simulationSpeedNumInput = document.querySelector(
+	'.stepsPerSecond input',
+) as HTMLInputElement;
+simulationSpeedNumInput.valueAsNumber = simulationSpeed.sps;
+simulationSpeedNumInput.disabled = !simulationSpeed.capped;
+simulationSpeedCapBtn.addEventListener('click', () => {
+	simulationSpeed.capped = !simulationSpeed.capped;
+	simulationSpeedCapBtn.textContent = simulationSpeed.capped
+		? 'Capped'
+		: 'Uncapped';
+	simulationSpeedNumInput.disabled = !simulationSpeed.capped;
+});
+simulationSpeedNumInput.addEventListener('change', () => {
+	const newVal = simulationSpeed.sps;
+	if (isNaN(newVal) || newVal < 3) {
+		simulationSpeedNumInput.valueAsNumber = simulationSpeed.sps;
+		return;
+	}
+	simulationSpeed.sps = newVal;
+});
+
+let prevTime = Date.now();
+(function loop() {
+	requestAnimationFrame(loop);
+
+	let stepRunners = true;
+	if (simulationSpeed.capped) {
+		const time = Date.now();
+		const delta = time - prevTime;
+		if (delta < 1000 / simulationSpeed.sps) {
+			stepRunners = false;
+		} else {
+			prevTime = time;
+		}
+	}
+
+	grid.draw(canvas, ctx);
+	fastForwardBtn.disabled =
+		mazeGen.isComplete && (!mazeSolver || mazeSolver.isComplete);
+	if (mazeGen.isComplete && (!mazeSolver || mazeSolver.isComplete)) {
+		pause = false;
+		pauseBtn.disabled = true;
+		stepBtn.disabled = true;
+	}
+	pauseBtn.textContent = pause ? 'Resume' : 'Pause';
+	if (!mazeGen.isComplete) {
+		if (!pause && stepRunners) mazeGen.step();
+		mazeGen.draw(ctx);
+	} else if (mazeSolver) {
+		if (!mazeSolver.isComplete && !pause && stepRunners) mazeSolver.step();
 		mazeSolver.draw(ctx);
 	}
 })();
@@ -111,14 +162,10 @@ canvas.addEventListener('click', (e) => {
 		const cellIndex = cellY * grid.colCnt + cellX;
 
 		if (startCellIndex !== null && startCellIndex !== cellIndex) {
-			if (mazeSolver) mazeSolver.clear();
 			mazeSolver = new MazeSolver(grid, startCellIndex, cellIndex);
-			// @ts-ignore
-			window.m = mazeSolver;
 			startCellIndex = null;
+			pauseBtn.disabled = false;
+			stepBtn.disabled = false;
 		} else startCellIndex = cellIndex;
 	}
 });
-
-// @ts-ignore
-window.g = grid;

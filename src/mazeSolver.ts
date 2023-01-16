@@ -37,6 +37,24 @@ function convertGridToGraph(grid: Grid, start = grid[0]) {
 	return nodeMap;
 }
 
+// Only works for perfect mazes, which are the only mazes I make
+function nodeToPath(start: Node, filled: Set<Node>) {
+	const visited = new Set<Node>();
+	const path = [];
+	let current: Node | null = start;
+	mainLoop: while (current !== null) {
+		visited.add(current);
+		path.push(current.cell);
+		for (const neighbor of current.neighbors) {
+			if (filled.has(neighbor) || visited.has(neighbor)) continue;
+			current = neighbor;
+			continue mainLoop;
+		}
+		current = null;
+	}
+	return path;
+}
+
 export class MazeSolver {
 	grid: Grid;
 	from: number;
@@ -47,6 +65,8 @@ export class MazeSolver {
 	filledNodes = new Set<Node>();
 	graph: Map<Cell, Node>;
 	current: Node;
+	grayOutFilledNodes = false;
+	path?: Cell[];
 	constructor(grid: Grid, from: number, to: number) {
 		this.grid = grid;
 		this.from = from;
@@ -97,35 +117,79 @@ export class MazeSolver {
 
 		if (!hasReplacedCell) {
 			this.isComplete = true;
-			this.filledNodes.forEach((node) => this.graph.delete(node.cell));
+			this.path = nodeToPath(
+				this.graph.get(this.grid[this.from])!,
+				this.filledNodes,
+			);
 			return;
 		}
 	}
-	clear() {
-		if (this.isComplete) {
-			for (const node of this.filledNodes) {
-				node.cell.open = true;
-			}
-		}
-	}
-	fill() {
-		if (this.isComplete) {
-			for (const node of this.filledNodes) {
-				node.cell.open = false;
-			}
-		}
-	}
 	draw(ctx: CanvasRenderingContext2D) {
-		if (this.isComplete) return;
-		const path = new Path2D();
-		for (const { cell } of this.filledNodes) {
-			path.moveTo(cell.screenX, cell.screenY);
-			path.lineTo(cell.screenX + cell.w, cell.screenY);
-			path.lineTo(cell.screenX + cell.w, cell.screenY + cell.w);
-			path.lineTo(cell.screenX, cell.screenY + cell.w);
-			path.lineTo(cell.screenX, cell.screenY);
+		const fromCell = this.grid[this.from];
+		const toCell = this.grid[this.to];
+		ctx.fillStyle = '#f00';
+		ctx.fillRect(
+			fromCell.screenX + 1,
+			fromCell.screenY + 1,
+			this.grid.cellWidth - 2,
+			this.grid.cellHeight - 2,
+		);
+		ctx.fillStyle = '#00f';
+		ctx.fillRect(
+			toCell.screenX + 1,
+			toCell.screenY + 1,
+			this.grid.cellWidth - 2,
+			this.grid.cellHeight - 2,
+		);
+		if (this.isComplete && this.path) {
+			const linePath = new Path2D();
+			let isStartCell = true;
+			for (const cell of this.path) {
+				if (isStartCell) linePath.moveTo(cell.screenX, cell.screenY);
+				else linePath.lineTo(cell.screenX, cell.screenY);
+				isStartCell = false;
+			}
+
+			const circlePath = new Path2D();
+			const circleRX = this.grid.cellWidth * 0.05;
+			const circleRY = this.grid.cellHeight * 0.05;
+			circlePath.ellipse(
+				fromCell.screenX,
+				fromCell.screenY,
+				circleRX,
+				circleRY,
+				0,
+				0,
+				Math.PI * 2,
+			);
+			circlePath.ellipse(
+				toCell.screenX,
+				toCell.screenY,
+				circleRX,
+				circleRY,
+				0,
+				0,
+				Math.PI * 2,
+			);
+
+			ctx.save();
+			ctx.translate(this.grid.cellWidth / 2, this.grid.cellHeight / 2);
+			ctx.strokeStyle = '#0f0';
+			ctx.stroke(linePath);
+			ctx.fillStyle = ctx.strokeStyle;
+			ctx.fill(circlePath);
+			ctx.restore();
+		} else {
+			const grayPath = new Path2D();
+			for (const { cell } of this.filledNodes) {
+				grayPath.moveTo(cell.screenX, cell.screenY);
+				grayPath.lineTo(cell.screenX + cell.w, cell.screenY);
+				grayPath.lineTo(cell.screenX + cell.w, cell.screenY + cell.w);
+				grayPath.lineTo(cell.screenX, cell.screenY + cell.w);
+				grayPath.lineTo(cell.screenX, cell.screenY);
+			}
+			ctx.fillStyle = '#fff2';
+			ctx.fill(grayPath);
 		}
-		ctx.fillStyle = '#fff2';
-		ctx.fill(path);
 	}
 }

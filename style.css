@@ -1,8 +1,18 @@
+* {
+	box-sizing: border-box;
+}
+
 body {
 	margin: 0;
 	display: grid;
-	grid-template-columns: 1fr 1fr;
+	grid-template-columns: min-content auto;
 	font-family: system-ui;
+	background-color: hsl(0, 0%, 95%);
+}
+
+h1,
+h2 {
+	border-bottom: 2px solid black;
 }
 
 canvas {
@@ -16,46 +26,75 @@ main {
 
 p {
 	margin-top: 0;
-	width: 60ch;
+	/* max-width: 60ch; */
+}
+
+button {
+	padding: 0 0.5rem;
+	border-radius: 0;
+	border: 2px solid black;
+	background-color: transparent;
+	cursor: pointer;
+}
+
+button:hover:not(:disabled) {
+	background-color: hsl(0, 0%, 90%);
+}
+
+button:disabled {
+	border-color: currentColor;
+	cursor: not-allowed;
 }
 
 .ui {
 	padding: 0 1rem;
 }
 
-.controls {
-	display: flex;
-	flex-direction: column;
-	gap: 0.5rem;
-	width: fit-content;
+.options h2 {
+	margin: 0.5rem 0;
+	width: 100%;
 }
 
-.miscBtns {
+.buttons {
 	display: flex;
-	justify-content: center;
+	flex-wrap: wrap;
+	gap: 0.2rem;
+	width: 10rem;
+	height: min-content;
+}
+
+.buttons > button {
+	flex-grow: 1;
+}
+
+.misc {
+	display: flex;
+	flex-direction: column;
+	gap: 0.2rem;
+}
+
+.misc > div {
+	display: flex;
+	gap: 0.2rem;
+	flex-direction: column;
+}
+
+.inputs {
+	display: flex;
 	gap: 1rem;
 }
 
-.sizeControls {
-	display: flex;
-	align-items: center;
-	gap: 0.5rem;
-}
-
-.sizeControls .display {
-	margin: 0;
-	width: 7rem;
-	display: flex;
-	justify-content: space-between;
-	border-right: 2px solid black;
-	padding-right: 0.5rem;
-}
-
-.sizeControls .display::before {
-	content: 'Columns: ';
+.inputs label {
 	font-weight: bold;
 }
 
-.sizeControls.row .display::before {
-	content: 'Rows: ';
+.inputs input {
+	display: flex;
+	align-items: center;
+	gap: 0.5rem;
+	width: 100%;
+}
+
+.stepsPerSecond label {
+	cursor: help;
 }
