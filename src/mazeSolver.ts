@@ -1,186 +1,131 @@
 import { Cell, Grid } from './grid.js';
-import { randomItemInArray } from './utils.js';
+
+interface Node {
+	cell: Cell;
+	neighbors: Node[];
+	walls: number;
+}
+function convertGridToGraph(grid: Grid, start = grid[0]) {
+	const directions = [-grid.colCnt, 1, grid.colCnt, -1];
+	const visited = new Set<Cell>();
+	const nodeMap = new Map<Cell, Node>();
+	function convert(cell: Cell) {
+		if (visited.has(cell)) return nodeMap.get(cell)!;
+
+		const node: Node = {
+			cell: cell,
+			neighbors: [],
+			walls: cell.walls.filter((w) => w).length,
+		};
+
+		visited.add(cell);
+		nodeMap.set(cell, node);
+
+		node.neighbors = directions
+			.map((dir, i): Node | [] => {
+				const neighbor = grid[cell.gridIndex + dir];
+				if (neighbor === undefined || cell.walls[i]) {
+					return [];
+				}
+				return convert(neighbor);
+			})
+			.flat();
+
+		return node;
+	}
+	convert(start);
+	return nodeMap;
+}
 
 export class MazeSolver {
 	grid: Grid;
-	startIndex: number;
-	endIndex: number;
+	from: number;
+	to: number;
 	isComplete = false;
-	allDirOffsets: [number, number, number, number];
-	phase = 0;
-	filledCells: Cell[] = [];
-	deadEndCells: Cell[];
-	constructor(grid: Grid, startIndex: number, endIndex: number) {
+	directions: [number, number, number, number];
+	corridorsToFill: (Node | null)[] = [];
+	filledNodes = new Set<Node>();
+	graph: Map<Cell, Node>;
+	current: Node;
+	constructor(grid: Grid, from: number, to: number) {
 		this.grid = grid;
-		this.startIndex = startIndex;
-		this.endIndex = endIndex;
-		this.isComplete = false;
-		this.allDirOffsets = [-grid.colCnt, 1, grid.colCnt, -1];
-		this.filledCells = [];
-		this.phase = 0;
-		this.deadEndCells = this.getDeadEnds();
+		this.from = from;
+		this.to = to;
+		this.directions = [-grid.colCnt, 1, grid.colCnt, -1];
+
+		// Precompute some data
+		this.graph = convertGridToGraph(grid, grid[from]);
+		this.current = this.graph.get(grid[from])!;
+		for (let i = 0; i < grid.length; i++) {
+			const cell = grid[i];
+			const cellWallCount = cell.walls.filter((w) => w).length;
+			if (
+				cell.open &&
+				cell.gridIndex !== this.from &&
+				cell.gridIndex !== this.to &&
+				cellWallCount >= 3
+			) {
+				this.corridorsToFill.push(this.graph.get(cell)!);
+			}
+		}
 	}
-	index: number;
-	head: number;
-	x: number;
-	y: number;
-	path: {
-		returnOffset?: number;
-		index: number;
-		tried: number[];
-	}[] = [];
-	truePath: number[];
-	mazeIsPerfect: boolean;
 	step() {
 		if (this.isComplete) return;
-		if (this.phase === 0) {
-			for (const cell of this.deadEndCells) {
-				cell.filled = true;
-				this.filledCells.push(cell);
-			}
-			const nextCells = this.getDeadEnds();
-			if (!nextCells.length) {
-				const startCell = this.grid[this.startIndex];
-				this.index = this.startIndex;
-				this.head = 0;
-				this.x = startCell.x;
-				this.y = startCell.y;
-				this.path = [
-					{
-						index: this.startIndex,
-						tried: [],
-					},
-				];
-				this.mazeIsPerfect = true;
-				this.phase = 1;
-			} else this.deadEndCells = nextCells;
-		} else {
-			const dirOffSets = this.allDirOffsets.filter((offset, i) => {
-				const newIndex = this.index + offset;
-				const cell = this.grid[newIndex];
 
-				if (this.index === this.endIndex) return false;
-				if (newIndex < 0 || newIndex >= this.grid.colCnt * this.grid.rowCnt)
-					return false;
-				if (Math.abs(offset) === 1 && cell.y !== this.y) return false;
-				if (cell.filled || cell.pathVisited) return false;
-				if (this.grid[this.index].walls[i]) return false;
-				if (this.head !== -1) {
-					for (const triedOffset of this.path[this.head].tried) {
-						if (triedOffset === offset) return false;
-					}
+		// Dead-end filling
+		let hasReplacedCell = false;
+		for (let i = 0; i < this.corridorsToFill.length; i++) {
+			const node = this.corridorsToFill[i];
+			if (!node) continue;
+			this.filledNodes.add(node);
+
+			this.corridorsToFill[i] = null;
+			for (const neighbor of node.neighbors) {
+				if (
+					neighbor.walls++ < 2 ||
+					this.filledNodes.has(neighbor) ||
+					neighbor.cell === this.grid[this.from] ||
+					neighbor.cell === this.grid[this.to]
+				) {
+					continue;
 				}
-
-				return true;
-			});
-
-			if (dirOffSets.length) {
-				if (dirOffSets.length > 1) this.mazeIsPerfect = false;
-				const offset = randomItemInArray(dirOffSets);
-				const curCell = this.grid[(this.index += offset)];
-				curCell.pathVisited = true;
-				this.x = curCell.x;
-				this.y = curCell.y;
-				this.path[this.head++].tried.push(offset);
-				this.path.push({
-					returnOffset: -offset,
-					index: this.index,
-					tried: [],
-				});
-			} else {
-				if (!this.mazeIsPerfect) {
-					for (const { index } of this.path) {
-						const cell = this.grid[index];
-						cell.pathVisited = false;
-					}
-					this.isComplete = true;
-					return;
-				}
-
-				if (this.index === this.endIndex) {
-					if (!this.truePath || this.path.length < this.truePath.length) {
-						this.truePath = this.path.map(({ index }) => index);
-					}
-				}
-
-				this.grid[this.index].pathVisited = false;
-				const returnOffset = this.path.pop()!.returnOffset!;
-				const prevCell = this.grid[(this.index += returnOffset)];
-				if (!prevCell) {
-					for (let i = 0; i < this.grid.length; i++) {
-						const cell = this.grid[i];
-						if (cell.pathVisited) cell.pathVisited = false;
-						if (!cell.filled && !this.truePath.includes(i)) {
-							cell.filled = true;
-						}
-					}
-					this.isComplete = true;
-					return;
-				}
-				this.x = prevCell.x;
-				this.y = prevCell.y;
-				this.head--;
+				this.corridorsToFill[i] = neighbor;
+				hasReplacedCell = true;
+				break;
 			}
 		}
-	}
-	getDeadEnds() {
-		return this.grid.filter((cell) => {
-			// Check if cell is already filled
-			if (cell.filled) return false;
 
-			// Check if cell is end or start point
-			const cellIndex = cell.j * this.grid.colCnt + cell.i;
-			if (cellIndex === this.startIndex || cellIndex === this.endIndex)
-				return false;
-
-			if (this.cellIsJunction(cell)) return false;
-			return true;
-		});
-	}
-	cellIsJunction(cell: Cell) {
-		// Check if it has 3 walls, as cells with three walls are deadends
-		const numOfWalls = cell.walls.filter((x) => x).length;
-		if (numOfWalls === 3) return false;
-
-		// Check if the number of filled neighbors and walls together equal 3
-		const cellIndex = cell.j * this.grid.colCnt + cell.i;
-		let numOfFilledNeighbors = 0;
-		for (let i = 0; i < 4; i++) {
-			if (cell.walls[i]) continue;
-			const offset = this.allDirOffsets[i];
-			const neighborCell = this.grid[cellIndex + offset];
-			if (neighborCell.filled && ++numOfFilledNeighbors + numOfWalls >= 3)
-				return false;
+		if (!hasReplacedCell) {
+			this.isComplete = true;
+			this.filledNodes.forEach((node) => this.graph.delete(node.cell));
+			return;
 		}
-		return true;
 	}
 	clear() {
 		if (this.isComplete) {
-			for (const cell of this.filledCells) {
-				cell.filled = false;
+			for (const node of this.filledNodes) {
+				node.cell.open = true;
 			}
 		}
 	}
 	fill() {
 		if (this.isComplete) {
-			for (const cell of this.filledCells) {
-				cell.filled = true;
+			for (const node of this.filledNodes) {
+				node.cell.open = false;
 			}
 		}
 	}
 	draw(ctx: CanvasRenderingContext2D) {
-		ctx.save();
-		ctx.translate(this.grid.cellWidth / 2, this.grid.cellHeight / 2);
-		ctx.fillStyle = 'rgb(0, 255, 0)';
-		ctx.ellipse(
-			this.x,
-			this.y,
-			this.grid.cellWidth / 4,
-			this.grid.cellHeight / 4,
-			0,
-			0,
-			Math.PI,
-		);
-		ctx.restore();
+		if (this.isComplete) return;
+		const path = new Path2D();
+		for (const { cell } of this.filledNodes) {
+			path.moveTo(cell.screenX, cell.screenY);
+			path.lineTo(cell.screenX + cell.w, cell.screenY);
+			path.lineTo(cell.screenX + cell.w, cell.screenY + cell.w);
+			path.lineTo(cell.screenX, cell.screenY + cell.w);
+			path.lineTo(cell.screenX, cell.screenY);
+		}
+		ctx.fillStyle = '#fff2';
+		ctx.fill(path);
 	}
 }

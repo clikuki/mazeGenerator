@@ -1,59 +1,63 @@
 export class Cell {
-	i: number;
-	j: number;
-	x: number;
-	y: number;
+	gridIndex: number;
+	gridX: number;
+	gridY: number;
+	screenX: number;
+	screenY: number;
 	w: number;
 	h: number;
-	visited = false;
-	pathVisited = false;
-	filled = false;
-	direction: number | null;
+	open = false;
 	walls = [true, true, true, true];
-	constructor(i: number, j: number, w: number, h: number) {
-		this.i = i;
-		this.j = j;
-		this.x = i * w;
-		this.y = j * h;
-		this.w = w + 1;
-		this.h = h + 1;
+	constructor(grid: Grid, i: number, j: number, w: number, h: number) {
+		this.gridIndex = j * grid.colCnt + i;
+		this.gridX = i;
+		this.gridY = j;
+		this.screenX = Math.floor(i * w);
+		this.screenY = Math.floor(j * h);
+		this.w = w;
+		this.h = h;
 	}
 	draw(canvas: HTMLCanvasElement, ctx: CanvasRenderingContext2D) {
+		// Gray when closed
 		ctx.fillStyle = `black`;
-		if (!this.visited || this.filled) {
-			ctx.fillStyle = `hsla(0, 0%, 20%)`;
+		if (!this.open) {
+			ctx.fillStyle = `hsla(0, 0%, 15%)`;
 			ctx.fillRect(
-				this.x + (!this.x ? 0 : 1),
-				this.y + (!this.y ? 0 : 1),
-				this.w - (this.x >= canvas.width ? 0 : 1),
-				this.h - (this.y >= canvas.height ? 0 : 1),
+				this.screenX + (!this.screenX && this.walls[3] ? 0 : 1),
+				this.screenY + (!this.screenY && this.walls[0] ? 0 : 1),
+				this.w + (this.screenX >= canvas.width && this.walls[1] ? 0 : 1),
+				this.h + (this.screenY >= canvas.height && this.walls[2] ? 0 : 1),
 			);
+
+			// Don't draw walls when cell is closed
+			return;
 		}
 
+		// Walls
 		ctx.strokeStyle = 'white';
 		const path = new Path2D();
 		for (let i = 0; i < 4; i++) {
 			if (this.walls[i]) {
 				switch (i) {
 					case 0: // Top
-						if (!this.y) break;
-						path.moveTo(this.x, this.y);
-						path.lineTo(this.x + this.w, this.y);
+						if (!this.screenY) break;
+						path.moveTo(this.screenX, this.screenY);
+						path.lineTo(this.screenX + this.w, this.screenY);
 						break;
 					case 1: // Right
-						if (this.x >= canvas.width) break;
-						path.moveTo(this.x + this.w, this.y);
-						path.lineTo(this.x + this.w, this.y + this.h);
+						if (this.screenX + this.w >= canvas.width) break;
+						path.moveTo(this.screenX + this.w, this.screenY);
+						path.lineTo(this.screenX + this.w, this.screenY + this.h);
 						break;
 					case 2: // Bottom
-						if (this.y >= canvas.height) break;
-						path.moveTo(this.x + this.w, this.y + this.h);
-						path.lineTo(this.x, this.y + this.h);
+						if (this.screenY + this.h >= canvas.height) break;
+						path.moveTo(this.screenX + this.w, this.screenY + this.h);
+						path.lineTo(this.screenX, this.screenY + this.h);
 						break;
 					case 3: // Left
-						if (!this.x) break;
-						path.moveTo(this.x, this.y + this.h);
-						path.lineTo(this.x, this.y);
+						if (!this.screenX) break;
+						path.moveTo(this.screenX, this.screenY + this.h);
+						path.lineTo(this.screenX, this.screenY);
 						break;
 				}
 			}
@@ -80,7 +84,7 @@ export class Grid extends Array<Cell> {
 		this.cellHeight = cellHeight;
 		for (let j = 0; j < rowCnt; j++) {
 			for (let i = 0; i < colCnt; i++) {
-				const cell = new Cell(i, j, cellWidth, cellHeight);
+				const cell = new Cell(this, i, j, cellWidth, cellHeight);
 				this[j * colCnt + i] = cell;
 			}
 		}
