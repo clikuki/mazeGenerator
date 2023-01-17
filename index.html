@@ -33,13 +33,19 @@
 						<button class="fastForward">Fast Forward</button>
 					</div>
 					<div class="misc">
-						<label>Columns:<input type="number" class="column" min="3" /></label>
-						<label>Rows:<input type="number" class="row" min="3" /></label>
+						<div class="algoType">
+							<label for="algoTypeInput" title="Algorithm to use when generating maze"
+								>Algorithm</label
+							>
+							<select id="algoTypeInput"></select>
+						</div>
+						<label>Columns<input type="number" class="column" min="3" /></label>
+						<label>Rows<input type="number" class="row" min="3" /></label>
 						<div class="stepsPerSecond">
 							<label
 								for="stepsPerSecondInput"
 								title="Number of Simulation steps per second"
-								>Steps per Second:</label
+								>Steps per Second</label
 							>
 							<button>Uncapped</button>
 							<input id="stepsPerSecondInput" type="number" min="0" disabled />

@@ -56,6 +56,7 @@ button:disabled {
 }
 
 .buttons {
+	padding-top: 0.5rem;
 	display: flex;
 	flex-wrap: wrap;
 	gap: 0.2rem;
@@ -81,6 +82,8 @@ button:disabled {
 
 .inputs {
 	display: flex;
+	justify-content: center;
+	flex-wrap: wrap;
 	gap: 1rem;
 }
 
@@ -95,6 +98,6 @@ button:disabled {
 	width: 100%;
 }
 
-.stepsPerSecond label {
+.inputs label[title] {
 	cursor: help;
 }

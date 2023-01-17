@@ -1,7 +1,17 @@
 import { Cell, Grid } from './grid.js';
 import { randomItemInArray } from './utils.js';
 
-abstract class MazeGeneratorWalkerBase {
+export abstract class MazeGenerator {
+	grid: Grid;
+	isComplete = false;
+	constructor(grid: Grid) {
+		this.grid = grid;
+	}
+	abstract step(): void;
+	abstract draw(ctx: CanvasRenderingContext2D): void;
+}
+
+abstract class WalkerBase extends MazeGenerator {
 	index: number;
 	isComplete = false;
 	directions: [number, number, number, number];
@@ -11,6 +21,7 @@ abstract class MazeGeneratorWalkerBase {
 		startX = Math.floor(grid.colCnt / 2),
 		startY = Math.floor(grid.rowCnt / 2),
 	) {
+		super(grid);
 		const starterIndex = startY * grid.colCnt + startX;
 		const starterCell = grid[starterIndex];
 		starterCell.open = true;
@@ -50,10 +61,10 @@ abstract class MazeGeneratorWalkerBase {
 	checkIfComplete() {
 		return this.grid.every(({ open: visited }) => visited);
 	}
-	abstract step(): void;
-	abstract draw(ctx: CanvasRenderingContext2D): void;
 }
-class AldousBroderWalker extends MazeGeneratorWalkerBase {
+
+export class AldousBroder extends WalkerBase {
+	static key = 'Aldous-Broder';
 	step() {
 		if (this.isComplete) return;
 
@@ -106,7 +117,9 @@ class AldousBroderWalker extends MazeGeneratorWalkerBase {
 		ctx.restore();
 	}
 }
-class WilsonWalker extends MazeGeneratorWalkerBase {
+
+export class Wilsons extends WalkerBase {
+	static key = "Wilson's";
 	startIndex: number;
 	walkedCells = new Set<number>();
 	cellDirection = new Map<Cell, number>();
@@ -204,22 +217,22 @@ class WilsonWalker extends MazeGeneratorWalkerBase {
 		ctx.restore();
 	}
 }
-export class MazeGenerator {
-	grid: Grid;
+
+export class AldousBroderWilsonHybrid extends MazeGenerator {
+	static key = "Aldous-Broder + Wilson's";
 	phase = 0;
-	isComplete = false;
-	walkers: MazeGeneratorWalkerBase[] = [];
+	walkers: WalkerBase[] = [];
 	constructor(grid: Grid) {
-		this.grid = grid;
+		super(grid);
 
 		const minSize = 10;
 		if (Math.max(grid.colCnt, grid.rowCnt) > minSize) {
 			const oneToWalkerRatio = 100;
 			const numOfWalkers = Math.max(Math.floor(grid.length / oneToWalkerRatio), 1);
 			for (let i = 0; i < numOfWalkers; i++) {
-				this.walkers[i] = new AldousBroderWalker(grid);
+				this.walkers[i] = new AldousBroder(grid);
 			}
-		} else this.walkers[0] = new AldousBroderWalker(grid);
+		} else this.walkers[0] = new AldousBroder(grid);
 	}
 	step() {
 		if (this.isComplete) return;
@@ -230,14 +243,15 @@ export class MazeGenerator {
 				return;
 			}
 		}
-		if (this.phase !== 0) return;
-		const numOfVisitedCells = this.grid.filter(
-			({ open: visited }) => visited,
-		).length;
-		if (numOfVisitedCells >= (this.grid.rowCnt * this.grid.colCnt) / 3) {
-			this.phase = 1;
-			this.walkers.length = 0;
-			this.walkers[0] = new WilsonWalker(this.grid);
+
+		if (this.phase === 0) {
+			const visitedCellCount = this.grid.filter(
+				({ open: visited }) => visited,
+			).length;
+			if (visitedCellCount >= (this.grid.rowCnt * this.grid.colCnt) / 3) {
+				this.phase = 1;
+				this.walkers = [new Wilsons(this.grid)];
+			}
 		}
 	}
 	draw(ctx: CanvasRenderingContext2D) {
@@ -245,3 +259,5 @@ export class MazeGenerator {
 		this.walkers.forEach((walker) => walker.draw(ctx));
 	}
 }
+
+export const algorithms = [AldousBroder, Wilsons, AldousBroderWilsonHybrid];

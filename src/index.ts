@@ -1,24 +1,28 @@
 import { Grid } from './grid.js';
-import { MazeGenerator } from './mazeGenerator.js';
+import {
+	MazeGenerator,
+	algorithms as mazeAlgorithms,
+} from './mazeGenerator.js';
 import { MazeSolver } from './mazeSolver.js';
 
 const canvas = document.querySelector('canvas')!;
 const ctx = canvas.getContext('2d')!;
 canvas.width = innerHeight;
 canvas.height = innerHeight;
-const initGridSize = {
+const init = {
 	w: 10,
 	h: 10,
 };
 let grid = new Grid(
-	initGridSize.w,
-	initGridSize.h,
-	canvas.width / initGridSize.w,
-	canvas.height / initGridSize.h,
+	init.w,
+	init.h,
+	canvas.width / init.w,
+	canvas.height / init.h,
 );
 let mazeSolver: MazeSolver | undefined;
 let startCellIndex: number | null = null;
-let mazeGen = new MazeGenerator(grid);
+let mazeGenClass: typeof mazeAlgorithms[number] | undefined;
+let mazeGen: MazeGenerator | undefined;
 let pause = false;
 const simulationSpeed = {
 	capped: false,
@@ -26,9 +30,10 @@ const simulationSpeed = {
 };
 
 // Controls and displays
-function restart({ colCnt = grid.colCnt, rowCnt = grid.colCnt }) {
+function restart({ colCnt = grid.colCnt, rowCnt = grid.rowCnt }) {
+	if (!mazeGenClass) return;
 	grid = new Grid(colCnt, rowCnt, canvas.width / colCnt, canvas.height / rowCnt);
-	mazeGen = new MazeGenerator(grid);
+	mazeGen = new mazeGenClass(grid);
 	mazeSolver = undefined;
 	pause = false;
 	pauseBtn.disabled = false;
@@ -41,7 +46,7 @@ document
 
 const stepBtn = document.querySelector('.step') as HTMLButtonElement;
 stepBtn.addEventListener('click', () => {
-	if (!mazeGen.isComplete) {
+	if (mazeGen && !mazeGen.isComplete) {
 		mazeGen.step();
 		mazeGen.draw(ctx);
 	} else if (mazeSolver && !mazeSolver.isComplete) {
@@ -59,13 +64,13 @@ const fastForwardBtn = document.querySelector(
 	'.fastForward',
 ) as HTMLButtonElement;
 fastForwardBtn.addEventListener('click', () => {
-	if (!mazeGen.isComplete) {
+	if (mazeGen && !mazeGen.isComplete) {
 		while (!mazeGen.isComplete) {
 			mazeGen.step();
 		}
 	} else if (mazeSolver && !mazeSolver.isComplete) {
 		while (!mazeSolver.isComplete) {
-			mazeGen.step();
+			mazeSolver.step();
 		}
 	}
 	fastForwardBtn.disabled = true;
@@ -120,6 +125,30 @@ simulationSpeedNumInput.addEventListener('change', () => {
 	simulationSpeed.sps = newVal;
 });
 
+const algoTypeSelection = document.querySelector(
+	'.algoType select',
+) as HTMLSelectElement;
+const emptyOption = document.createElement('option');
+emptyOption.textContent = 'Choose Algorithm';
+algoTypeSelection.appendChild(emptyOption);
+for (const mazeGen of mazeAlgorithms) {
+	const optionElem = document.createElement('option');
+	optionElem.textContent = mazeGen.key;
+	optionElem.value = mazeGen.key;
+	algoTypeSelection.appendChild(optionElem);
+}
+algoTypeSelection.addEventListener('change', () => {
+	const newVal = algoTypeSelection.value;
+	for (const mazeGen of mazeAlgorithms) {
+		if (mazeGen.key !== newVal) continue;
+		if (!mazeGenClass) emptyOption.remove();
+		mazeGenClass = mazeGen;
+		restart({});
+		return;
+	}
+	throw 'Invalid algorithm chosen';
+});
+
 let prevTime = Date.now();
 (function loop() {
 	requestAnimationFrame(loop);
@@ -136,15 +165,16 @@ let prevTime = Date.now();
 	}
 
 	grid.draw(canvas, ctx);
-	fastForwardBtn.disabled =
-		mazeGen.isComplete && (!mazeSolver || mazeSolver.isComplete);
-	if (mazeGen.isComplete && (!mazeSolver || mazeSolver.isComplete)) {
+	const nothingIsRunning =
+		(!mazeGen || mazeGen.isComplete) && (!mazeSolver || mazeSolver.isComplete);
+	fastForwardBtn.disabled = nothingIsRunning;
+	if (nothingIsRunning) {
 		pause = false;
 		pauseBtn.disabled = true;
 		stepBtn.disabled = true;
 	}
 	pauseBtn.textContent = pause ? 'Resume' : 'Pause';
-	if (!mazeGen.isComplete) {
+	if (mazeGen && !mazeGen.isComplete) {
 		if (!pause && stepRunners) mazeGen.step();
 		mazeGen.draw(ctx);
 	} else if (mazeSolver) {
