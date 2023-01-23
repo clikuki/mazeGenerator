@@ -23,6 +23,9 @@ let mazeSolver: MazeSolver | undefined;
 let startCellIndex: number | null = null;
 let mazeGenClass: typeof mazeAlgorithms[number] | undefined;
 let mazeGen: MazeGenerator | undefined;
+if (mazeGenClass) {
+	mazeGen = new mazeGenClass(grid);
+}
 let pause = false;
 const simulationSpeed = {
 	capped: false,
@@ -38,11 +41,12 @@ function restart({ colCnt = grid.colCnt, rowCnt = grid.rowCnt }) {
 	pause = false;
 	pauseBtn.disabled = false;
 	stepBtn.disabled = false;
+	restartBtn.disabled = false;
 }
 
-document
-	.querySelector('.restart')!
-	.addEventListener('click', () => restart({}));
+const restartBtn = document.querySelector('.restart') as HTMLButtonElement;
+restartBtn.disabled = !mazeGenClass;
+restartBtn.addEventListener('click', () => restart({}));
 
 const stepBtn = document.querySelector('.step') as HTMLButtonElement;
 stepBtn.addEventListener('click', () => {
@@ -129,14 +133,16 @@ const algoTypeSelection = document.querySelector(
 	'.algoType select',
 ) as HTMLSelectElement;
 const emptyOption = document.createElement('option');
-emptyOption.textContent = 'Choose Algorithm';
-algoTypeSelection.appendChild(emptyOption);
+emptyOption.textContent = '-- Choose Algorithm --';
+if (!mazeGenClass) algoTypeSelection.appendChild(emptyOption);
 for (const mazeGen of mazeAlgorithms) {
 	const optionElem = document.createElement('option');
 	optionElem.textContent = mazeGen.key;
 	optionElem.value = mazeGen.key;
 	algoTypeSelection.appendChild(optionElem);
 }
+if (mazeGenClass) algoTypeSelection.value = mazeGenClass.key;
+
 algoTypeSelection.addEventListener('change', () => {
 	const newVal = algoTypeSelection.value;
 	for (const mazeGen of mazeAlgorithms) {
