@@ -3,7 +3,11 @@ import {
 	MazeGenerator,
 	algorithms as mazeAlgorithms,
 } from './mazeGenerator.js';
-import { MazeSolver } from './mazeSolver.js';
+import {
+	MazeSolver,
+	pathDrawMethods,
+	pathDrawMethodList,
+} from './mazeSolver.js';
 
 const canvas = document.querySelector('canvas')!;
 const ctx = canvas.getContext('2d')!;
@@ -21,11 +25,13 @@ let grid = new Grid(
 );
 let mazeSolver: MazeSolver | undefined;
 let startCellIndex: number | null = null;
-let mazeGenClass: typeof mazeAlgorithms[number] | undefined;
+// let mazeGenClass: typeof mazeAlgorithms[number] | undefined;
+let mazeGenClass: typeof mazeAlgorithms[number] | undefined = mazeAlgorithms[2];
 let mazeGen: MazeGenerator | undefined;
 if (mazeGenClass) {
 	mazeGen = new mazeGenClass(grid);
 }
+let pathDrawMethod: pathDrawMethods = pathDrawMethodList[0];
 let pause = false;
 const simulationSpeed = {
 	capped: false,
@@ -34,8 +40,8 @@ const simulationSpeed = {
 
 // Controls and displays
 function restart({ colCnt = grid.colCnt, rowCnt = grid.rowCnt }) {
-	if (!mazeGenClass) return;
 	grid = new Grid(colCnt, rowCnt, canvas.width / colCnt, canvas.height / rowCnt);
+	if (!mazeGenClass) return;
 	mazeGen = new mazeGenClass(grid);
 	mazeSolver = undefined;
 	pause = false;
@@ -129,6 +135,21 @@ simulationSpeedNumInput.addEventListener('change', () => {
 	simulationSpeed.sps = newVal;
 });
 
+const pathDrawMethodSelection = document.querySelector(
+	'.pathDrawMethod select',
+) as HTMLSelectElement;
+for (const pathDrawMethod of pathDrawMethodList) {
+	const optionElem = document.createElement('option');
+	optionElem.value = pathDrawMethod;
+	optionElem.textContent = pathDrawMethod;
+	pathDrawMethodSelection.appendChild(optionElem);
+}
+pathDrawMethodSelection.value = pathDrawMethod;
+pathDrawMethodSelection.addEventListener('change', () => {
+	pathDrawMethod = pathDrawMethodSelection.value as pathDrawMethods;
+	if (mazeSolver) mazeSolver.pathDrawMethod = pathDrawMethod;
+});
+
 const algoTypeSelection = document.querySelector(
 	'.algoType select',
 ) as HTMLSelectElement;
@@ -170,7 +191,6 @@ let prevTime = Date.now();
 		}
 	}
 
-	grid.draw(canvas, ctx);
 	const nothingIsRunning =
 		(!mazeGen || mazeGen.isComplete) && (!mazeSolver || mazeSolver.isComplete);
 	fastForwardBtn.disabled = nothingIsRunning;
@@ -180,6 +200,12 @@ let prevTime = Date.now();
 		stepBtn.disabled = true;
 	}
 	pauseBtn.textContent = pause ? 'Resume' : 'Pause';
+
+	ctx.fillStyle = 'black';
+	ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+	grid.drawGrayedCells(canvas, ctx);
+
 	if (mazeGen && !mazeGen.isComplete) {
 		if (!pause && stepRunners) mazeGen.step();
 		mazeGen.draw(ctx);
@@ -187,9 +213,12 @@ let prevTime = Date.now();
 		if (!mazeSolver.isComplete && !pause && stepRunners) mazeSolver.step();
 		mazeSolver.draw(ctx);
 	}
+
+	grid.drawWalls(canvas, ctx);
+
 	if (startCellIndex !== null) {
 		const cell = grid[startCellIndex];
-		ctx.fillStyle = '#f00';
+		ctx.fillStyle = '#00f';
 		ctx.fillRect(cell.screenX, cell.screenY, grid.cellWidth, grid.cellHeight);
 	}
 })();
@@ -204,6 +233,7 @@ canvas.addEventListener('click', (e) => {
 
 		if (startCellIndex !== null && startCellIndex !== cellIndex) {
 			mazeSolver = new MazeSolver(grid, startCellIndex, cellIndex);
+			mazeSolver.pathDrawMethod = pathDrawMethod;
 			startCellIndex = null;
 			pauseBtn.disabled = false;
 			stepBtn.disabled = false;
