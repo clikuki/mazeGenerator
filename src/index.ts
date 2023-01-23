@@ -187,6 +187,11 @@ let prevTime = Date.now();
 		if (!mazeSolver.isComplete && !pause && stepRunners) mazeSolver.step();
 		mazeSolver.draw(ctx);
 	}
+	if (startCellIndex !== null) {
+		const cell = grid[startCellIndex];
+		ctx.fillStyle = '#f00';
+		ctx.fillRect(cell.screenX, cell.screenY, grid.cellWidth, grid.cellHeight);
+	}
 })();
 
 // Activate Mouse solver on clicks
@@ -202,6 +207,9 @@ canvas.addEventListener('click', (e) => {
 			startCellIndex = null;
 			pauseBtn.disabled = false;
 			stepBtn.disabled = false;
-		} else startCellIndex = cellIndex;
+		} else {
+			startCellIndex = cellIndex;
+			mazeSolver = undefined;
+		}
 	}
 });
