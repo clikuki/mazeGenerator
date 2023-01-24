@@ -8,6 +8,7 @@ import {
 	pathDrawMethods,
 	pathDrawMethodList,
 } from './mazeSolver.js';
+import { Node, convertGridToGraph } from './utils.js';
 
 const canvas = document.querySelector('canvas')!;
 const ctx = canvas.getContext('2d')!;
@@ -25,8 +26,8 @@ let grid = new Grid(
 );
 let mazeSolver: MazeSolver | undefined;
 let startCellIndex: number | null = null;
-// let mazeGenClass: typeof mazeAlgorithms[number] | undefined;
-let mazeGenClass: typeof mazeAlgorithms[number] | undefined = mazeAlgorithms[2];
+let mazeGenClass: typeof mazeAlgorithms[number] | undefined;
+// let mazeGenClass: typeof mazeAlgorithms[number] | undefined = mazeAlgorithms[2];
 let mazeGen: MazeGenerator | undefined;
 if (mazeGenClass) {
 	mazeGen = new mazeGenClass(grid);
@@ -135,6 +136,91 @@ simulationSpeedInput.addEventListener('change', () => {
 	simulationSpeed.sps = newVal;
 });
 
+function download(url: string, fileExtension: string) {
+	// Download img by clicking link with js
+	const link = document.createElement('a');
+	document.body.appendChild(link);
+	link.href = url;
+
+	// Set datetime filename
+	const date = new Date();
+	const numToTwoCharStr = (num: number) => String(num).padStart(2, '0');
+	const year = date.getFullYear();
+	const month = numToTwoCharStr(date.getMonth());
+	const day = numToTwoCharStr(date.getDate());
+	const hour = numToTwoCharStr(date.getHours());
+	const minutes = numToTwoCharStr(date.getMinutes());
+	const seconds = numToTwoCharStr(date.getSeconds());
+	const milliseconds = numToTwoCharStr(date.getMilliseconds());
+	const fileName = `maze-${year}-${month}-${day}-T${hour}-${minutes}-${seconds}-${milliseconds}`;
+	link.download = `${fileName}.${fileExtension}`;
+
+	link.click();
+	link.remove();
+}
+
+const exportAsImageBtn = document.querySelector(
+	'.exportAsImage',
+) as HTMLButtonElement;
+exportAsImageBtn.addEventListener('click', () => {
+	if (!mazeGen || !mazeGen.isComplete) return;
+
+	// Clear canvas and draw walls
+	ctx.fillStyle = 'black';
+	ctx.fillRect(0, 0, canvas.width, canvas.height);
+	grid.drawWalls(canvas, ctx);
+	download(canvas.toDataURL(), 'png');
+});
+
+const exportAsGridBtn = document.querySelector(
+	'.exportAsGrid',
+) as HTMLButtonElement;
+exportAsGridBtn.addEventListener('click', () => {
+	if (!mazeGen || !mazeGen.isComplete) return;
+
+	const simplifiedGrid = grid.map((cell) => ({
+		x: cell.gridX,
+		y: cell.gridY,
+		top: cell.walls[0],
+		right: cell.walls[1],
+		bottom: cell.walls[2],
+		left: cell.walls[3],
+	}));
+
+	const blob = new Blob([JSON.stringify(simplifiedGrid)], { type: 'text/json' });
+	download(URL.createObjectURL(blob), 'json');
+});
+
+const exportAsGraphBtn = document.querySelector(
+	'.exportAsGraph',
+) as HTMLButtonElement;
+exportAsGraphBtn.addEventListener('click', () => {
+	if (!mazeGen || !mazeGen.isComplete) return;
+
+	const graph = convertGridToGraph(grid);
+	const simplifiedGraph: { [key: string]: string[] } = {};
+
+	let idCounter = 0;
+	const nodeIdMap = new Map<Node, string>();
+	function getNodeId(node: Node) {
+		let id = nodeIdMap.get(node);
+		if (!id) {
+			id = (++idCounter).toString(16);
+			nodeIdMap.set(node, id);
+		}
+		return id;
+	}
+	for (const [, node] of graph) {
+		const id = getNodeId(node);
+		simplifiedGraph[id] = node.neighbors.map((neighbor) => getNodeId(neighbor));
+	}
+
+	const blob = new Blob([JSON.stringify(simplifiedGraph)], {
+		type: 'text/json',
+	});
+	download(URL.createObjectURL(blob), 'json');
+});
+
 const pathDrawMethodSelection = document.querySelector(
 	'.pathDrawMethod select',
 ) as HTMLSelectElement;
@@ -200,6 +286,11 @@ let prevTime = Date.now();
 		stepBtn.disabled = true;
 	}
 	pauseBtn.textContent = pause ? 'Resume' : 'Pause';
+
+	const mazeHasGenerated = !mazeGen || !mazeGen.isComplete;
+	exportAsImageBtn.disabled = mazeHasGenerated;
+	exportAsGridBtn.disabled = mazeHasGenerated;
+	exportAsGraphBtn.disabled = mazeHasGenerated;
 
 	ctx.fillStyle = 'black';
 	ctx.fillRect(0, 0, canvas.width, canvas.height);

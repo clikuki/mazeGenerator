@@ -34,6 +34,41 @@
 						<button class="pause">Pause</button>
 						<button class="restart">Restart</button>
 						<button class="fastForward">Fast Forward</button>
+						<button
+							class="exportAsImage"
+							title="Walls are more than 1px and are antialiased, so reading image file for walls and stuff will be hard"
+						>
+							Export as PNG
+						</button>
+						<button
+							class="exportAsGrid"
+							title="JSON format:
+[
+	{
+		// Position in grid
+		x: number,
+		y: number,
+
+		// Walls on four sides
+		top: boolean,
+		right: boolean,
+		bottom: boolean,
+		left: boolean,
+	}
+]"
+						>
+							Export as grid
+						</button>
+						<button
+							class="exportAsGraph"
+							title="JSON format:
+{
+	// id with array of more Id's showing adjacencies
+	<Id>: Id[]
+}"
+						>
+							Export as graph
+						</button>
 					</div>
 					<div class="misc">
 						<div class="algoType">

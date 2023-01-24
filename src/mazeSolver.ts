@@ -1,41 +1,5 @@
 import { Cell, Grid } from './grid.js';
-
-interface Node {
-	cell: Cell;
-	neighbors: Node[];
-	walls: number;
-}
-function convertGridToGraph(grid: Grid, start = grid[0]) {
-	const directions = [-grid.colCnt, 1, grid.colCnt, -1];
-	const visited = new Set<Cell>();
-	const nodeMap = new Map<Cell, Node>();
-	function convert(cell: Cell) {
-		if (visited.has(cell)) return nodeMap.get(cell)!;
-
-		const node: Node = {
-			cell: cell,
-			neighbors: [],
-			walls: cell.walls.filter((w) => w).length,
-		};
-
-		visited.add(cell);
-		nodeMap.set(cell, node);
-
-		node.neighbors = directions
-			.map((dir, i): Node | [] => {
-				const neighbor = grid[cell.gridIndex + dir];
-				if (neighbor === undefined || cell.walls[i]) {
-					return [];
-				}
-				return convert(neighbor);
-			})
-			.flat();
-
-		return node;
-	}
-	convert(start);
-	return nodeMap;
-}
+import { Node, convertGridToGraph } from './utils.js';
 
 // Only works for perfect mazes, which are the only mazes I make
 function nodeToPath(start: Node, filled: Set<Node>) {

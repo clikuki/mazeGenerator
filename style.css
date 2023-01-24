@@ -47,6 +47,10 @@ button:disabled {
 	cursor: not-allowed;
 }
 
+[title] {
+	cursor: help;
+}
+
 .ui {
 	padding: 0 1rem;
 }
@@ -97,8 +101,4 @@ button:disabled {
 	align-items: center;
 	gap: 0.5rem;
 	width: 100%;
-}
-
-.inputs label[title] {
-	cursor: help;
 }
