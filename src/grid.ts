@@ -74,8 +74,8 @@ export class Grid extends Array<Cell> {
 		super();
 		this.colCnt = colCnt;
 		this.rowCnt = rowCnt;
-		this.cellWidth = cellWidth;
-		this.cellHeight = cellHeight;
+		this.cellWidth = Math.floor(cellWidth);
+		this.cellHeight = Math.floor(cellHeight);
 		for (let j = 0; j < rowCnt; j++) {
 			for (let i = 0; i < colCnt; i++) {
 				const cell = new Cell(this, i, j, cellWidth, cellHeight);

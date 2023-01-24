@@ -114,22 +114,22 @@ rowInput.addEventListener('change', () => {
 const simulationSpeedCapBtn = document.querySelector(
 	'.stepsPerSecond button',
 ) as HTMLButtonElement;
-const simulationSpeedNumInput = document.querySelector(
+const simulationSpeedInput = document.querySelector(
 	'.stepsPerSecond input',
 ) as HTMLInputElement;
-simulationSpeedNumInput.valueAsNumber = simulationSpeed.sps;
-simulationSpeedNumInput.disabled = !simulationSpeed.capped;
+simulationSpeedInput.valueAsNumber = simulationSpeed.sps;
+simulationSpeedInput.disabled = !simulationSpeed.capped;
 simulationSpeedCapBtn.addEventListener('click', () => {
 	simulationSpeed.capped = !simulationSpeed.capped;
 	simulationSpeedCapBtn.textContent = simulationSpeed.capped
 		? 'Capped'
 		: 'Uncapped';
-	simulationSpeedNumInput.disabled = !simulationSpeed.capped;
+	simulationSpeedInput.disabled = !simulationSpeed.capped;
 });
-simulationSpeedNumInput.addEventListener('change', () => {
+simulationSpeedInput.addEventListener('change', () => {
 	const newVal = simulationSpeed.sps;
 	if (isNaN(newVal) || newVal < 3) {
-		simulationSpeedNumInput.valueAsNumber = simulationSpeed.sps;
+		simulationSpeedInput.valueAsNumber = simulationSpeed.sps;
 		return;
 	}
 	simulationSpeed.sps = newVal;
