@@ -14,16 +14,7 @@ const canvas = document.querySelector('canvas')!;
 const ctx = canvas.getContext('2d')!;
 canvas.width = innerHeight;
 canvas.height = innerHeight;
-const init = {
-	w: 10,
-	h: 10,
-};
-let grid = new Grid(
-	init.w,
-	init.h,
-	canvas.width / init.w,
-	canvas.height / init.h,
-);
+let grid = new Grid(10, 10, canvas);
 let mazeSolver: MazeSolver | undefined;
 let startCellIndex: number | null = null;
 let mazeGenClass: typeof mazeAlgorithms[number] | undefined;
@@ -39,9 +30,12 @@ const simulationSpeed = {
 	sps: 60,
 };
 
+// @ts-ignore
+window.g = () => grid;
+
 // Controls and displays
 function restart({ colCnt = grid.colCnt, rowCnt = grid.rowCnt }) {
-	grid = new Grid(colCnt, rowCnt, canvas.width / colCnt, canvas.height / rowCnt);
+	grid = new Grid(colCnt, rowCnt, canvas);
 	if (!mazeGenClass) return;
 	mazeGen = new mazeGenClass(grid);
 	mazeSolver = undefined;
@@ -178,7 +172,7 @@ const exportAsGridBtn = document.querySelector(
 exportAsGridBtn.addEventListener('click', () => {
 	if (!mazeGen || !mazeGen.isComplete) return;
 
-	const simplifiedGrid = grid.map((cell) => ({
+	const simplifiedGrid = grid.cells.map((cell) => ({
 		x: cell.gridX,
 		y: cell.gridY,
 		top: cell.walls[0],
@@ -308,17 +302,17 @@ let prevTime = Date.now();
 	grid.drawWalls(canvas, ctx);
 
 	if (startCellIndex !== null) {
-		const cell = grid[startCellIndex];
+		const cell = grid.cells[startCellIndex];
 		ctx.fillStyle = '#00f';
-		ctx.fillRect(cell.screenX, cell.screenY, grid.cellWidth, grid.cellHeight);
+		ctx.fillRect(cell.screenX, cell.screenY, grid.cellSize, grid.cellSize);
 	}
 })();
 
 // Activate Mouse solver on clicks
 canvas.addEventListener('click', (e) => {
 	if (mazeGen && mazeGen.isComplete && (!mazeSolver || mazeSolver.isComplete)) {
-		const cellX = Math.floor(e.x / grid.cellWidth);
-		const cellY = Math.floor(e.y / grid.cellHeight);
+		const cellX = Math.floor(e.x / grid.cellSize);
+		const cellY = Math.floor(e.y / grid.cellSize);
 		if (cellX >= grid.colCnt || cellY >= grid.rowCnt) return;
 		const cellIndex = cellY * grid.colCnt + cellX;
 

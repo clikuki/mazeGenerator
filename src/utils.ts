@@ -11,7 +11,7 @@ export interface Node {
 	neighbors: Node[];
 	walls: number;
 }
-export function convertGridToGraph(grid: Grid, start = grid[0]) {
+export function convertGridToGraph(grid: Grid, start = grid.cells[0]) {
 	const directions = [-grid.colCnt, 1, grid.colCnt, -1];
 	const visited = new Set<Cell>();
 	const nodeMap = new Map<Cell, Node>();
@@ -29,7 +29,7 @@ export function convertGridToGraph(grid: Grid, start = grid[0]) {
 
 		node.neighbors = directions
 			.map((dir, i): Node | [] => {
-				const neighbor = grid[cell.gridIndex + dir];
+				const neighbor = grid.cells[cell.gridIndex + dir];
 				if (neighbor === undefined || cell.walls[i]) {
 					return [];
 				}

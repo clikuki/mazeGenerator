@@ -54,10 +54,10 @@ export class MazeSolver {
 		this.directions = [-grid.colCnt, 1, grid.colCnt, -1];
 
 		// Precompute some data
-		this.graph = convertGridToGraph(grid, grid[from]);
-		this.current = this.graph.get(grid[from])!;
-		for (let i = 0; i < grid.length; i++) {
-			const cell = grid[i];
+		this.graph = convertGridToGraph(grid, grid.cells[from]);
+		this.current = this.graph.get(grid.cells[from])!;
+		for (let i = 0; i < grid.cells.length; i++) {
+			const cell = grid.cells[i];
 			const cellWallCount = cell.walls.filter((w) => w).length;
 			if (
 				cell.open &&
@@ -84,8 +84,8 @@ export class MazeSolver {
 				if (
 					neighbor.walls++ < 2 ||
 					this.filledNodes.has(neighbor) ||
-					neighbor.cell === this.grid[this.from] ||
-					neighbor.cell === this.grid[this.to]
+					neighbor.cell === this.grid.cells[this.from] ||
+					neighbor.cell === this.grid.cells[this.to]
 				) {
 					continue;
 				}
@@ -98,29 +98,29 @@ export class MazeSolver {
 		if (!hasReplacedCell) {
 			this.isComplete = true;
 			this.path = nodeToPath(
-				this.graph.get(this.grid[this.from])!,
+				this.graph.get(this.grid.cells[this.from])!,
 				this.filledNodes,
 			);
 			return;
 		}
 	}
 	draw(ctx: CanvasRenderingContext2D) {
-		const fromCell = this.grid[this.from];
-		const toCell = this.grid[this.to];
+		const fromCell = this.grid.cells[this.from];
+		const toCell = this.grid.cells[this.to];
 		if (!this.isComplete || this.pathDrawMethod === 'LINE') {
 			ctx.fillStyle = arrayToClrStr(startColor);
 			ctx.fillRect(
 				fromCell.screenX,
 				fromCell.screenY,
-				this.grid.cellWidth,
-				this.grid.cellHeight,
+				this.grid.cellSize,
+				this.grid.cellSize,
 			);
 			ctx.fillStyle = arrayToClrStr(endColor);
 			ctx.fillRect(
 				toCell.screenX,
 				toCell.screenY,
-				this.grid.cellWidth,
-				this.grid.cellHeight,
+				this.grid.cellSize,
+				this.grid.cellSize,
 			);
 		}
 		if (this.isComplete && this.path) {
@@ -134,8 +134,8 @@ export class MazeSolver {
 						ctx.fillRect(
 							cell.screenX,
 							cell.screenY,
-							this.grid.cellWidth,
-							this.grid.cellHeight,
+							this.grid.cellSize,
+							this.grid.cellSize,
 						);
 					}
 					break;
@@ -150,8 +150,8 @@ export class MazeSolver {
 						}
 
 						const circlePath = new Path2D();
-						const circleRX = this.grid.cellWidth * 0.05;
-						const circleRY = this.grid.cellHeight * 0.05;
+						const circleRX = this.grid.cellSize * 0.05;
+						const circleRY = this.grid.cellSize * 0.05;
 						for (const cell of [fromCell, toCell]) {
 							circlePath.ellipse(
 								cell.screenX,
@@ -165,7 +165,7 @@ export class MazeSolver {
 						}
 
 						ctx.save();
-						ctx.translate(this.grid.cellWidth / 2, this.grid.cellHeight / 2);
+						ctx.translate(this.grid.cellSize / 2, this.grid.cellSize / 2);
 						ctx.strokeStyle = '#0f0';
 						ctx.stroke(linePath);
 						ctx.fillStyle = ctx.strokeStyle;
@@ -180,9 +180,9 @@ export class MazeSolver {
 			const grayPath = new Path2D();
 			for (const { cell } of this.filledNodes) {
 				grayPath.moveTo(cell.screenX, cell.screenY);
-				grayPath.lineTo(cell.screenX + cell.w, cell.screenY);
-				grayPath.lineTo(cell.screenX + cell.w, cell.screenY + cell.w);
-				grayPath.lineTo(cell.screenX, cell.screenY + cell.w);
+				grayPath.lineTo(cell.screenX + cell.size, cell.screenY);
+				grayPath.lineTo(cell.screenX + cell.size, cell.screenY + cell.size);
+				grayPath.lineTo(cell.screenX, cell.screenY + cell.size);
 				grayPath.lineTo(cell.screenX, cell.screenY);
 			}
 			ctx.fillStyle = '#fff2';

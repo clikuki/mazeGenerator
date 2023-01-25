@@ -23,7 +23,7 @@ abstract class WalkerBase extends MazeGenerator {
 	) {
 		super(grid);
 		const starterIndex = startY * grid.colCnt + startX;
-		const starterCell = grid[starterIndex];
+		const starterCell = grid.cells[starterIndex];
 		starterCell.open = true;
 		this.index = starterIndex;
 		this.isComplete = false;
@@ -31,7 +31,7 @@ abstract class WalkerBase extends MazeGenerator {
 		this.grid = grid;
 	}
 	getRandomUnvisitedCellIndex() {
-		const mazePartIndices = this.grid
+		const mazePartIndices = this.grid.cells
 			.map((cell, i) => ({ ...cell, i }))
 			.filter(({ open: visited }) => visited)
 			.map(({ i }) => i);
@@ -59,7 +59,7 @@ abstract class WalkerBase extends MazeGenerator {
 		}
 	}
 	checkIfComplete() {
-		return this.grid.every(({ open: visited }) => visited);
+		return this.grid.cells.every(({ open: visited }) => visited);
 	}
 }
 
@@ -68,11 +68,11 @@ export class AldousBroder extends WalkerBase {
 	step() {
 		if (this.isComplete) return;
 
-		const head = this.grid[this.index];
+		const head = this.grid.cells[this.index];
 		// Get valid directions
 		const directions = this.directions.filter((offset) => {
 			const newIndex = this.index + offset;
-			const cell = this.grid[newIndex];
+			const cell = this.grid.cells[newIndex];
 
 			// Check if cell is within grid
 			if (newIndex < 0 || newIndex >= this.grid.colCnt * this.grid.rowCnt)
@@ -85,9 +85,9 @@ export class AldousBroder extends WalkerBase {
 
 		const direction = randomItemInArray(directions);
 		// Pick new head
-		const newHead = this.grid[(this.index += direction)];
+		const newHead = this.grid.cells[(this.index += direction)];
 
-		const prevCell = this.grid[this.index - direction];
+		const prevCell = this.grid.cells[this.index - direction];
 		// If new cell is unvisited, then carve walls inbetween
 		if (!newHead.open) {
 			newHead.open = true;
@@ -100,14 +100,14 @@ export class AldousBroder extends WalkerBase {
 	draw(ctx: CanvasRenderingContext2D) {
 		if (this.isComplete) return;
 		ctx.save();
-		ctx.translate(this.grid.cellWidth / 2, this.grid.cellHeight / 2);
+		ctx.translate(this.grid.cellSize / 2, this.grid.cellSize / 2);
 		ctx.beginPath();
-		const headCell = this.grid[this.index];
+		const headCell = this.grid.cells[this.index];
 		ctx.ellipse(
 			headCell.screenX,
 			headCell.screenY,
-			this.grid.cellWidth / 4,
-			this.grid.cellHeight / 4,
+			this.grid.cellSize / 4,
+			this.grid.cellSize / 4,
 			0,
 			0,
 			Math.PI * 2,
@@ -128,20 +128,20 @@ export class Wilsons extends WalkerBase {
 		const walkerStartIndex = this.getRandomUnvisitedCellIndex();
 		this.startIndex = walkerStartIndex;
 		this.index = walkerStartIndex;
-		if (this.grid.every(({ open: visited }) => !visited)) {
+		if (this.grid.cells.every(({ open: visited }) => !visited)) {
 			const centerCellIndex =
 				Math.floor(grid.rowCnt / 2) * grid.colCnt + Math.floor(grid.colCnt / 2);
-			this.grid[centerCellIndex].open = true;
+			this.grid.cells[centerCellIndex].open = true;
 		}
 	}
 	step() {
 		if (this.isComplete) return;
 
-		const head = this.grid[this.index];
+		const head = this.grid.cells[this.index];
 		// Get valid directions
 		const directions = this.directions.filter((offset) => {
 			const newIndex = this.index + offset;
-			const cell = this.grid[newIndex];
+			const cell = this.grid.cells[newIndex];
 
 			// Check if cell is within grid
 			if (newIndex < 0 || newIndex >= this.grid.colCnt * this.grid.rowCnt) return;
@@ -154,12 +154,12 @@ export class Wilsons extends WalkerBase {
 
 		const direction = randomItemInArray(directions);
 		// Set direction of current head
-		const curHead = this.grid[this.index];
+		const curHead = this.grid.cells[this.index];
 		this.cellDirection.set(curHead, direction);
 		this.walkedCells.add(this.index);
 
 		// Pick new head
-		const newHead = this.grid[(this.index += direction)];
+		const newHead = this.grid.cells[(this.index += direction)];
 		if (newHead.open) {
 			// Connect path back to body
 			let prevCell: Cell | undefined;
@@ -167,7 +167,7 @@ export class Wilsons extends WalkerBase {
 			let pathIndex = this.startIndex;
 			while (true) {
 				// Loop through paths using directions
-				const curCell = this.grid[pathIndex];
+				const curCell = this.grid.cells[pathIndex];
 				const pathOffset = this.cellDirection.get(curCell)!;
 				if (prevCell === newHead) break;
 				if (prevCell) this.carveWall(prevCell, curCell, prevOffset!);
@@ -179,7 +179,7 @@ export class Wilsons extends WalkerBase {
 			this.cellDirection.clear();
 			this.walkedCells.clear();
 
-			if (this.grid.every(({ open: visited }) => visited)) {
+			if (this.grid.cells.every(({ open: visited }) => visited)) {
 				this.isComplete = true;
 			} else {
 				// Find new starting point for path
@@ -193,21 +193,21 @@ export class Wilsons extends WalkerBase {
 		if (this.isComplete) return;
 		// Path
 		for (const index of this.walkedCells) {
-			const cell = this.grid[index];
+			const cell = this.grid.cells[index];
 			ctx.fillStyle = 'rgb(255, 0, 0)';
-			ctx.fillRect(cell.screenX, cell.screenY, cell.w - 2, cell.h - 2);
+			ctx.fillRect(cell.screenX, cell.screenY, cell.size - 2, cell.size - 2);
 		}
 		// Head
 		ctx.save();
-		ctx.translate(this.grid.cellWidth / 2, this.grid.cellHeight / 2);
+		ctx.translate(this.grid.cellSize / 2, this.grid.cellSize / 2);
 		ctx.fillStyle = 'rgb(0, 255, 0)';
 		ctx.beginPath();
-		const headCell = this.grid[this.index];
+		const headCell = this.grid.cells[this.index];
 		ctx.ellipse(
 			headCell.screenX,
 			headCell.screenY,
-			this.grid.cellWidth / 4,
-			this.grid.cellHeight / 4,
+			this.grid.cellSize / 4,
+			this.grid.cellSize / 4,
 			0,
 			0,
 			Math.PI * 2,
@@ -228,7 +228,10 @@ export class AldousBroderWilsonHybrid extends MazeGenerator {
 		const minSize = 10;
 		if (Math.max(grid.colCnt, grid.rowCnt) > minSize) {
 			const oneToWalkerRatio = 100;
-			const numOfWalkers = Math.max(Math.floor(grid.length / oneToWalkerRatio), 1);
+			const numOfWalkers = Math.max(
+				Math.floor(grid.cells.length / oneToWalkerRatio),
+				1,
+			);
 			for (let i = 0; i < numOfWalkers; i++) {
 				this.walkers[i] = new AldousBroder(grid);
 			}
@@ -245,7 +248,7 @@ export class AldousBroderWilsonHybrid extends MazeGenerator {
 		}
 
 		if (this.phase === 0) {
-			const visitedCellCount = this.grid.filter(
+			const visitedCellCount = this.grid.cells.filter(
 				({ open: visited }) => visited,
 			).length;
 			if (visitedCellCount >= (this.grid.rowCnt * this.grid.colCnt) / 3) {
