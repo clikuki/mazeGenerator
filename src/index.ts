@@ -128,8 +128,8 @@ simulationSpeedCapBtn.addEventListener('click', () => {
 	simulationSpeedInput.disabled = !simulationSpeed.capped;
 });
 simulationSpeedInput.addEventListener('change', () => {
-	const newVal = simulationSpeed.sps;
-	if (isNaN(newVal) || newVal < 3) {
+	const newVal = simulationSpeedInput.valueAsNumber;
+	if (isNaN(newVal) || newVal < 1) {
 		simulationSpeedInput.valueAsNumber = simulationSpeed.sps;
 		return;
 	}
