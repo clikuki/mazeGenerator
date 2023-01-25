@@ -17,8 +17,8 @@ canvas.height = innerHeight;
 let grid = new Grid(10, 10, canvas);
 let mazeSolver: MazeSolver | undefined;
 let startCellIndex: number | null = null;
-let mazeGenClass: typeof mazeAlgorithms[number] | undefined;
-// let mazeGenClass: typeof mazeAlgorithms[number] | undefined = mazeAlgorithms[2];
+// let mazeGenClass: typeof mazeAlgorithms[number] | undefined;
+let mazeGenClass: typeof mazeAlgorithms[number] | undefined = mazeAlgorithms[2];
 let mazeGen: MazeGenerator | undefined;
 if (mazeGenClass) {
 	mazeGen = new mazeGenClass(grid);
@@ -29,9 +29,6 @@ const simulationSpeed = {
 	capped: false,
 	sps: 60,
 };
-
-// @ts-ignore
-window.g = () => grid;
 
 // Controls and displays
 function restart({ colCnt = grid.colCnt, rowCnt = grid.rowCnt }) {
@@ -159,11 +156,19 @@ const exportAsImageBtn = document.querySelector(
 exportAsImageBtn.addEventListener('click', () => {
 	if (!mazeGen || !mazeGen.isComplete) return;
 
-	// Clear canvas and draw walls
+	const dimensions = [canvas.width, canvas.height];
+	canvas.width = grid.cellSize * grid.colCnt;
+	canvas.height = grid.cellSize * grid.rowCnt;
+
 	ctx.fillStyle = 'black';
 	ctx.fillRect(0, 0, canvas.width, canvas.height);
-	grid.drawWalls(canvas, ctx);
-	download(canvas.toDataURL(), 'png');
+	grid.drawWalls(ctx);
+	const imgUrl = canvas.toDataURL();
+
+	canvas.width = dimensions[0];
+	canvas.height = dimensions[1];
+
+	download(imgUrl, 'png');
 });
 
 const exportAsGridBtn = document.querySelector(
@@ -256,6 +261,13 @@ algoTypeSelection.addEventListener('change', () => {
 	throw 'Invalid algorithm chosen';
 });
 
+function getMazeOffset(): [number, number] {
+	return [
+		(grid.cellSize / 2) * Math.max(grid.rowCnt - grid.colCnt, 0),
+		(grid.cellSize / 2) * Math.max(grid.colCnt - grid.rowCnt, 0),
+	];
+}
+
 let prevTime = Date.now();
 (function loop() {
 	requestAnimationFrame(loop);
@@ -289,6 +301,10 @@ let prevTime = Date.now();
 	ctx.fillStyle = 'black';
 	ctx.fillRect(0, 0, canvas.width, canvas.height);
 
+	// Center draws
+	ctx.save();
+	ctx.translate(...getMazeOffset());
+
 	grid.drawGrayedCells(canvas, ctx);
 
 	if (mazeGen && !mazeGen.isComplete) {
@@ -299,20 +315,29 @@ let prevTime = Date.now();
 		mazeSolver.draw(ctx);
 	}
 
-	grid.drawWalls(canvas, ctx);
+	grid.drawWalls(ctx);
 
 	if (startCellIndex !== null) {
 		const cell = grid.cells[startCellIndex];
 		ctx.fillStyle = '#00f';
 		ctx.fillRect(cell.screenX, cell.screenY, grid.cellSize, grid.cellSize);
 	}
+
+	ctx.restore();
 })();
 
 // Activate Mouse solver on clicks
 canvas.addEventListener('click', (e) => {
-	if (mazeGen && mazeGen.isComplete && (!mazeSolver || mazeSolver.isComplete)) {
-		const cellX = Math.floor(e.x / grid.cellSize);
-		const cellY = Math.floor(e.y / grid.cellSize);
+	const mazeOffset = getMazeOffset();
+	if (
+		mazeGen &&
+		mazeGen.isComplete &&
+		(!mazeSolver || mazeSolver.isComplete) &&
+		e.x >= mazeOffset[0] &&
+		e.y >= mazeOffset[1]
+	) {
+		const cellX = Math.floor((e.x - mazeOffset[0]) / grid.cellSize);
+		const cellY = Math.floor((e.y - mazeOffset[1]) / grid.cellSize);
 		if (cellX >= grid.colCnt || cellY >= grid.rowCnt) return;
 		const cellIndex = cellY * grid.colCnt + cellX;
 

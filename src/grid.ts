@@ -24,7 +24,7 @@ export class Cell {
 			this.size + (this.screenY >= canvas.height && this.walls[2] ? 0 : 1),
 		);
 	}
-	drawWalls(canvas: HTMLCanvasElement, ctx: CanvasRenderingContext2D) {
+	drawWalls(ctx: CanvasRenderingContext2D) {
 		// Walls
 		ctx.strokeStyle = 'white';
 		const path = new Path2D();
@@ -32,22 +32,18 @@ export class Cell {
 			if (this.walls[i]) {
 				switch (i) {
 					case 0: // Top
-						if (!this.screenY) break;
 						path.moveTo(this.screenX, this.screenY);
 						path.lineTo(this.screenX + this.size, this.screenY);
 						break;
 					case 1: // Right
-						if (this.screenX + this.size >= canvas.width) break;
 						path.moveTo(this.screenX + this.size, this.screenY);
 						path.lineTo(this.screenX + this.size, this.screenY + this.size);
 						break;
 					case 2: // Bottom
-						if (this.screenY + this.size >= canvas.height) break;
 						path.moveTo(this.screenX + this.size, this.screenY + this.size);
 						path.lineTo(this.screenX, this.screenY + this.size);
 						break;
 					case 3: // Left
-						if (!this.screenX) break;
 						path.moveTo(this.screenX, this.screenY + this.size);
 						path.lineTo(this.screenX, this.screenY);
 						break;
@@ -74,9 +70,9 @@ export class Grid {
 			}
 		}
 	}
-	drawWalls(canvas: HTMLCanvasElement, ctx: CanvasRenderingContext2D) {
+	drawWalls(ctx: CanvasRenderingContext2D) {
 		for (const cell of this.cells) {
-			if (cell.open) cell.drawWalls(canvas, ctx);
+			if (cell.open) cell.drawWalls(ctx);
 		}
 	}
 	drawGrayedCells(canvas: HTMLCanvasElement, ctx: CanvasRenderingContext2D) {
