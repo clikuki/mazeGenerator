@@ -16,9 +16,9 @@ canvas.width = innerHeight;
 canvas.height = innerHeight;
 let grid = new Grid(10, 10, canvas);
 let mazeSolver: MazeSolver | undefined;
-let startCellIndex: number | null = null;
-// let mazeGenClass: typeof mazeAlgorithms[number] | undefined;
-let mazeGenClass: typeof mazeAlgorithms[number] | undefined = mazeAlgorithms[2];
+let solveStartIndex: number | null = null;
+let mazeGenClass: typeof mazeAlgorithms[number] | undefined;
+// let mazeGenClass: typeof mazeAlgorithms[number] | undefined = mazeAlgorithms[0];
 let mazeGen: MazeGenerator | undefined;
 if (mazeGenClass) {
 	mazeGen = new mazeGenClass(grid);
@@ -40,6 +40,7 @@ function restart({ colCnt = grid.colCnt, rowCnt = grid.rowCnt }) {
 	pauseBtn.disabled = false;
 	stepBtn.disabled = false;
 	restartBtn.disabled = false;
+	solveStartIndex = null;
 }
 
 const restartBtn = document.querySelector('.restart') as HTMLButtonElement;
@@ -85,9 +86,11 @@ columnInput.valueAsNumber = grid.colCnt;
 const rowInput = document.querySelector('.inputs .row') as HTMLInputElement;
 rowInput.valueAsNumber = grid.rowCnt;
 
+const minDimensions = 3;
+const maxDimensions = 150;
 columnInput.addEventListener('change', () => {
 	const newVal = columnInput.valueAsNumber;
-	if (isNaN(newVal) || newVal < 3 || newVal > 100) {
+	if (isNaN(newVal) || newVal < minDimensions || newVal > maxDimensions) {
 		columnInput.valueAsNumber = grid.colCnt;
 		return;
 	}
@@ -96,7 +99,7 @@ columnInput.addEventListener('change', () => {
 
 rowInput.addEventListener('change', () => {
 	const newVal = rowInput.valueAsNumber;
-	if (isNaN(newVal) || newVal < 3 || newVal > 100) {
+	if (isNaN(newVal) || newVal < minDimensions || newVal > maxDimensions) {
 		rowInput.valueAsNumber = grid.colCnt;
 		return;
 	}
@@ -261,16 +264,11 @@ algoTypeSelection.addEventListener('change', () => {
 	throw 'Invalid algorithm chosen';
 });
 
-function getMazeOffset(): [number, number] {
-	return [
-		(grid.cellSize / 2) * Math.max(grid.rowCnt - grid.colCnt, 0),
-		(grid.cellSize / 2) * Math.max(grid.colCnt - grid.rowCnt, 0),
-	];
-}
-
 let prevTime = Date.now();
 (function loop() {
 	requestAnimationFrame(loop);
+
+	grid.drawWalls(ctx);
 
 	let stepRunners = true;
 	if (simulationSpeed.capped) {
@@ -303,7 +301,7 @@ let prevTime = Date.now();
 
 	// Center draws
 	ctx.save();
-	ctx.translate(...getMazeOffset());
+	ctx.translate(grid.centerOffsetX, grid.centerOffsetY);
 
 	grid.drawGrayedCells(canvas, ctx);
 
@@ -317,8 +315,8 @@ let prevTime = Date.now();
 
 	grid.drawWalls(ctx);
 
-	if (startCellIndex !== null) {
-		const cell = grid.cells[startCellIndex];
+	if (solveStartIndex !== null) {
+		const cell = grid.cells[solveStartIndex];
 		ctx.fillStyle = '#00f';
 		ctx.fillRect(cell.screenX, cell.screenY, grid.cellSize, grid.cellSize);
 	}
@@ -328,27 +326,26 @@ let prevTime = Date.now();
 
 // Activate Mouse solver on clicks
 canvas.addEventListener('click', (e) => {
-	const mazeOffset = getMazeOffset();
 	if (
 		mazeGen &&
 		mazeGen.isComplete &&
 		(!mazeSolver || mazeSolver.isComplete) &&
-		e.x >= mazeOffset[0] &&
-		e.y >= mazeOffset[1]
+		e.x >= grid.centerOffsetX &&
+		e.y >= grid.centerOffsetY
 	) {
-		const cellX = Math.floor((e.x - mazeOffset[0]) / grid.cellSize);
-		const cellY = Math.floor((e.y - mazeOffset[1]) / grid.cellSize);
+		const cellX = Math.floor((e.x - grid.centerOffsetX) / grid.cellSize);
+		const cellY = Math.floor((e.y - grid.centerOffsetY) / grid.cellSize);
 		if (cellX >= grid.colCnt || cellY >= grid.rowCnt) return;
 		const cellIndex = cellY * grid.colCnt + cellX;
 
-		if (startCellIndex !== null && startCellIndex !== cellIndex) {
-			mazeSolver = new MazeSolver(grid, startCellIndex, cellIndex);
+		if (solveStartIndex !== null && solveStartIndex !== cellIndex) {
+			mazeSolver = new MazeSolver(grid, solveStartIndex, cellIndex);
 			mazeSolver.pathDrawMethod = pathDrawMethod;
-			startCellIndex = null;
+			solveStartIndex = null;
 			pauseBtn.disabled = false;
 			stepBtn.disabled = false;
 		} else {
-			startCellIndex = cellIndex;
+			solveStartIndex = cellIndex;
 			mazeSolver = undefined;
 		}
 	}

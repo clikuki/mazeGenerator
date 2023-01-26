@@ -59,10 +59,14 @@ export class Grid {
 	rowCnt: number;
 	cellSize: number;
 	cells: Cell[] = [];
+	centerOffsetX: number;
+	centerOffsetY: number;
 	constructor(colCnt: number, rowCnt: number, canvas: HTMLCanvasElement) {
 		this.colCnt = colCnt;
 		this.rowCnt = rowCnt;
 		this.cellSize = Math.min(canvas.width / colCnt, canvas.height / rowCnt);
+		this.centerOffsetX = (this.cellSize / 2) * Math.max(rowCnt - colCnt, 0);
+		this.centerOffsetY = (this.cellSize / 2) * Math.max(colCnt - rowCnt, 0);
 		for (let j = 0; j < rowCnt; j++) {
 			for (let i = 0; i < colCnt; i++) {
 				const cell = new Cell(this, i, j, this.cellSize);

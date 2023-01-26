@@ -42,3 +42,13 @@ export function convertGridToGraph(grid: Grid, start = grid.cells[0]) {
 	convert(start);
 	return nodeMap;
 }
+
+export function shuffle<T>(arr: T[]) {
+	let shuffledCount = 0;
+	const shuffled = [...arr];
+	while (shuffledCount < arr.length) {
+		const index = Math.random() * (arr.length - shuffledCount++);
+		shuffled.push(shuffled.splice(index, 1)[0]);
+	}
+	return shuffled;
+}

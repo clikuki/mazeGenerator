@@ -1,5 +1,5 @@
 import { Cell, Grid } from './grid.js';
-import { randomItemInArray } from './utils.js';
+import { randomItemInArray, shuffle } from './utils.js';
 
 export abstract class MazeGenerator {
 	grid: Grid;
@@ -9,6 +9,20 @@ export abstract class MazeGenerator {
 	}
 	abstract step(): void;
 	abstract draw(ctx: CanvasRenderingContext2D): void;
+}
+
+// Does not check whether the two cells are actually neighbors
+// Don't know if I need to fix that :|
+function carveWall(prevCell: Cell, curCell: Cell, offset: number) {
+	if (Math.abs(offset) === 1) {
+		// Left and Right
+		prevCell.walls[offset < 1 ? 3 : 1] = false;
+		curCell.walls[offset < 1 ? 1 : 3] = false;
+	} else {
+		// Up and Down
+		prevCell.walls[offset < 1 ? 0 : 2] = false;
+		curCell.walls[offset < 1 ? 2 : 0] = false;
+	}
 }
 
 abstract class WalkerBase extends MazeGenerator {
@@ -45,19 +59,6 @@ abstract class WalkerBase extends MazeGenerator {
 			}
 		}
 	}
-	// Does not check whether the two cells are actually neighbors
-	// Don't know if I need to fix that :|
-	carveWall(prevCell: Cell, curCell: Cell, offset: number) {
-		if (Math.abs(offset) === 1) {
-			// Left and Right
-			prevCell.walls[offset < 1 ? 3 : 1] = false;
-			curCell.walls[offset < 1 ? 1 : 3] = false;
-		} else {
-			// Up and Down
-			prevCell.walls[offset < 1 ? 0 : 2] = false;
-			curCell.walls[offset < 1 ? 2 : 0] = false;
-		}
-	}
 	checkIfComplete() {
 		return this.grid.cells.every(({ open: visited }) => visited);
 	}
@@ -70,8 +71,8 @@ export class AldousBroder extends WalkerBase {
 
 		const head = this.grid.cells[this.index];
 		// Get valid directions
-		const directions = this.directions.filter((offset) => {
-			const newIndex = this.index + offset;
+		const directions = this.directions.filter((direction) => {
+			const newIndex = this.index + direction;
 			const cell = this.grid.cells[newIndex];
 
 			// Check if cell is within grid
@@ -79,7 +80,7 @@ export class AldousBroder extends WalkerBase {
 				return false;
 
 			// Prevent Walker from going over left and right edges
-			if (Math.abs(offset) === 1 && cell.screenY !== head.screenY) return false;
+			if (Math.abs(direction) === 1 && cell.screenY !== head.screenY) return false;
 			return true;
 		});
 
@@ -91,7 +92,7 @@ export class AldousBroder extends WalkerBase {
 		// If new cell is unvisited, then carve walls inbetween
 		if (!newHead.open) {
 			newHead.open = true;
-			this.carveWall(prevCell, newHead, direction);
+			carveWall(prevCell, newHead, direction);
 			if (this.checkIfComplete()) {
 				this.isComplete = true;
 			}
@@ -139,15 +140,15 @@ export class Wilsons extends WalkerBase {
 
 		const head = this.grid.cells[this.index];
 		// Get valid directions
-		const directions = this.directions.filter((offset) => {
-			const newIndex = this.index + offset;
+		const directions = this.directions.filter((direction) => {
+			const newIndex = this.index + direction;
 			const cell = this.grid.cells[newIndex];
 
 			// Check if cell is within grid
 			if (newIndex < 0 || newIndex >= this.grid.colCnt * this.grid.rowCnt) return;
 
 			// Prevent Walker from going over left and right edges
-			if (Math.abs(offset) === 1 && cell.screenY !== head.screenY) return;
+			if (Math.abs(direction) === 1 && cell.screenY !== head.screenY) return;
 
 			return true;
 		});
@@ -170,7 +171,7 @@ export class Wilsons extends WalkerBase {
 				const curCell = this.grid.cells[pathIndex];
 				const pathOffset = this.cellDirection.get(curCell)!;
 				if (prevCell === newHead) break;
-				if (prevCell) this.carveWall(prevCell, curCell, prevOffset!);
+				if (prevCell) carveWall(prevCell, curCell, prevOffset!);
 				curCell.open = true;
 				pathIndex += pathOffset;
 				prevCell = curCell;
@@ -218,33 +219,123 @@ export class Wilsons extends WalkerBase {
 	}
 }
 
-export class AldousBroderWilsonHybrid extends MazeGenerator {
+export class RecursiveBacktracking {
+	static key = 'Recursive Backtracking';
+	grid: Grid;
+	directions: [number, number, number, number];
+	isComplete = false;
+	stack: {
+		cell: Cell;
+		directionsToTry?: number[];
+	}[];
+	constructor(grid: Grid) {
+		this.grid = grid;
+		this.directions = [-grid.colCnt, 1, grid.colCnt, -1];
+		this.stack = [
+			{
+				cell: grid.cells[0],
+			},
+		];
+		this.stack[0].cell.open = true;
+	}
+	step(): void {
+		if (this.isComplete) return;
+
+		const head = this.stack[this.stack.length - 1];
+		if (!head) {
+			this.isComplete = true;
+			return;
+		}
+
+		const directions =
+			head.directionsToTry ||
+			shuffle(
+				this.directions.filter((direction) => {
+					const newIndex = head.cell.gridIndex + direction;
+					const newCell = this.grid.cells[newIndex];
+
+					if (!newCell) return;
+
+					// Check if cell is within grid
+					if (newIndex < 0 || newIndex >= this.grid.colCnt * this.grid.rowCnt)
+						return;
+
+					// Prevent Walker from going over left and right edges
+					if (Math.abs(direction) === 1 && newCell.screenY !== head.cell.screenY)
+						return;
+
+					return true;
+				}),
+			);
+
+		if (!directions.length) {
+			this.stack.pop();
+			return;
+		}
+
+		head.directionsToTry ||= directions;
+		while (directions.length) {
+			const direction = directions.shift()!;
+			const cell = this.grid.cells[head.cell.gridIndex + direction];
+			if (!cell.open) {
+				head.directionsToTry = directions;
+				cell.open = true;
+				carveWall(head.cell, cell, direction);
+
+				const newHead = { cell };
+				this.stack.push(newHead);
+				return;
+			}
+		}
+	}
+	draw(ctx: CanvasRenderingContext2D): void {
+		if (this.isComplete || !this.stack.length) return;
+
+		ctx.fillStyle = '#f004';
+		for (const { cell } of this.stack) {
+			ctx.fillRect(
+				cell.screenX,
+				cell.screenY,
+				this.grid.cellSize,
+				this.grid.cellSize,
+			);
+		}
+
+		ctx.save();
+		ctx.translate(this.grid.cellSize / 2, this.grid.cellSize / 2);
+		ctx.beginPath();
+		const headCell = this.stack[this.stack.length - 1].cell;
+		ctx.ellipse(
+			headCell.screenX,
+			headCell.screenY,
+			this.grid.cellSize / 4,
+			this.grid.cellSize / 4,
+			0,
+			0,
+			Math.PI * 2,
+		);
+		ctx.fillStyle = 'rgb(0, 255, 0)';
+		ctx.fill();
+		ctx.restore();
+	}
+}
+
+export class AldousBroderWilsonHybrid {
 	static key = "Aldous-Broder + Wilson's";
 	phase = 0;
-	walkers: WalkerBase[] = [];
+	isComplete = false;
+	grid: Grid;
+	walker: AldousBroder | Wilsons;
 	constructor(grid: Grid) {
-		super(grid);
-
-		const minSize = 10;
-		if (Math.max(grid.colCnt, grid.rowCnt) > minSize) {
-			const oneToWalkerRatio = 100;
-			const numOfWalkers = Math.max(
-				Math.floor(grid.cells.length / oneToWalkerRatio),
-				1,
-			);
-			for (let i = 0; i < numOfWalkers; i++) {
-				this.walkers[i] = new AldousBroder(grid);
-			}
-		} else this.walkers[0] = new AldousBroder(grid);
+		this.grid = grid;
+		this.walker = new AldousBroder(grid);
 	}
 	step() {
 		if (this.isComplete) return;
-		for (const walker of this.walkers) {
-			walker.step();
-			if (walker.isComplete) {
-				this.isComplete = true;
-				return;
-			}
+		this.walker.step();
+		if (this.walker.isComplete) {
+			this.isComplete = true;
+			return;
 		}
 
 		if (this.phase === 0) {
@@ -253,14 +344,19 @@ export class AldousBroderWilsonHybrid extends MazeGenerator {
 			).length;
 			if (visitedCellCount >= (this.grid.rowCnt * this.grid.colCnt) / 3) {
 				this.phase = 1;
-				this.walkers = [new Wilsons(this.grid)];
+				this.walker = new Wilsons(this.grid);
 			}
 		}
 	}
 	draw(ctx: CanvasRenderingContext2D) {
 		if (this.isComplete) return;
-		this.walkers.forEach((walker) => walker.draw(ctx));
+		this.walker.draw(ctx);
 	}
 }
 
-export const algorithms = [AldousBroder, Wilsons, AldousBroderWilsonHybrid];
+export const algorithms = [
+	RecursiveBacktracking,
+	AldousBroder,
+	Wilsons,
+	AldousBroderWilsonHybrid,
+];
