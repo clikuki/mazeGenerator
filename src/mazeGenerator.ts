@@ -312,7 +312,6 @@ export class RecursiveBacktracking implements algorithm {
 
 export class RecursiveDivision implements algorithm {
 	static key = 'Recursive Division';
-	private minChamberSize = 3;
 	isComplete = false;
 	chambers: [x: number, y: number, w: number, h: number][];
 	grid: Grid;
