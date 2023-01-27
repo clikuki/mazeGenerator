@@ -1,6 +1,6 @@
 import { Grid } from './grid.js';
 import {
-	MazeGenerator,
+	algorithm as mazeAlgorithm,
 	algorithms as mazeAlgorithms,
 } from './mazeGenerator.js';
 import {
@@ -18,8 +18,7 @@ let grid = new Grid(10, 10, canvas);
 let mazeSolver: MazeSolver | undefined;
 let solveStartIndex: number | null = null;
 let mazeGenClass: typeof mazeAlgorithms[number] | undefined;
-// let mazeGenClass: typeof mazeAlgorithms[number] | undefined = mazeAlgorithms[0];
-let mazeGen: MazeGenerator | undefined;
+let mazeGen: mazeAlgorithm | undefined;
 if (mazeGenClass) {
 	mazeGen = new mazeGenClass(grid);
 }
@@ -51,7 +50,7 @@ const stepBtn = document.querySelector('.step') as HTMLButtonElement;
 stepBtn.addEventListener('click', () => {
 	if (mazeGen && !mazeGen.isComplete) {
 		mazeGen.step();
-		mazeGen.draw(ctx);
+		if (mazeGen.draw) mazeGen.draw(ctx);
 	} else if (mazeSolver && !mazeSolver.isComplete) {
 		mazeSolver.step();
 		mazeSolver.draw(ctx);
@@ -307,7 +306,7 @@ let prevTime = Date.now();
 
 	if (mazeGen && !mazeGen.isComplete) {
 		if (!pause && stepRunners) mazeGen.step();
-		mazeGen.draw(ctx);
+		if (mazeGen.draw) mazeGen.draw(ctx);
 	} else if (mazeSolver) {
 		if (!mazeSolver.isComplete && !pause && stepRunners) mazeSolver.step();
 		mazeSolver.draw(ctx);

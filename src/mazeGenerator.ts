@@ -1,16 +1,6 @@
 import { Cell, Grid } from './grid.js';
 import { randomItemInArray, shuffle } from './utils.js';
 
-export abstract class MazeGenerator {
-	grid: Grid;
-	isComplete = false;
-	constructor(grid: Grid) {
-		this.grid = grid;
-	}
-	abstract step(): void;
-	abstract draw(ctx: CanvasRenderingContext2D): void;
-}
-
 // Does not check whether the two cells are actually neighbors
 // Don't know if I need to fix that :|
 function carveWall(prevCell: Cell, curCell: Cell, offset: number) {
@@ -25,7 +15,7 @@ function carveWall(prevCell: Cell, curCell: Cell, offset: number) {
 	}
 }
 
-abstract class WalkerBase extends MazeGenerator {
+abstract class WalkerBase {
 	index: number;
 	isComplete = false;
 	directions: [number, number, number, number];
@@ -35,10 +25,10 @@ abstract class WalkerBase extends MazeGenerator {
 		startX = Math.floor(grid.colCnt / 2),
 		startY = Math.floor(grid.rowCnt / 2),
 	) {
-		super(grid);
 		const starterIndex = startY * grid.colCnt + startX;
 		const starterCell = grid.cells[starterIndex];
 		starterCell.open = true;
+		this.grid = grid;
 		this.index = starterIndex;
 		this.isComplete = false;
 		this.directions = [-grid.colCnt, 1, grid.colCnt, -1];
@@ -64,7 +54,7 @@ abstract class WalkerBase extends MazeGenerator {
 	}
 }
 
-export class AldousBroder extends WalkerBase {
+export class AldousBroder extends WalkerBase implements algorithm {
 	static key = 'Aldous-Broder';
 	step() {
 		if (this.isComplete) return;
@@ -119,7 +109,7 @@ export class AldousBroder extends WalkerBase {
 	}
 }
 
-export class Wilsons extends WalkerBase {
+export class Wilsons extends WalkerBase implements algorithm {
 	static key = "Wilson's";
 	startIndex: number;
 	walkedCells = new Set<number>();
@@ -219,7 +209,7 @@ export class Wilsons extends WalkerBase {
 	}
 }
 
-export class RecursiveBacktracking {
+export class RecursiveBacktracking implements algorithm {
 	static key = 'Recursive Backtracking';
 	grid: Grid;
 	directions: [number, number, number, number];
@@ -320,7 +310,104 @@ export class RecursiveBacktracking {
 	}
 }
 
-export class AldousBroderWilsonHybrid {
+export class RecursiveDivision implements algorithm {
+	static key = 'Recursive Division';
+	private minChamberSize = 3;
+	isComplete = false;
+	chambers: [x: number, y: number, w: number, h: number][];
+	grid: Grid;
+	constructor(grid: Grid) {
+		for (const cell of grid.cells) {
+			cell.open = true;
+			cell.walls = [false, false, false, false];
+			if (cell.gridX === 0) cell.walls[3] = true;
+			if (cell.gridY === 0) cell.walls[0] = true;
+			if (cell.gridX === grid.colCnt - 1) cell.walls[1] = true;
+			if (cell.gridY === grid.rowCnt - 1) cell.walls[2] = true;
+		}
+		this.grid = grid;
+		this.chambers = [[0, 0, grid.colCnt, grid.rowCnt]];
+	}
+	chooseOrientation(width: number, height: number) {
+		if (width < height) return 'HORIZONTAL';
+		else if (height < width) return 'VERTICAL';
+		else return Math.random() < 0.5 ? 'HORIZONTAL' : 'VERTICAL';
+	}
+	step() {
+		if (this.isComplete) return;
+
+		const chamber = this.chambers.pop();
+		if (!chamber) {
+			this.isComplete = true;
+			return;
+		}
+
+		const [areaX, areaY, areaWidth, areaHeight] = chamber;
+
+		if (this.chooseOrientation(areaWidth, areaHeight) === 'VERTICAL') {
+			const wallX = Math.floor(Math.random() * (areaWidth - 1)) + areaX;
+			const holeY = Math.floor(Math.random() * areaHeight) + areaY;
+			for (let y = areaY; y < areaHeight + areaY; y++) {
+				if (y === holeY) continue;
+				const leftCell = this.grid.cells[wallX + this.grid.colCnt * y];
+				const rightCell = this.grid.cells[wallX + this.grid.colCnt * y + 1];
+				leftCell.walls[1] = true;
+				rightCell.walls[3] = true;
+			}
+
+			const leftChamberWidth = areaWidth - (areaX + areaWidth - wallX) + 1;
+			if (leftChamberWidth > 1) {
+				this.chambers.push([areaX, areaY, leftChamberWidth, areaHeight]);
+			}
+			if (areaWidth - leftChamberWidth > 1) {
+				this.chambers.push([
+					areaX + leftChamberWidth,
+					areaY,
+					areaWidth - leftChamberWidth,
+					areaHeight,
+				]);
+			}
+		} else {
+			const holeX = Math.floor(Math.random() * areaWidth) + areaX;
+			const wallY = Math.floor(Math.random() * (areaHeight - 1)) + areaY;
+			for (let x = areaX; x < areaWidth + areaX; x++) {
+				if (x === holeX) continue;
+				const topCell = this.grid.cells[x + this.grid.colCnt * wallY];
+				const bottomCell = this.grid.cells[x + this.grid.colCnt * (wallY + 1)];
+				topCell.walls[2] = true;
+				bottomCell.walls[0] = true;
+			}
+			const topChamberHeight = areaHeight - (areaY + areaHeight - wallY) + 1;
+			if (topChamberHeight > 1) {
+				this.chambers.push([areaX, areaY, areaWidth, topChamberHeight]);
+			}
+			if (areaHeight - topChamberHeight > 1) {
+				this.chambers.push([
+					areaX,
+					areaY + topChamberHeight,
+					areaWidth,
+					areaHeight - topChamberHeight,
+				]);
+			}
+		}
+
+		if (!this.chambers.length) this.isComplete = true;
+	}
+	draw(ctx: CanvasRenderingContext2D) {
+		if (this.isComplete) return;
+		const chamber = this.chambers[this.chambers.length - 1];
+		if (!chamber) return;
+		ctx.fillStyle = '#f003';
+		ctx.fillRect(
+			chamber[0] * this.grid.cellSize,
+			chamber[1] * this.grid.cellSize,
+			chamber[2] * this.grid.cellSize,
+			chamber[3] * this.grid.cellSize,
+		);
+	}
+}
+
+export class AldousBroderWilsonHybrid implements algorithm {
 	static key = "Aldous-Broder + Wilson's";
 	phase = 0;
 	isComplete = false;
@@ -354,9 +441,21 @@ export class AldousBroderWilsonHybrid {
 	}
 }
 
+export interface algorithm {
+	step(): void;
+	draw?(ctx: CanvasRenderingContext2D): void;
+	isComplete: boolean;
+}
+
 export const algorithms = [
 	RecursiveBacktracking,
+	RecursiveDivision,
 	AldousBroder,
 	Wilsons,
 	AldousBroderWilsonHybrid,
 ];
+export type algorithmInstances =
+	| RecursiveBacktracking
+	| AldousBroder
+	| Wilsons
+	| AldousBroder;
