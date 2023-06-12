@@ -1,5 +1,5 @@
 import { Grid } from './grid.js';
-import { algorithms as mazeAlgorithms, } from './mazeGenerator.js';
+import { Algorithms as mazeGenerators } from './mazeGenerator.js';
 import { MazeSolver, pathDrawMethodList, } from './mazeSolver.js';
 import { convertGridToGraph } from './utils.js';
 const canvas = document.querySelector('canvas');
@@ -9,10 +9,12 @@ canvas.height = innerHeight;
 let grid = new Grid(10, 10, canvas);
 let mazeSolver;
 let solveStartIndex = null;
-let mazeGenClass;
-let mazeGen;
-if (mazeGenClass) {
-    mazeGen = new mazeGenClass(grid);
+const mazeGen = {
+    class: undefined,
+    instance: undefined,
+};
+if (mazeGen.class) {
+    mazeGen.instance = new mazeGen.class(grid);
 }
 let pathDrawMethod = pathDrawMethodList[0];
 let pause = false;
@@ -23,9 +25,9 @@ const simulationSpeed = {
 // Controls and displays
 function restart({ colCnt = grid.colCnt, rowCnt = grid.rowCnt }) {
     grid = new Grid(colCnt, rowCnt, canvas);
-    if (!mazeGenClass)
+    if (!mazeGen.class)
         return;
-    mazeGen = new mazeGenClass(grid);
+    mazeGen.instance = new mazeGen.class(grid);
     mazeSolver = undefined;
     pause = false;
     pauseBtn.disabled = false;
@@ -34,14 +36,14 @@ function restart({ colCnt = grid.colCnt, rowCnt = grid.rowCnt }) {
     solveStartIndex = null;
 }
 const restartBtn = document.querySelector('.restart');
-restartBtn.disabled = !mazeGenClass;
+restartBtn.disabled = !mazeGen.class;
 restartBtn.addEventListener('click', () => restart({}));
 const stepBtn = document.querySelector('.step');
 stepBtn.addEventListener('click', () => {
-    if (mazeGen && !mazeGen.isComplete) {
-        mazeGen.step();
-        if (mazeGen.draw)
-            mazeGen.draw(ctx);
+    if (mazeGen.instance && !mazeGen.instance.isComplete) {
+        mazeGen.instance.step();
+        if (mazeGen.instance.draw)
+            mazeGen.instance.draw(ctx);
     }
     else if (mazeSolver && !mazeSolver.isComplete) {
         mazeSolver.step();
@@ -54,9 +56,9 @@ pauseBtn.addEventListener('click', () => {
 });
 const fastForwardBtn = document.querySelector('.fastForward');
 fastForwardBtn.addEventListener('click', () => {
-    if (mazeGen && !mazeGen.isComplete) {
-        while (!mazeGen.isComplete) {
-            mazeGen.step();
+    if (mazeGen.instance && !mazeGen.instance.isComplete) {
+        while (!mazeGen.instance.isComplete) {
+            mazeGen.instance.step();
         }
     }
     else if (mazeSolver && !mazeSolver.isComplete) {
@@ -129,7 +131,7 @@ function download(url, fileExtension) {
 }
 const exportAsImageBtn = document.querySelector('.exportAsImage');
 exportAsImageBtn.addEventListener('click', () => {
-    if (!mazeGen || !mazeGen.isComplete)
+    if (!mazeGen.instance || !mazeGen.instance.isComplete)
         return;
     const dimensions = [canvas.width, canvas.height];
     canvas.width = grid.cellSize * grid.colCnt;
@@ -144,7 +146,7 @@ exportAsImageBtn.addEventListener('click', () => {
 });
 const exportAsGridBtn = document.querySelector('.exportAsGrid');
 exportAsGridBtn.addEventListener('click', () => {
-    if (!mazeGen || !mazeGen.isComplete)
+    if (!mazeGen.instance || !mazeGen.instance.isComplete)
         return;
     const simplifiedGrid = grid.cells.map((cell) => ({
         x: cell.gridX,
@@ -159,7 +161,7 @@ exportAsGridBtn.addEventListener('click', () => {
 });
 const exportAsGraphBtn = document.querySelector('.exportAsGraph');
 exportAsGraphBtn.addEventListener('click', () => {
-    if (!mazeGen || !mazeGen.isComplete)
+    if (!mazeGen.instance || !mazeGen.instance.isComplete)
         return;
     const graph = convertGridToGraph(grid);
     const simplifiedGraph = {};
@@ -198,24 +200,24 @@ pathDrawMethodSelection.addEventListener('change', () => {
 const algoTypeSelection = document.querySelector('.algoType select');
 const emptyOption = document.createElement('option');
 emptyOption.textContent = '-- Choose Algorithm --';
-if (!mazeGenClass)
+if (!mazeGen.class)
     algoTypeSelection.appendChild(emptyOption);
-for (const mazeGen of mazeAlgorithms) {
+for (const mazeGen of mazeGenerators) {
     const optionElem = document.createElement('option');
     optionElem.textContent = mazeGen.key;
     optionElem.value = mazeGen.key;
     algoTypeSelection.appendChild(optionElem);
 }
-if (mazeGenClass)
-    algoTypeSelection.value = mazeGenClass.key;
+if (mazeGen.class)
+    algoTypeSelection.value = mazeGen.class.key;
 algoTypeSelection.addEventListener('change', () => {
     const newVal = algoTypeSelection.value;
-    for (const mazeGen of mazeAlgorithms) {
-        if (mazeGen.key !== newVal)
+    for (const mazeAlgo of mazeGenerators) {
+        if (mazeAlgo.key !== newVal)
             continue;
-        if (!mazeGenClass)
+        if (!mazeGen.class)
             emptyOption.remove();
-        mazeGenClass = mazeGen;
+        mazeGen.class = mazeAlgo;
         restart({});
         return;
     }
@@ -236,7 +238,8 @@ let prevTime = Date.now();
             prevTime = time;
         }
     }
-    const nothingIsRunning = (!mazeGen || mazeGen.isComplete) && (!mazeSolver || mazeSolver.isComplete);
+    const nothingIsRunning = (!mazeGen.instance || mazeGen.instance.isComplete) &&
+        (!mazeSolver || mazeSolver.isComplete);
     fastForwardBtn.disabled = nothingIsRunning;
     if (nothingIsRunning) {
         pause = false;
@@ -244,21 +247,41 @@ let prevTime = Date.now();
         stepBtn.disabled = true;
     }
     pauseBtn.textContent = pause ? 'Resume' : 'Pause';
-    const mazeHasGenerated = !mazeGen || !mazeGen.isComplete;
+    const mazeHasGenerated = !mazeGen.instance || !mazeGen.instance.isComplete;
     exportAsImageBtn.disabled = mazeHasGenerated;
     exportAsGridBtn.disabled = mazeHasGenerated;
     exportAsGraphBtn.disabled = mazeHasGenerated;
-    ctx.fillStyle = 'black';
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    // Draw outside of grid
+    if (grid.colCnt !== grid.rowCnt) {
+        ctx.fillStyle = '#dd0';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.fillStyle = '#333';
+        {
+            const barIterSpacing = 1 / 5;
+            const spaceBetweenBars = (barIterSpacing * 1) / 3;
+            for (let i = -spaceBetweenBars; i < 2; i += barIterSpacing) {
+                ctx.beginPath();
+                ctx.moveTo(canvas.width * i, 0);
+                ctx.lineTo(canvas.width * (i + 1 / 8), 0);
+                ctx.lineTo(0, canvas.width * (i + 1 / 8));
+                ctx.lineTo(0, canvas.width * i);
+                ctx.closePath();
+                ctx.fill();
+            }
+        }
+    }
+    // Draw grid background
+    ctx.fillStyle = '#000';
+    ctx.fillRect(Math.floor(grid.centerOffsetX), Math.ceil(grid.centerOffsetY), Math.floor(grid.cellSize * grid.colCnt), Math.ceil(grid.cellSize * grid.rowCnt));
     // Center draws
     ctx.save();
     ctx.translate(grid.centerOffsetX, grid.centerOffsetY);
     grid.drawGrayedCells(canvas, ctx);
-    if (mazeGen && !mazeGen.isComplete) {
+    if (mazeGen.instance && !mazeGen.instance.isComplete) {
         if (!pause && stepRunners)
-            mazeGen.step();
-        if (mazeGen.draw)
-            mazeGen.draw(ctx);
+            mazeGen.instance.step();
+        if (mazeGen.instance.draw)
+            mazeGen.instance.draw(ctx);
     }
     else if (mazeSolver) {
         if (!mazeSolver.isComplete && !pause && stepRunners)
@@ -275,8 +298,8 @@ let prevTime = Date.now();
 })();
 // Activate Mouse solver on clicks
 canvas.addEventListener('click', (e) => {
-    if (mazeGen &&
-        mazeGen.isComplete &&
+    if (mazeGen.instance &&
+        mazeGen.instance.isComplete &&
         (!mazeSolver || mazeSolver.isComplete) &&
         e.x >= grid.centerOffsetX &&
         e.y >= grid.centerOffsetY) {

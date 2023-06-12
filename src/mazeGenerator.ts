@@ -54,7 +54,7 @@ abstract class WalkerBase {
 	}
 }
 
-export class AldousBroder extends WalkerBase implements algorithm {
+export class AldousBroder extends WalkerBase {
 	static key = 'Aldous-Broder';
 	step() {
 		if (this.isComplete) return;
@@ -109,7 +109,7 @@ export class AldousBroder extends WalkerBase implements algorithm {
 	}
 }
 
-export class Wilsons extends WalkerBase implements algorithm {
+export class Wilsons extends WalkerBase {
 	static key = "Wilson's";
 	startIndex: number;
 	walkedCells = new Set<number>();
@@ -209,7 +209,7 @@ export class Wilsons extends WalkerBase implements algorithm {
 	}
 }
 
-export class RecursiveBacktracking implements algorithm {
+export class RecursiveBacktracking {
 	static key = 'Recursive Backtracking';
 	grid: Grid;
 	directions: [number, number, number, number];
@@ -310,7 +310,7 @@ export class RecursiveBacktracking implements algorithm {
 	}
 }
 
-export class RecursiveDivision implements algorithm {
+export class RecursiveDivision {
 	static key = 'Recursive Division';
 	isComplete = false;
 	chambers: [x: number, y: number, w: number, h: number][];
@@ -406,7 +406,7 @@ export class RecursiveDivision implements algorithm {
 	}
 }
 
-export class AldousBroderWilsonHybrid implements algorithm {
+export class AldousBroderWilsonHybrid {
 	static key = "Aldous-Broder + Wilson's";
 	phase = 0;
 	isComplete = false;
@@ -440,21 +440,10 @@ export class AldousBroderWilsonHybrid implements algorithm {
 	}
 }
 
-export interface algorithm {
-	step(): void;
-	draw?(ctx: CanvasRenderingContext2D): void;
-	isComplete: boolean;
-}
-
-export const algorithms = [
+export const Algorithms = [
 	RecursiveBacktracking,
 	RecursiveDivision,
-	AldousBroder,
 	Wilsons,
+	AldousBroder,
 	AldousBroderWilsonHybrid,
 ];
-export type algorithmInstances =
-	| RecursiveBacktracking
-	| AldousBroder
-	| Wilsons
-	| AldousBroder;

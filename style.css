@@ -15,9 +15,14 @@ h2 {
 	border-bottom: 2px solid black;
 }
 
+p,
+li {
+	color: #222;
+}
+
 canvas {
 	display: block;
-	image-rendering: crisp-edges;
+	/* image-rendering: crisp-edges; */
 }
 
 main {

@@ -253,7 +253,6 @@ export class RecursiveBacktracking {
 }
 export class RecursiveDivision {
     static key = 'Recursive Division';
-    minChamberSize = 3;
     isComplete = false;
     chambers;
     grid;
@@ -383,11 +382,11 @@ export class AldousBroderWilsonHybrid {
         this.walker.draw(ctx);
     }
 }
-export const algorithms = [
+export const Algorithms = [
     RecursiveBacktracking,
     RecursiveDivision,
-    AldousBroder,
     Wilsons,
+    AldousBroder,
     AldousBroderWilsonHybrid,
 ];
 //# sourceMappingURL=mazeGenerator.js.map

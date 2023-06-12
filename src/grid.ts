@@ -18,10 +18,18 @@ export class Cell {
 	grayOut(canvas: HTMLCanvasElement, ctx: CanvasRenderingContext2D) {
 		ctx.fillStyle = `hsla(0, 0%, 15%)`;
 		ctx.fillRect(
-			this.screenX + (!this.screenX && this.walls[3] ? 0 : 1),
-			this.screenY + (!this.screenY && this.walls[0] ? 0 : 1),
-			this.size + (this.screenX >= canvas.width && this.walls[1] ? 0 : 1),
-			this.size + (this.screenY >= canvas.height && this.walls[2] ? 0 : 1),
+			Math.floor(this.screenX + (!this.screenX && this.walls[3] ? 0 : 1)),
+			Math.ceil(this.screenY + (!this.screenY && this.walls[0] ? 0 : 1)),
+			Math.floor(
+				this.size + (this.screenX >= canvas.width && this.walls[1] ? 0 : 1),
+			),
+			Math.ceil(
+				this.size + (this.screenY >= canvas.height && this.walls[2] ? 0 : 1),
+			),
+			// Math.floor(this.screenX),
+			// Math.ceil(this.screenY),
+			// Math.floor(this.size),
+			// Math.ceil(this.size),
 		);
 	}
 	drawWalls(ctx: CanvasRenderingContext2D) {
