@@ -27,7 +27,8 @@ canvas {
 canvas[data-state='IDLE'] {
 	cursor: pointer;
 }
-canvas[data-state='RUNNING'] {
+canvas[data-state='RUNNING'],
+canvas[data-state='EMPTY'] {
 	cursor: not-allowed;
 }
 

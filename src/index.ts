@@ -295,7 +295,8 @@ let prevTime = Date.now();
 		stepBtn.disabled = true;
 	}
 	pauseBtn.textContent = pause ? 'Resume' : 'Pause';
-	canvas.setAttribute('data-state', nothingIsRunning ? 'IDLE' : 'RUNNING');
+	if (!mazeGen.instance) canvas.setAttribute('data-state', 'EMPTY');
+	else canvas.setAttribute('data-state', nothingIsRunning ? 'IDLE' : 'RUNNING');
 
 	const mazeHasGenerated = !mazeGen.instance || !mazeGen.instance.isComplete;
 	exportAsImageBtn.disabled = mazeHasGenerated;
