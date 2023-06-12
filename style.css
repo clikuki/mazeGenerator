@@ -63,13 +63,23 @@ button:disabled {
 }
 
 .ui {
-	padding: 0 1rem;
+	padding: 0.5rem 1rem;
+	overflow: auto;
+	height: 100vh;
 }
 
-.options h2 {
+.algorithm-list > ul > li > span {
+	font-weight: bold;
+}
+
+.options {
+	margin: 0.3rem 0;
+}
+
+/* .options h2 {
 	margin: 0.5rem 0;
 	width: 100%;
-}
+} */
 
 .buttons {
 	padding-top: 0.5rem;

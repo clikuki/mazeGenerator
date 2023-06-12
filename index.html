@@ -3,32 +3,15 @@
 	<head>
 		<meta charset="utf-8" />
 		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-		<title>Maze Generator</title>
+		<title>Maze Visualizations</title>
 		<link rel="stylesheet" type="text/css" href="style.css" />
 		<script src="dest/index.js" type="module"></script>
 	</head>
 	<body>
 		<canvas></canvas>
 		<div class="ui">
-			<h1>Maze Generator</h1>
-			<p>The algorithms featured here are:</p>
-			<ul>
-				<li>Recursive Backtracking</li>
-				<li>Aldous-Broder algorithm</li>
-				<li>Wilson's algorithm</li>
-				<li
-					style="cursor: help"
-					title="Uses Aldous-Broder for the start and Wilson's to finish it off"
-				>
-					Aldous-Broder + Wilson's hybrid algorithm
-				</li>
-			</ul>
-			<p>
-				Once the maze has finished generating, click on any two cells to find a path
-				between them.
-			</p>
+			<h1>Maze Algorithm Visualizations</h1>
 			<div class="options">
-				<h2>Options</h2>
 				<div class="inputs">
 					<div class="buttons">
 						<button class="step">Step</button>
@@ -95,6 +78,115 @@
 						</div>
 					</div>
 				</div>
+			</div>
+			<p style="font-style: italic;">
+				Once the maze has finished generating, click on any two cells to find a path
+				between them.
+			</p>
+			<div class="algorithm-list">
+				<h2>Algorithms Used</h2>
+				<ul>
+					<li>
+						<span>Recursive Backtracking</span>
+						<ul>
+							<li>
+								Creates a path while avoiding itself and the walls. When a dead-end is
+								reached, it backtracks until it reaches open space to branch away
+							</li>
+							<li>Average speed</li>
+							<li>Long, winding corridors</li>
+							<li>Few branches</li>
+							<li>Guaranteed to finish</li>
+						</ul>
+					</li>
+					<li>
+						<span>Recursive Division</span>
+						<ul>
+							<li>
+								Splits an area into two smaller areas recursively until an area is as
+								small as it can be
+							</li>
+							<li>
+								Very quick - Can quickly split large spaces into smaller chambers
+							</li>
+							<li>Ugly - Has obvious bottlenecks due to how uses chambers</li>
+							<li>Guaranteed to finish</li>
+						</ul>
+					</li>
+					<li>
+						<span>Aldous-Broder algorithm</span>
+						<ul>
+							<li>
+								Walks randomly around the grid, carving walls between cells when
+								reaching an unvisited cell
+							</li>
+							<li>Creates a uniformly spanning tree</li>
+							<li>
+								Very slow - Fast in the beginning but slows down by the end, as there
+								are less cells to carve
+							</li>
+							<li>Not guaranteed to finish - Could keep generating for forever!</li>
+						</ul>
+					</li>
+					<li>
+						<span>Wilson's algorithm</span>
+						<ul>
+							<li>
+								Walks randomly around the grid, keeping track of its starting cell and
+								the directions it took from each cell. When it encounters a visited
+								cell, it creates a corridor from the path it took, then repeats the
+								process until all cells are visited
+							</li>
+							<li>Creates a uniformly spanning tree</li>
+							<li>
+								Very slow - Slow at the start as there is less visited cells, but gets
+								faster as it creates more corridors for it to path back to
+							</li>
+							<li>Not guaranteed to finish</li>
+						</ul>
+					</li>
+					<li>
+						<span> Aldous-Broder + Wilson's hybrid algorithm </span>
+						<ul>
+							<li>
+								A mix of the Aldous-Broder and Wilson's algorithm, using the former at
+								the start to create a large amount of visited cells for the latter to
+								path back to
+							</li>
+							<li>
+								May not create a uniformly spanning tree (Haven't researched that yet)
+							</li>
+							<li>
+								Average to slow - Faster than its constituent algorithms but still takes
+								longer than other algorithms due to its randomness
+							</li>
+							<li>Not guaranteed to finish</li>
+						</ul>
+					</li>
+					<span
+						style="font-style: italic; color: #222; margin-top: .5rem; display: inline-block;"
+						>EXTRA: Maze Solver algorithm</span
+					>
+					<li>
+						<span>Flood-Fill</span>
+						<ul>
+							<li>
+								Finds every dead-end in the maze and fills them in until it reaches a
+								junction. This keeps into account filled-in cells by the algorithm until
+								no cell can be fill in anymore.
+							</li>
+							<li>
+								If a maze is imperfect (has loops, multiple solutions), it will feature
+								two unfilled paths. A BFS algorithm or similar can be used to find the
+								shortest route
+							</li>
+							<li>
+								Requires full knowledge of the maze, unlike other algorithms that use
+								walkers
+							</li>
+						</ul>
+					</li>
+				</ul>
 			</div>
 		</div>
 	</body>
