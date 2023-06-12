@@ -109,7 +109,10 @@
 							<li>
 								Very quick - Can quickly split large spaces into smaller chambers
 							</li>
-							<li>Ugly - Has obvious bottlenecks due to how uses chambers</li>
+							<li>
+								Ugly - Has obvious walls and bottlenecks due to how recursively cut
+								rectangles into smaller and smaller rectangles within itself
+							</li>
 							<li>Guaranteed to finish</li>
 						</ul>
 					</li>
@@ -120,7 +123,11 @@
 								Walks randomly around the grid, carving walls between cells when
 								reaching an unvisited cell
 							</li>
-							<li>Creates a uniformly spanning tree</li>
+							<li>
+								Creates a uniformly spanning tree, ie. corridors, dead-ends, and
+								junctions are completely random, and the maze has no distinguishable
+								features unlike Recursive Division's chambers
+							</li>
 							<li>
 								Very slow - Fast in the beginning but slows down by the end, as there
 								are less cells to carve
@@ -168,7 +175,7 @@
 						>EXTRA: Maze Solver algorithm</span
 					>
 					<li>
-						<span>Flood-Fill</span>
+						<span>Flood-Fill Algorithm</span>
 						<ul>
 							<li>
 								Finds every dead-end in the maze and fills them in until it reaches a
