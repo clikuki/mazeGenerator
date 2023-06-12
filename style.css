@@ -24,6 +24,12 @@ canvas {
 	display: block;
 	/* image-rendering: crisp-edges; */
 }
+canvas[data-state='IDLE'] {
+	cursor: pointer;
+}
+canvas[data-state='RUNNING'] {
+	cursor: not-allowed;
+}
 
 main {
 	float: left;

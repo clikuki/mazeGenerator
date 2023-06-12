@@ -20,19 +20,14 @@ abstract class WalkerBase {
 	isComplete = false;
 	directions: [number, number, number, number];
 	grid: Grid;
-	constructor(
-		grid: Grid,
-		startX = Math.floor(grid.colCnt / 2),
-		startY = Math.floor(grid.rowCnt / 2),
-	) {
-		const starterIndex = startY * grid.colCnt + startX;
+	constructor(grid: Grid) {
+		const starterIndex = Math.floor(Math.random() * grid.cells.length);
 		const starterCell = grid.cells[starterIndex];
 		starterCell.open = true;
 		this.grid = grid;
 		this.index = starterIndex;
 		this.isComplete = false;
 		this.directions = [-grid.colCnt, 1, grid.colCnt, -1];
-		this.grid = grid;
 	}
 	getRandomUnvisitedCellIndex() {
 		const mazePartIndices = this.grid.cells
@@ -119,11 +114,6 @@ export class Wilsons extends WalkerBase {
 		const walkerStartIndex = this.getRandomUnvisitedCellIndex();
 		this.startIndex = walkerStartIndex;
 		this.index = walkerStartIndex;
-		if (this.grid.cells.every(({ open: visited }) => !visited)) {
-			const centerCellIndex =
-				Math.floor(grid.rowCnt / 2) * grid.colCnt + Math.floor(grid.colCnt / 2);
-			this.grid.cells[centerCellIndex].open = true;
-		}
 	}
 	step() {
 		if (this.isComplete) return;
@@ -144,6 +134,7 @@ export class Wilsons extends WalkerBase {
 		});
 
 		const direction = randomItemInArray(directions);
+		// const direction = directions[0];
 		// Set direction of current head
 		const curHead = this.grid.cells[this.index];
 		this.cellDirection.set(curHead, direction);
@@ -182,16 +173,56 @@ export class Wilsons extends WalkerBase {
 	}
 	draw(ctx: CanvasRenderingContext2D) {
 		if (this.isComplete) return;
-		// Path
+		// Full path
 		for (const index of this.walkedCells) {
 			const cell = this.grid.cells[index];
 			ctx.fillStyle = 'rgb(255, 0, 0)';
 			ctx.fillRect(cell.screenX, cell.screenY, cell.size - 2, cell.size - 2);
 		}
+
+		// True path
+		let pathIndex = this.startIndex;
+		const truePath = new Set([this.index]);
+		while (true) {
+			const cell = this.grid.cells[pathIndex];
+			const dir = this.cellDirection.get(cell);
+			if (dir === undefined || truePath.has(pathIndex)) break;
+			truePath.add(pathIndex);
+			pathIndex += dir;
+
+			// draw direction of cell
+			ctx.save();
+			ctx.translate(cell.screenX + cell.size / 2, cell.screenY + cell.size / 2);
+			let rot: number;
+			if (dir === this.directions[0]) rot = 0;
+			else if (dir === this.directions[1]) rot = Math.PI / 2;
+			else if (dir === this.directions[2]) rot = Math.PI;
+			else if (dir === this.directions[3]) rot = -Math.PI / 2;
+			else throw 'Impossible direction encountered!';
+			ctx.rotate(rot);
+
+			ctx.beginPath();
+			ctx.moveTo(0, cell.size / 4);
+			ctx.lineTo(0, -cell.size / 4);
+			ctx.moveTo(-cell.size / 4, 0);
+			ctx.lineTo(0, -cell.size / 4);
+			ctx.moveTo(cell.size / 4, 0);
+			ctx.lineTo(0, -cell.size / 4);
+
+			ctx.strokeStyle = 'rgb(0, 255, 0)';
+			const prevLineWidth = ctx.lineWidth;
+			ctx.lineWidth = 5;
+			if (26 > this.grid.cellSize) ctx.lineWidth = 2;
+			ctx.lineCap = 'round';
+			ctx.stroke();
+			ctx.lineWidth = prevLineWidth;
+
+			ctx.restore();
+		}
+
 		// Head
 		ctx.save();
 		ctx.translate(this.grid.cellSize / 2, this.grid.cellSize / 2);
-		ctx.fillStyle = 'rgb(0, 255, 0)';
 		ctx.beginPath();
 		const headCell = this.grid.cells[this.index];
 		ctx.ellipse(

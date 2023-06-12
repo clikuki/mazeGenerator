@@ -33,7 +33,7 @@ function arrayToClrStr([r, g, b]: Color) {
 }
 
 export const pathDrawMethodList = ['GRADIENT', 'LINE'] as const;
-export type pathDrawMethods = typeof pathDrawMethodList[number];
+export type pathDrawMethods = (typeof pathDrawMethodList)[number];
 export class MazeSolver {
 	grid: Grid;
 	from: number;
@@ -132,10 +132,10 @@ export class MazeSolver {
 						const color = lerpClr(startColor, endColor, progress);
 						ctx.fillStyle = arrayToClrStr(color);
 						ctx.fillRect(
-							cell.screenX,
-							cell.screenY,
-							this.grid.cellSize,
-							this.grid.cellSize,
+							Math.floor(cell.screenX),
+							Math.floor(cell.screenY),
+							Math.ceil(this.grid.cellSize),
+							Math.ceil(this.grid.cellSize),
 						);
 					}
 					break;

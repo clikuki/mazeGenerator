@@ -295,6 +295,7 @@ let prevTime = Date.now();
 		stepBtn.disabled = true;
 	}
 	pauseBtn.textContent = pause ? 'Resume' : 'Pause';
+	canvas.setAttribute('data-state', nothingIsRunning ? 'IDLE' : 'RUNNING');
 
 	const mazeHasGenerated = !mazeGen.instance || !mazeGen.instance.isComplete;
 	exportAsImageBtn.disabled = mazeHasGenerated;
@@ -325,8 +326,8 @@ let prevTime = Date.now();
 	ctx.fillStyle = '#000';
 	ctx.fillRect(
 		Math.floor(grid.centerOffsetX),
-		Math.ceil(grid.centerOffsetY),
-		Math.floor(grid.cellSize * grid.colCnt),
+		Math.floor(grid.centerOffsetY),
+		Math.ceil(grid.cellSize * grid.colCnt),
 		Math.ceil(grid.cellSize * grid.rowCnt),
 	);
 

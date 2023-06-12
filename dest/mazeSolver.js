@@ -107,7 +107,7 @@ export class MazeSolver {
                         const progress = i / (this.path.length - 1);
                         const color = lerpClr(startColor, endColor, progress);
                         ctx.fillStyle = arrayToClrStr(color);
-                        ctx.fillRect(cell.screenX, cell.screenY, this.grid.cellSize, this.grid.cellSize);
+                        ctx.fillRect(Math.floor(cell.screenX), Math.floor(cell.screenY), Math.ceil(this.grid.cellSize), Math.ceil(this.grid.cellSize));
                     }
                     break;
                 case 'LINE':
