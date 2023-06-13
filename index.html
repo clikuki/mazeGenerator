@@ -53,6 +53,7 @@
 						>
 							Export as graph
 						</button>
+						<br />
 					</div>
 					<div class="misc">
 						<div class="algoType">
@@ -75,6 +76,17 @@
 								>Path Draw Method</label
 							>
 							<select id="pathDrawMethodInput"></select>
+						</div>
+					</div>
+					<div class="mazeAlgo">
+						<div class="binaryTree">
+							<label for="binaryTreeInput">Binary Tree Direction</label>
+							<select id="binaryTreeInput">
+								<option value="NORTH-WEST">North-West</option>
+								<option value="NORTH-EAST">North-East</option>
+								<option value="SOUTH-WEST">South-West</option>
+								<option value="SOUTH-EAST">South-East</option>
+							</select>
 						</div>
 					</div>
 				</div>
@@ -168,6 +180,29 @@
 								longer than other algorithms due to its randomness
 							</li>
 							<li>Not guaranteed to finish</li>
+						</ul>
+					</li>
+					<li>
+						<span>Binary Tree</span>
+						<ul>
+							<li>
+								For each cell, it randomly picks between 2 perpendicular directions and
+								carves a wall in that direction
+							</li>
+							<li>Quick</li>
+							<li>Creates a binary tree, as the name suggests</li>
+							<li>
+								Ugly - Has a strong diagonal bias, as well as long corridors at the two
+								end edges
+							</li>
+							<li>
+								Memory efficient - Its main selling point. As it only looks at the
+								current cell, it doesn't need any state. If using a seedable RNG,
+								instead of keeping the maze in memory, it can just regenerate the maze
+								when needed. This allows for absolutely massive mazes that don't use too
+								much memory
+							</li>
+							<li>Guaranteed to finish</li>
 						</ul>
 					</li>
 					<span

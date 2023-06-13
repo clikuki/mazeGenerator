@@ -13,7 +13,23 @@ function carveWall(prevCell, curCell, offset) {
         curCell.walls[offset < 1 ? 2 : 0] = false;
     }
 }
-class WalkerBase {
+function getRandomUnvisitedCellIndex(grid) {
+    const mazePartIndices = grid.cells
+        .map((cell, i) => ({ ...cell, i }))
+        .filter(({ open: visited }) => visited)
+        .map(({ i }) => i);
+    while (true) {
+        const randCellIndex = Math.floor(Math.random() * grid.colCnt * grid.rowCnt);
+        if (!mazePartIndices.includes(randCellIndex)) {
+            return randCellIndex;
+        }
+    }
+}
+function checkIfComplete(grid) {
+    return grid.cells.every(({ open: visited }) => visited);
+}
+export class AldousBroder {
+    static key = 'Aldous-Broder';
     index;
     isComplete = false;
     directions;
@@ -24,27 +40,8 @@ class WalkerBase {
         starterCell.open = true;
         this.grid = grid;
         this.index = starterIndex;
-        this.isComplete = false;
         this.directions = [-grid.colCnt, 1, grid.colCnt, -1];
     }
-    getRandomUnvisitedCellIndex() {
-        const mazePartIndices = this.grid.cells
-            .map((cell, i) => ({ ...cell, i }))
-            .filter(({ open: visited }) => visited)
-            .map(({ i }) => i);
-        while (true) {
-            const randCellIndex = Math.floor(Math.random() * this.grid.colCnt * this.grid.rowCnt);
-            if (!mazePartIndices.includes(randCellIndex)) {
-                return randCellIndex;
-            }
-        }
-    }
-    checkIfComplete() {
-        return this.grid.cells.every(({ open: visited }) => visited);
-    }
-}
-export class AldousBroder extends WalkerBase {
-    static key = 'Aldous-Broder';
     step() {
         if (this.isComplete)
             return;
@@ -69,7 +66,7 @@ export class AldousBroder extends WalkerBase {
         if (!newHead.open) {
             newHead.open = true;
             carveWall(prevCell, newHead, direction);
-            if (this.checkIfComplete()) {
+            if (checkIfComplete(this.grid)) {
                 this.isComplete = true;
             }
         }
@@ -87,16 +84,25 @@ export class AldousBroder extends WalkerBase {
         ctx.restore();
     }
 }
-export class Wilsons extends WalkerBase {
+export class Wilsons {
     static key = "Wilson's";
+    index;
+    isComplete = false;
+    directions;
+    grid;
     startIndex;
     walkedCells = new Set();
     cellDirection = new Map();
     constructor(grid) {
-        super(grid);
-        const walkerStartIndex = this.getRandomUnvisitedCellIndex();
+        const walkerStartIndex = getRandomUnvisitedCellIndex(grid);
         this.startIndex = walkerStartIndex;
         this.index = walkerStartIndex;
+        this.grid = grid;
+        this.directions = [-grid.colCnt, 1, grid.colCnt, -1];
+        if (!grid.cells.some(({ open }) => open)) {
+            const starterIndex = Math.floor(Math.random() * grid.cells.length);
+            grid.cells[starterIndex].open = true;
+        }
     }
     step() {
         if (this.isComplete)
@@ -142,12 +148,12 @@ export class Wilsons extends WalkerBase {
             }
             this.cellDirection.clear();
             this.walkedCells.clear();
-            if (this.grid.cells.every(({ open: visited }) => visited)) {
+            if (checkIfComplete(this.grid)) {
                 this.isComplete = true;
             }
             else {
                 // Find new starting point for path
-                const randCellIndex = this.getRandomUnvisitedCellIndex();
+                const randCellIndex = getRandomUnvisitedCellIndex(this.grid);
                 this.startIndex = randCellIndex;
                 this.index = randCellIndex;
             }
@@ -424,30 +430,57 @@ export class BinaryTreeAlgorithm {
     grid;
     isComplete = false;
     directions;
-    index;
-    constructor(grid, horizontal, vertical) {
+    x;
+    y;
+    get index() {
+        return this.y * this.grid.colCnt + this.x;
+    }
+    constructor(grid, options) {
+        const { horizontal, vertical } = options[BinaryTreeAlgorithm.key];
         this.grid = grid;
         this.directions = [
             horizontal === 'EAST' ? 1 : -1,
             (vertical === 'SOUTH' ? 1 : -1) * grid.colCnt,
         ];
-        const x = horizontal === 'EAST' ? grid.colCnt - 1 : 1;
-        const y = vertical === 'SOUTH' ? grid.rowCnt - 1 : 1;
-        this.index = y * grid.colCnt + x;
+        this.x = horizontal === 'EAST' ? 0 : grid.colCnt - 1;
+        this.y = vertical === 'SOUTH' ? 0 : grid.rowCnt - 1;
     }
     step() {
+        if (this.isComplete)
+            return;
         const directions = this.directions.filter((dir) => {
             const newIndex = this.index + dir;
-            const x = newIndex % this.grid.colCnt;
-            if (x < 0 || x > this.grid.colCnt)
+            const oldY = Math.floor(this.index / this.grid.colCnt);
+            const newY = Math.floor(newIndex / this.grid.colCnt);
+            if (Math.abs(dir) === 1 && oldY !== newY)
                 return false;
-            if (newIndex < 0 || newIndex > this.grid.cellSize)
+            if (newIndex < 0 || newIndex >= this.grid.cells.length)
                 return false;
             return true;
         });
+        if (directions.length === 0) {
+            this.isComplete = true;
+            return;
+        }
         const dir = randomItemInArray(directions);
-        carveWall(this.grid.cells[this.index], this.grid.cells[this.index + dir], dir);
-        this.index += this.directions[0];
+        const cell1 = this.grid.cells[this.index];
+        const cell2 = this.grid.cells[this.index + dir];
+        cell2.open = cell1.open = true;
+        carveWall(cell1, cell2, dir);
+        this.x += this.directions[0];
+        if (this.x < 0) {
+            this.x = this.grid.colCnt - 1;
+            this.y += Math.sign(this.directions[1]);
+        }
+        if (this.x >= this.grid.colCnt) {
+            this.x = 0;
+            this.y += Math.sign(this.directions[1]);
+        }
+    }
+    draw(ctx) {
+        ctx.fillStyle = '#0a0';
+        const cell = this.grid.cells[this.index];
+        ctx.fillRect(cell.screenX, cell.screenY, cell.size, cell.size);
     }
 }
 export const Algorithms = [
@@ -456,8 +489,6 @@ export const Algorithms = [
     Wilsons,
     AldousBroder,
     AldousBroderWilsonHybrid,
-    // BinaryTreeAlgorithm,
+    BinaryTreeAlgorithm,
 ];
-// TODO: fix problem of binary tree algorithm having different paramaters than others
-function MazeGenFactory(key) { }
 //# sourceMappingURL=mazeGenerator.js.map

@@ -95,13 +95,14 @@ button:disabled {
 	flex-grow: 1;
 }
 
-.misc {
+.misc,
+.mazeAlgo {
 	display: flex;
 	flex-direction: column;
 	gap: 0.2rem;
 }
 
-.misc > div {
+:where(.misc, .mazeAlgo) > div {
 	display: flex;
 	gap: 0.2rem;
 	flex-direction: column;

@@ -1,5 +1,5 @@
 import { Grid } from './grid.js';
-import { Algorithms as mazeGenerators } from './mazeGenerator.js';
+import { Algorithms as mazeGenerators, MazeOptions } from './mazeGenerator.js';
 import {
 	MazeSolver,
 	pathDrawMethods,
@@ -20,12 +20,19 @@ let solveStartIndex: number | null = null;
 const mazeGen: {
 	class: UndefinedOr<MazeGeneratorClass>;
 	instance: UndefinedOr<InstanceType<MazeGeneratorClass>>;
+	options: MazeOptions;
 } = {
 	class: undefined,
 	instance: undefined,
+	options: {
+		'Binary Tree': {
+			horizontal: 'EAST',
+			vertical: 'SOUTH',
+		},
+	},
 };
 if (mazeGen.class) {
-	mazeGen.instance = new mazeGen.class(grid);
+	mazeGen.instance = new mazeGen.class(grid, mazeGen.options);
 }
 let pathDrawMethod: pathDrawMethods = pathDrawMethodList[0];
 let pause = false;
@@ -36,9 +43,9 @@ const simulationSpeed = {
 
 // Controls and displays
 function restart({ colCnt = grid.colCnt, rowCnt = grid.rowCnt }) {
-	grid = new Grid(colCnt, rowCnt, canvas);
 	if (!mazeGen.class) return;
-	mazeGen.instance = new mazeGen.class(grid);
+	grid = new Grid(colCnt, rowCnt, canvas);
+	mazeGen.instance = new mazeGen.class(grid, mazeGen.options);
 	mazeSolver = undefined;
 	pause = false;
 	pauseBtn.disabled = false;
@@ -266,6 +273,21 @@ algoTypeSelection.addEventListener('change', () => {
 		return;
 	}
 	throw 'Invalid algorithm chosen';
+});
+
+const binaryTreeSelection = document.querySelector(
+	'.binaryTree select',
+) as HTMLSelectElement;
+binaryTreeSelection.addEventListener('change', () => {
+	const [vertical, horizontal] = binaryTreeSelection.value.split('-') as [
+		any,
+		any,
+	];
+	const options = mazeGen.options['Binary Tree'];
+	if (options.horizontal === horizontal && options.vertical === vertical) return;
+	options.horizontal = horizontal;
+	options.vertical = vertical;
+	restart({});
 });
 
 let prevTime = Date.now();
