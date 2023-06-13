@@ -248,10 +248,10 @@ const algoTypeSelection = document.querySelector(
 const emptyOption = document.createElement('option');
 emptyOption.textContent = '-- Choose Algorithm --';
 if (!mazeGen.class) algoTypeSelection.appendChild(emptyOption);
-for (const mazeGen of mazeGenerators) {
+for (const mazeGenClass of mazeGenerators) {
 	const optionElem = document.createElement('option');
-	optionElem.textContent = mazeGen.key;
-	optionElem.value = mazeGen.key;
+	optionElem.textContent = mazeGenClass.key;
+	optionElem.value = mazeGenClass.key;
 	algoTypeSelection.appendChild(optionElem);
 }
 if (mazeGen.class) algoTypeSelection.value = mazeGen.class.key;

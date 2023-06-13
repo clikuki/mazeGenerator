@@ -15,7 +15,26 @@ function carveWall(prevCell: Cell, curCell: Cell, offset: number) {
 	}
 }
 
-abstract class WalkerBase {
+function getRandomUnvisitedCellIndex(grid: Grid) {
+	const mazePartIndices = grid.cells
+		.map((cell, i) => ({ ...cell, i }))
+		.filter(({ open: visited }) => visited)
+		.map(({ i }) => i);
+
+	while (true) {
+		const randCellIndex = Math.floor(Math.random() * grid.colCnt * grid.rowCnt);
+		if (!mazePartIndices.includes(randCellIndex)) {
+			return randCellIndex;
+		}
+	}
+}
+
+function checkIfComplete(grid: Grid) {
+	return grid.cells.every(({ open: visited }) => visited);
+}
+
+export class AldousBroder {
+	static key = 'Aldous-Broder';
 	index: number;
 	isComplete = false;
 	directions: [number, number, number, number];
@@ -26,31 +45,8 @@ abstract class WalkerBase {
 		starterCell.open = true;
 		this.grid = grid;
 		this.index = starterIndex;
-		this.isComplete = false;
 		this.directions = [-grid.colCnt, 1, grid.colCnt, -1];
 	}
-	getRandomUnvisitedCellIndex() {
-		const mazePartIndices = this.grid.cells
-			.map((cell, i) => ({ ...cell, i }))
-			.filter(({ open: visited }) => visited)
-			.map(({ i }) => i);
-
-		while (true) {
-			const randCellIndex = Math.floor(
-				Math.random() * this.grid.colCnt * this.grid.rowCnt,
-			);
-			if (!mazePartIndices.includes(randCellIndex)) {
-				return randCellIndex;
-			}
-		}
-	}
-	checkIfComplete() {
-		return this.grid.cells.every(({ open: visited }) => visited);
-	}
-}
-
-export class AldousBroder extends WalkerBase {
-	static key = 'Aldous-Broder';
 	step() {
 		if (this.isComplete) return;
 
@@ -78,7 +74,7 @@ export class AldousBroder extends WalkerBase {
 		if (!newHead.open) {
 			newHead.open = true;
 			carveWall(prevCell, newHead, direction);
-			if (this.checkIfComplete()) {
+			if (checkIfComplete(this.grid)) {
 				this.isComplete = true;
 			}
 		}
@@ -104,16 +100,24 @@ export class AldousBroder extends WalkerBase {
 	}
 }
 
-export class Wilsons extends WalkerBase {
+export class Wilsons {
 	static key = "Wilson's";
+	index: number;
+	isComplete = false;
+	directions: [number, number, number, number];
+	grid: Grid;
 	startIndex: number;
 	walkedCells = new Set<number>();
 	cellDirection = new Map<Cell, number>();
 	constructor(grid: Grid) {
-		super(grid);
-		const walkerStartIndex = this.getRandomUnvisitedCellIndex();
+		const starterIndex = Math.floor(Math.random() * grid.cells.length);
+		const walkerStartIndex = getRandomUnvisitedCellIndex(grid);
+		this.index = starterIndex;
+		grid.cells[this.index].open = true;
 		this.startIndex = walkerStartIndex;
 		this.index = walkerStartIndex;
+		this.grid = grid;
+		this.directions = [-grid.colCnt, 1, grid.colCnt, -1];
 	}
 	step() {
 		if (this.isComplete) return;
@@ -161,11 +165,11 @@ export class Wilsons extends WalkerBase {
 			this.cellDirection.clear();
 			this.walkedCells.clear();
 
-			if (this.grid.cells.every(({ open: visited }) => visited)) {
+			if (checkIfComplete(this.grid)) {
 				this.isComplete = true;
 			} else {
 				// Find new starting point for path
-				const randCellIndex = this.getRandomUnvisitedCellIndex();
+				const randCellIndex = getRandomUnvisitedCellIndex(this.grid);
 				this.startIndex = randCellIndex;
 				this.index = randCellIndex;
 			}
@@ -471,10 +475,49 @@ export class AldousBroderWilsonHybrid {
 	}
 }
 
+type Vertical = 'NORTH' | 'SOUTH';
+type Horizontal = 'EAST' | 'WEST';
+export class BinaryTreeAlgorithm {
+	static key = 'Binary Tree';
+	grid: Grid;
+	isComplete = false;
+	directions: [number, number];
+	index: number;
+	constructor(grid: Grid, horizontal: Horizontal, vertical: Vertical) {
+		this.grid = grid;
+		this.directions = [
+			horizontal === 'EAST' ? 1 : -1,
+			(vertical === 'SOUTH' ? 1 : -1) * grid.colCnt,
+		];
+		const x = horizontal === 'EAST' ? grid.colCnt - 1 : 1;
+		const y = vertical === 'SOUTH' ? grid.rowCnt - 1 : 1;
+		this.index = y * grid.colCnt + x;
+	}
+	step(): void {
+		const directions = this.directions.filter((dir) => {
+			const newIndex = this.index + dir;
+			const x = newIndex % this.grid.colCnt;
+			if (x < 0 || x > this.grid.colCnt) return false;
+			if (newIndex < 0 || newIndex > this.grid.cellSize) return false;
+			return true;
+		});
+		const dir = randomItemInArray(directions);
+		carveWall(
+			this.grid.cells[this.index],
+			this.grid.cells[this.index + dir],
+			dir,
+		);
+		this.index += this.directions[0];
+	}
+}
+
 export const Algorithms = [
 	RecursiveBacktracking,
 	RecursiveDivision,
 	Wilsons,
 	AldousBroder,
 	AldousBroderWilsonHybrid,
+	// BinaryTreeAlgorithm,
 ];
+
+// TODO: fix problem of binary tree algorithm having different paramaters than others

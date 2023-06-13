@@ -419,11 +419,45 @@ export class AldousBroderWilsonHybrid {
         this.walker.draw(ctx);
     }
 }
+export class BinaryTreeAlgorithm {
+    static key = 'Binary Tree';
+    grid;
+    isComplete = false;
+    directions;
+    index;
+    constructor(grid, horizontal, vertical) {
+        this.grid = grid;
+        this.directions = [
+            horizontal === 'EAST' ? 1 : -1,
+            (vertical === 'SOUTH' ? 1 : -1) * grid.colCnt,
+        ];
+        const x = horizontal === 'EAST' ? grid.colCnt - 1 : 1;
+        const y = vertical === 'SOUTH' ? grid.rowCnt - 1 : 1;
+        this.index = y * grid.colCnt + x;
+    }
+    step() {
+        const directions = this.directions.filter((dir) => {
+            const newIndex = this.index + dir;
+            const x = newIndex % this.grid.colCnt;
+            if (x < 0 || x > this.grid.colCnt)
+                return false;
+            if (newIndex < 0 || newIndex > this.grid.cellSize)
+                return false;
+            return true;
+        });
+        const dir = randomItemInArray(directions);
+        carveWall(this.grid.cells[this.index], this.grid.cells[this.index + dir], dir);
+        this.index += this.directions[0];
+    }
+}
 export const Algorithms = [
     RecursiveBacktracking,
     RecursiveDivision,
     Wilsons,
     AldousBroder,
     AldousBroderWilsonHybrid,
+    // BinaryTreeAlgorithm,
 ];
+// TODO: fix problem of binary tree algorithm having different paramaters than others
+function MazeGenFactory(key) { }
 //# sourceMappingURL=mazeGenerator.js.map
