@@ -1,4 +1,22 @@
 import { randomItemInArray, shuffle } from './utils.js';
+function findTreeRoot(node) {
+    while (node.parent) {
+        node = node.parent;
+    }
+    return node;
+}
+function findBranchSize(node) {
+    let nodes = [node];
+    for (let i = 0; i < nodes.length; i++) {
+        const node = nodes[i];
+        nodes.push(...node.children);
+    }
+    return nodes.length;
+}
+function randomRGB(max) {
+    const r = (max) => Math.floor(Math.random() * max);
+    return [r(max), r(max), r(max)];
+}
 // Does not check whether the two cells are actually neighbors
 // Don't know if I need to fix that :|
 function carveWall(prevCell, curCell, offset) {
@@ -88,7 +106,7 @@ export class Wilsons {
     grid;
     startIndex;
     walkedCells = new Set();
-    cellDirection = new Map();
+    cellDirection = [];
     constructor(grid) {
         const walkerStartIndex = getRandomUnvisitedCellIndex(grid);
         this.startIndex = walkerStartIndex;
@@ -107,8 +125,7 @@ export class Wilsons {
         const direction = randomItemInArray(directions);
         // const direction = directions[0];
         // Set direction of current head
-        const curHead = this.grid.cells[this.index];
-        this.cellDirection.set(curHead, direction);
+        this.cellDirection[this.index] = direction;
         this.walkedCells.add(this.index);
         // Pick new head
         const newHead = this.grid.cells[(this.index += direction)];
@@ -120,17 +137,17 @@ export class Wilsons {
             while (true) {
                 // Loop through paths using directions
                 const curCell = this.grid.cells[pathIndex];
-                const pathOffset = this.cellDirection.get(curCell);
-                if (prevCell === newHead)
-                    break;
+                const pathOffset = this.cellDirection[pathIndex];
                 if (prevCell)
                     carveWall(prevCell, curCell, prevOffset);
+                if (curCell.open)
+                    break;
                 curCell.open = true;
                 pathIndex += pathOffset;
                 prevCell = curCell;
                 prevOffset = pathOffset;
             }
-            this.cellDirection.clear();
+            this.cellDirection.length = 0;
             this.walkedCells.clear();
             if (checkIfComplete(this.grid)) {
                 this.isComplete = true;
@@ -156,15 +173,15 @@ export class Wilsons {
         let pathIndex = this.startIndex;
         const truePath = new Set([this.index]);
         while (true) {
-            const cell = this.grid.cells[pathIndex];
-            const dir = this.cellDirection.get(cell);
+            const { screenX, screenY, size } = this.grid.cells[pathIndex];
+            const dir = this.cellDirection[pathIndex];
             if (dir === undefined || truePath.has(pathIndex))
                 break;
             truePath.add(pathIndex);
             pathIndex += dir;
             // draw direction of cell
             ctx.save();
-            ctx.translate(cell.screenX + cell.size / 2, cell.screenY + cell.size / 2);
+            ctx.translate(screenX + size / 2, screenY + size / 2);
             let rot;
             if (dir === -this.grid.colCnt)
                 rot = 0;
@@ -178,12 +195,12 @@ export class Wilsons {
                 throw 'Impossible direction encountered!';
             ctx.rotate(rot);
             ctx.beginPath();
-            ctx.moveTo(0, cell.size / 4);
-            ctx.lineTo(0, -cell.size / 4);
-            ctx.moveTo(-cell.size / 4, 0);
-            ctx.lineTo(0, -cell.size / 4);
-            ctx.moveTo(cell.size / 4, 0);
-            ctx.lineTo(0, -cell.size / 4);
+            ctx.moveTo(0, size / 4);
+            ctx.lineTo(0, -size / 4);
+            ctx.moveTo(-size / 4, 0);
+            ctx.lineTo(0, -size / 4);
+            ctx.moveTo(size / 4, 0);
+            ctx.lineTo(0, -size / 4);
             ctx.strokeStyle = 'rgb(0, 255, 0)';
             const prevLineWidth = ctx.lineWidth;
             ctx.lineWidth = 5;
@@ -455,41 +472,24 @@ export class BinaryTree {
         ctx.fillRect(cell.screenX, cell.screenY, cell.size, cell.size);
     }
 }
-function findTreeRoot(node) {
-    while (node.parent) {
-        node = node.parent;
-    }
-    return node;
-}
-function findBranchSize(node) {
-    let nodes = [node];
-    for (let i = 0; i < nodes.length; i++) {
-        const node = nodes[i];
-        nodes.push(...node.children);
-    }
-    return nodes.length;
-}
-function randomRGB(max) {
-    const r = (max) => Math.floor(Math.random() * max);
-    return [r(max), r(max), r(max)];
-}
 export class Kruskals {
     static key = "Kruskal's";
     grid;
     isComplete = false;
-    cellTrees = new Map();
+    cellTrees = [];
+    cellClrs = []; // For presentation
     edges = [];
     curEdge;
     constructor(grid) {
         this.grid = grid;
         for (const cell of grid.cells) {
             cell.open = true;
-            this.cellTrees.set(cell, {
+            this.cellTrees[cell.gridIndex] = {
                 index: cell.gridIndex,
                 parent: null,
-                clr: randomRGB(150),
                 children: [],
-            });
+            };
+            this.cellClrs[cell.gridIndex] = randomRGB(150);
         }
         for (let x = 0; x < grid.colCnt; x++) {
             for (let y = 0; y < grid.rowCnt; y++) {
@@ -508,8 +508,8 @@ export class Kruskals {
             return;
         this.curEdge = randomItemInArray(this.edges);
         const [index, dir] = this.curEdge;
-        let node1 = this.cellTrees.get(this.grid.cells[index]);
-        let node2 = this.cellTrees.get(this.grid.cells[index + dir]);
+        let node1 = this.cellTrees[index];
+        let node2 = this.cellTrees[index + dir];
         let root1 = findTreeRoot(node1);
         let root2 = findTreeRoot(node2);
         if (root1 !== root2) {
@@ -541,14 +541,14 @@ export class Kruskals {
             return;
         // Tree colors
         const allVisited = new Set();
-        for (const [, tree] of this.cellTrees) {
+        for (const tree of this.cellTrees) {
             const visited = new Set([tree]);
             let root = tree;
             while (root.parent) {
                 visited.add(root);
                 root = root.parent;
             }
-            const { clr: [r, g, b], } = root;
+            const [r, g, b] = this.cellClrs[root.index];
             for (const { index } of visited) {
                 const { screenX, screenY, size } = this.grid.cells[index];
                 ctx.fillStyle = `rgb(${r},${g},${b})`;
@@ -646,6 +646,30 @@ export class Prims {
     }
 }
 // TODO: Eller's Algorithm
+export class Ellers {
+    static key = "Eller's";
+    isComplete = false;
+    grid;
+    cellTrees = [];
+    index = 0;
+    constructor(grid) {
+        this.grid = grid;
+    }
+    step() {
+        if (this.isComplete)
+            return;
+        if (!this.cellTrees[this.index])
+            this.cellTrees[this.index] = {
+                index: this.index,
+                parent: null,
+                children: [],
+            };
+    }
+    draw(ctx) {
+        if (this.isComplete)
+            return;
+    }
+}
 // TODO: Sidewinder Algorithm
 // TODO: "Hunt and Kill" Algorithm
 // TODO: Customizable "Growing Tree" Algorithm
@@ -659,4 +683,19 @@ export const Algorithms = [
     Kruskals,
     Prims,
 ];
+// Some boilerplate
+// export class ALGO_NAME {
+// 	static readonly key = "ALGO_NAME";
+// 	isComplete = false;
+// 	grid: Grid;
+// 	constructor(grid: Grid) {
+// 		this.grid = grid;
+// 	}
+// 	step() {
+// 		if(this.isComplete) return;
+// 	}
+// 	draw(ctx: CanvasRenderingContext2D) {
+// 		if(this.isComplete) return;
+// 	}
+// }
 //# sourceMappingURL=mazeGenerator.js.map

@@ -1,6 +1,35 @@
 import { Cell, Grid } from './grid.js';
 import { randomItemInArray, shuffle } from './utils.js';
 
+type RGB = [number, number, number];
+
+// Tree Graph types and heler functions
+interface TreeNode {
+	index: number;
+	parent: TreeNode | null;
+	// Children is only needed for the finding branch size
+	children: TreeNode[];
+}
+type Edge = [index: number, dir: number];
+function findTreeRoot(node: TreeNode) {
+	while (node.parent) {
+		node = node.parent;
+	}
+	return node;
+}
+function findBranchSize(node: TreeNode): number {
+	let nodes = [node];
+	for (let i = 0; i < nodes.length; i++) {
+		const node = nodes[i];
+		nodes.push(...node.children);
+	}
+	return nodes.length;
+}
+function randomRGB(max: number): RGB {
+	const r = (max: number) => Math.floor(Math.random() * max);
+	return [r(max), r(max), r(max)];
+}
+
 // Does not check whether the two cells are actually neighbors
 // Don't know if I need to fix that :|
 function carveWall(prevCell: Cell, curCell: Cell, offset: number) {
@@ -111,7 +140,7 @@ export class Wilsons {
 	grid: Grid;
 	startIndex: number;
 	walkedCells = new Set<number>();
-	cellDirection = new Map<Cell, number>();
+	cellDirection: number[] = [];
 	constructor(grid: Grid) {
 		const walkerStartIndex = getRandomUnvisitedCellIndex(grid);
 		this.startIndex = walkerStartIndex;
@@ -132,8 +161,7 @@ export class Wilsons {
 		const direction = randomItemInArray(directions);
 		// const direction = directions[0];
 		// Set direction of current head
-		const curHead = this.grid.cells[this.index];
-		this.cellDirection.set(curHead, direction);
+		this.cellDirection[this.index] = direction;
 		this.walkedCells.add(this.index);
 
 		// Pick new head
@@ -146,15 +174,15 @@ export class Wilsons {
 			while (true) {
 				// Loop through paths using directions
 				const curCell = this.grid.cells[pathIndex];
-				const pathOffset = this.cellDirection.get(curCell)!;
-				if (prevCell === newHead) break;
+				const pathOffset = this.cellDirection[pathIndex];
 				if (prevCell) carveWall(prevCell, curCell, prevOffset!);
+				if (curCell.open) break;
 				curCell.open = true;
 				pathIndex += pathOffset;
 				prevCell = curCell;
 				prevOffset = pathOffset;
 			}
-			this.cellDirection.clear();
+			this.cellDirection.length = 0;
 			this.walkedCells.clear();
 
 			if (checkIfComplete(this.grid)) {
@@ -180,15 +208,15 @@ export class Wilsons {
 		let pathIndex = this.startIndex;
 		const truePath = new Set([this.index]);
 		while (true) {
-			const cell = this.grid.cells[pathIndex];
-			const dir = this.cellDirection.get(cell);
+			const { screenX, screenY, size } = this.grid.cells[pathIndex];
+			const dir = this.cellDirection[pathIndex];
 			if (dir === undefined || truePath.has(pathIndex)) break;
 			truePath.add(pathIndex);
 			pathIndex += dir;
 
 			// draw direction of cell
 			ctx.save();
-			ctx.translate(cell.screenX + cell.size / 2, cell.screenY + cell.size / 2);
+			ctx.translate(screenX + size / 2, screenY + size / 2);
 			let rot: number;
 			if (dir === -this.grid.colCnt) rot = 0;
 			else if (dir === 1) rot = Math.PI / 2;
@@ -198,12 +226,12 @@ export class Wilsons {
 			ctx.rotate(rot);
 
 			ctx.beginPath();
-			ctx.moveTo(0, cell.size / 4);
-			ctx.lineTo(0, -cell.size / 4);
-			ctx.moveTo(-cell.size / 4, 0);
-			ctx.lineTo(0, -cell.size / 4);
-			ctx.moveTo(cell.size / 4, 0);
-			ctx.lineTo(0, -cell.size / 4);
+			ctx.moveTo(0, size / 4);
+			ctx.lineTo(0, -size / 4);
+			ctx.moveTo(-size / 4, 0);
+			ctx.lineTo(0, -size / 4);
+			ctx.moveTo(size / 4, 0);
+			ctx.lineTo(0, -size / 4);
 
 			ctx.strokeStyle = 'rgb(0, 255, 0)';
 			const prevLineWidth = ctx.lineWidth;
@@ -512,50 +540,24 @@ export class BinaryTree {
 	}
 }
 
-type RGB = [number, number, number];
-interface TreeNode {
-	index: number;
-	clr: RGB;
-	parent: TreeNode | null;
-	// Children is only needed for the finding branch size
-	children: TreeNode[];
-}
-type Edge = [index: number, dir: number];
-function findTreeRoot(node: TreeNode) {
-	while (node.parent) {
-		node = node.parent;
-	}
-	return node;
-}
-function findBranchSize(node: TreeNode): number {
-	let nodes = [node];
-	for (let i = 0; i < nodes.length; i++) {
-		const node = nodes[i];
-		nodes.push(...node.children);
-	}
-	return nodes.length;
-}
-function randomRGB(max: number): RGB {
-	const r = (max: number) => Math.floor(Math.random() * max);
-	return [r(max), r(max), r(max)];
-}
 export class Kruskals {
 	static readonly key = "Kruskal's";
 	grid: Grid;
 	isComplete = false;
-	cellTrees = new Map<Cell, TreeNode>();
+	cellTrees: TreeNode[] = [];
+	cellClrs: RGB[] = []; // For presentation
 	edges: Edge[] = [];
 	curEdge: Edge | undefined;
 	constructor(grid: Grid) {
 		this.grid = grid;
 		for (const cell of grid.cells) {
 			cell.open = true;
-			this.cellTrees.set(cell, {
+			this.cellTrees[cell.gridIndex] = {
 				index: cell.gridIndex,
 				parent: null,
-				clr: randomRGB(150),
 				children: [],
-			});
+			};
+			this.cellClrs[cell.gridIndex] = randomRGB(150);
 		}
 		for (let x = 0; x < grid.colCnt; x++) {
 			for (let y = 0; y < grid.rowCnt; y++) {
@@ -572,8 +574,8 @@ export class Kruskals {
 
 		this.curEdge = randomItemInArray(this.edges);
 		const [index, dir] = this.curEdge;
-		let node1 = this.cellTrees.get(this.grid.cells[index])!;
-		let node2 = this.cellTrees.get(this.grid.cells[index + dir])!;
+		let node1 = this.cellTrees[index];
+		let node2 = this.cellTrees[index + dir];
 		let root1 = findTreeRoot(node1);
 		let root2 = findTreeRoot(node2);
 		if (root1 !== root2) {
@@ -607,16 +609,14 @@ export class Kruskals {
 
 		// Tree colors
 		const allVisited = new Set<TreeNode>();
-		for (const [, tree] of this.cellTrees) {
+		for (const tree of this.cellTrees) {
 			const visited = new Set<TreeNode>([tree]);
 			let root = tree;
 			while (root.parent) {
 				visited.add(root);
 				root = root.parent;
 			}
-			const {
-				clr: [r, g, b],
-			} = root;
+			const [r, g, b] = this.cellClrs[root.index];
 			for (const { index } of visited) {
 				const { screenX, screenY, size } = this.grid.cells[index];
 				ctx.fillStyle = `rgb(${r},${g},${b})`;
@@ -727,6 +727,29 @@ export class Prims {
 }
 
 // TODO: Eller's Algorithm
+export class Ellers {
+	static readonly key = "Eller's";
+	isComplete = false;
+	grid: Grid;
+	cellTrees: TreeNode[] = [];
+	index = 0;
+	constructor(grid: Grid) {
+		this.grid = grid;
+	}
+	step() {
+		if (this.isComplete) return;
+
+		if (!this.cellTrees[this.index])
+			this.cellTrees[this.index] = {
+				index: this.index,
+				parent: null,
+				children: [],
+			};
+	}
+	draw(ctx: CanvasRenderingContext2D) {
+		if (this.isComplete) return;
+	}
+}
 
 // TODO: Sidewinder Algorithm
 
@@ -744,3 +767,19 @@ export const Algorithms = [
 	Kruskals,
 	Prims,
 ];
+
+// Some boilerplate
+// export class ALGO_NAME {
+// 	static readonly key = "ALGO_NAME";
+// 	isComplete = false;
+// 	grid: Grid;
+// 	constructor(grid: Grid) {
+// 		this.grid = grid;
+// 	}
+// 	step() {
+// 		if(this.isComplete) return;
+// 	}
+// 	draw(ctx: CanvasRenderingContext2D) {
+// 		if(this.isComplete) return;
+// 	}
+// }
