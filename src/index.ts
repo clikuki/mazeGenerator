@@ -7,6 +7,13 @@ import {
 } from './mazeSolver.js';
 import { GraphNode, convertGridToGraph } from './utils.js';
 
+/*
+	SOME MAYBE PLANS
+==-==-==-==-==-==-==-==-==-==-==-==-==-==-==-==
+	Add option for symmetry
+	Different cell shapes? (triangle, hexagon)
+*/
+
 type MazeGeneratorClass = (typeof mazeGenerators)[number];
 type UndefinedOr<T> = T | undefined;
 

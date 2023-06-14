@@ -105,7 +105,7 @@
 								Creates a path while avoiding itself and the walls. When a dead-end is
 								reached, it backtracks until it reaches open space to branch away
 							</li>
-							<li>Average speed</li>
+							<li>Slow - Only updates one cell per step</li>
 							<li>Long, winding corridors</li>
 							<li>Few branches</li>
 							<li>Guaranteed to finish</li>
@@ -219,6 +219,24 @@
 								height of the grid
 							</li>
 							<li>Creates many short dead-ends</li>
+							<li>Guaranteed to finish</li>
+						</ul>
+					</li>
+					<li>
+						<span>Prim's</span>
+						<ul>
+							<li>
+								Open a random cell in the grid, and add its neighbors to a list. Pick
+								and remove a random cell in the list, add its neighbors to the list,
+								then carve a wall from it to an open neigbor. Repeat until all cells are
+								connected
+							</li>
+							<li>Slow - Only updates one cell per step</li>
+							<li>Creates many short dead-ends</li>
+							<li>
+								All paths tend to go back to the algorithm's starting point, which may
+								undesirable
+							</li>
 							<li>Guaranteed to finish</li>
 						</ul>
 					</li>

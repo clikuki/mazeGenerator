@@ -15,9 +15,8 @@ function carveWall(prevCell, curCell, offset) {
 }
 function getRandomUnvisitedCellIndex(grid) {
     const mazePartIndices = grid.cells
-        .map((cell, i) => ({ ...cell, i }))
         .filter(({ open: visited }) => visited)
-        .map(({ i }) => i);
+        .map(({ gridIndex }) => gridIndex);
     while (true) {
         const randCellIndex = Math.floor(Math.random() * grid.colCnt * grid.rowCnt);
         if (!mazePartIndices.includes(randCellIndex)) {
@@ -28,11 +27,24 @@ function getRandomUnvisitedCellIndex(grid) {
 function checkIfComplete(grid) {
     return grid.cells.every(({ open: visited }) => visited);
 }
+function findValidDirections(grid, index) {
+    const cell = grid.cells[index];
+    return [-grid.colCnt, 1, grid.colCnt, -1].filter((dir) => {
+        const newIndex = index + dir;
+        const neighbor = grid.cells[newIndex];
+        // Check if cell is within grid
+        if (newIndex < 0 || newIndex >= grid.colCnt * grid.rowCnt)
+            return;
+        // Prevent Walker from going over left and right edges
+        if (Math.abs(dir) === 1 && neighbor.screenY !== cell.screenY)
+            return;
+        return true;
+    });
+}
 export class AldousBroder {
     static key = 'Aldous-Broder';
     index;
     isComplete = false;
-    directions;
     grid;
     constructor(grid) {
         const starterIndex = Math.floor(Math.random() * grid.cells.length);
@@ -40,24 +52,11 @@ export class AldousBroder {
         starterCell.open = true;
         this.grid = grid;
         this.index = starterIndex;
-        this.directions = [-grid.colCnt, 1, grid.colCnt, -1];
     }
     step() {
         if (this.isComplete)
             return;
-        const head = this.grid.cells[this.index];
-        // Get valid directions
-        const directions = this.directions.filter((direction) => {
-            const newIndex = this.index + direction;
-            const cell = this.grid.cells[newIndex];
-            // Check if cell is within grid
-            if (newIndex < 0 || newIndex >= this.grid.colCnt * this.grid.rowCnt)
-                return false;
-            // Prevent Walker from going over left and right edges
-            if (Math.abs(direction) === 1 && cell.screenY !== head.screenY)
-                return false;
-            return true;
-        });
+        const directions = findValidDirections(this.grid, this.index);
         const direction = randomItemInArray(directions);
         // Pick new head
         const newHead = this.grid.cells[(this.index += direction)];
@@ -66,9 +65,7 @@ export class AldousBroder {
         if (!newHead.open) {
             newHead.open = true;
             carveWall(prevCell, newHead, direction);
-            if (checkIfComplete(this.grid)) {
-                this.isComplete = true;
-            }
+            this.isComplete = checkIfComplete(this.grid);
         }
     }
     draw(ctx) {
@@ -88,7 +85,6 @@ export class Wilsons {
     static key = "Wilson's";
     index;
     isComplete = false;
-    directions;
     grid;
     startIndex;
     walkedCells = new Set();
@@ -98,7 +94,6 @@ export class Wilsons {
         this.startIndex = walkerStartIndex;
         this.index = walkerStartIndex;
         this.grid = grid;
-        this.directions = [-grid.colCnt, 1, grid.colCnt, -1];
         if (!grid.cells.some(({ open }) => open)) {
             const starterIndex = Math.floor(Math.random() * grid.cells.length);
             grid.cells[starterIndex].open = true;
@@ -107,19 +102,8 @@ export class Wilsons {
     step() {
         if (this.isComplete)
             return;
-        const head = this.grid.cells[this.index];
         // Get valid directions
-        const directions = this.directions.filter((direction) => {
-            const newIndex = this.index + direction;
-            const cell = this.grid.cells[newIndex];
-            // Check if cell is within grid
-            if (newIndex < 0 || newIndex >= this.grid.colCnt * this.grid.rowCnt)
-                return;
-            // Prevent Walker from going over left and right edges
-            if (Math.abs(direction) === 1 && cell.screenY !== head.screenY)
-                return;
-            return true;
-        });
+        const directions = findValidDirections(this.grid, this.index);
         const direction = randomItemInArray(directions);
         // const direction = directions[0];
         // Set direction of current head
@@ -182,13 +166,13 @@ export class Wilsons {
             ctx.save();
             ctx.translate(cell.screenX + cell.size / 2, cell.screenY + cell.size / 2);
             let rot;
-            if (dir === this.directions[0])
+            if (dir === -this.grid.colCnt)
                 rot = 0;
-            else if (dir === this.directions[1])
+            else if (dir === 1)
                 rot = Math.PI / 2;
-            else if (dir === this.directions[2])
+            else if (dir === this.grid.colCnt)
                 rot = Math.PI;
-            else if (dir === this.directions[3])
+            else if (dir === -1)
                 rot = -Math.PI / 2;
             else
                 throw 'Impossible direction encountered!';
@@ -224,12 +208,10 @@ export class Wilsons {
 export class RecursiveBacktracking {
     static key = 'Recursive Backtracking';
     grid;
-    directions;
     isComplete = false;
     stack;
     constructor(grid) {
         this.grid = grid;
-        this.directions = [-grid.colCnt, 1, grid.colCnt, -1];
         this.stack = [
             {
                 cell: grid.cells[getRandomUnvisitedCellIndex(grid)],
@@ -246,19 +228,7 @@ export class RecursiveBacktracking {
             return;
         }
         const directions = head.directionsToTry ||
-            shuffle(this.directions.filter((direction) => {
-                const newIndex = head.cell.gridIndex + direction;
-                const newCell = this.grid.cells[newIndex];
-                if (!newCell)
-                    return;
-                // Check if cell is within grid
-                if (newIndex < 0 || newIndex >= this.grid.colCnt * this.grid.rowCnt)
-                    return;
-                // Prevent Walker from going over left and right edges
-                if (Math.abs(direction) === 1 && newCell.screenY !== head.cell.screenY)
-                    return;
-                return true;
-            }));
+            shuffle(findValidDirections(this.grid, head.cell.gridIndex));
         if (!directions.length) {
             this.stack.pop();
             return;
@@ -624,6 +594,61 @@ export class Kruskals {
         }
     }
 }
+export class Prims {
+    static key = "Prim's";
+    isComplete = false;
+    grid;
+    frontier = [];
+    constructor(grid) {
+        this.grid = grid;
+        const startIndex = getRandomUnvisitedCellIndex(grid);
+        grid.cells[startIndex].open = true;
+        this.frontier = findValidDirections(grid, startIndex).map((dir) => startIndex + dir);
+    }
+    step() {
+        if (this.isComplete)
+            return;
+        const pickedIndex = randomItemInArray(this.frontier);
+        this.frontier = this.frontier.filter((c) => c !== pickedIndex);
+        const newFrontier = findValidDirections(this.grid, pickedIndex)
+            .map((dir) => pickedIndex + dir)
+            .filter((i) => !this.grid.cells[i].open);
+        for (const index of newFrontier) {
+            if (this.frontier.includes(index))
+                continue;
+            this.frontier.push(index);
+        }
+        // Converting to set then spreading back to an array feels wrong...
+        // this.frontier = [
+        // 	...new Set(
+        // 		this.frontier.concat(
+        // 			this.#findValidDirections(pickedIndex)
+        // 				.map((dir) => pickedIndex + dir)
+        // 				.filter((i) => !this.grid.cells[i].open),
+        // 		),
+        // 	),
+        // ];
+        const dir = randomItemInArray(findValidDirections(this.grid, pickedIndex).filter((dir) => this.grid.cells[pickedIndex + dir].open));
+        const cell1 = this.grid.cells[pickedIndex];
+        const cell2 = this.grid.cells[pickedIndex + dir];
+        cell1.open = cell2.open = true;
+        carveWall(cell1, cell2, dir);
+        this.isComplete = checkIfComplete(this.grid);
+    }
+    draw(ctx) {
+        if (this.isComplete)
+            return;
+        for (const index of this.frontier) {
+            const { screenX, screenY, size } = this.grid.cells[index];
+            ctx.fillStyle = `#a00a`;
+            ctx.fillRect(screenX, screenY, size, size);
+        }
+    }
+}
+// TODO: Eller's Algorithm
+// TODO: Sidewinder Algorithm
+// TODO: "Hunt and Kill" Algorithm
+// TODO: Customizable "Growing Tree" Algorithm
 export const Algorithms = [
     RecursiveBacktracking,
     RecursiveDivision,
@@ -632,5 +657,6 @@ export const Algorithms = [
     AldousBroderWilsonHybrid,
     BinaryTree,
     Kruskals,
+    Prims,
 ];
 //# sourceMappingURL=mazeGenerator.js.map
