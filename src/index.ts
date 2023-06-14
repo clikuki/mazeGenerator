@@ -5,7 +5,7 @@ import {
 	pathDrawMethods,
 	pathDrawMethodList,
 } from './mazeSolver.js';
-import { Node, convertGridToGraph } from './utils.js';
+import { GraphNode, convertGridToGraph } from './utils.js';
 
 type MazeGeneratorClass = (typeof mazeGenerators)[number];
 type UndefinedOr<T> = T | undefined;
@@ -15,6 +15,7 @@ const ctx = canvas.getContext('2d')!;
 canvas.width = innerHeight;
 canvas.height = innerHeight;
 let grid = new Grid(10, 10, canvas);
+// let grid = new Grid(3, 3, canvas);
 let mazeSolver: MazeSolver | undefined;
 let solveStartIndex: number | null = null;
 const mazeGen: {
@@ -39,12 +40,14 @@ let pause = false;
 const simulationSpeed = {
 	capped: false,
 	sps: 60,
+	// capped: true,
+	// sps: 1,
 };
 
 // Controls and displays
 function restart({ colCnt = grid.colCnt, rowCnt = grid.rowCnt }) {
-	if (!mazeGen.class) return;
 	grid = new Grid(colCnt, rowCnt, canvas);
+	if (!mazeGen.class) return;
 	mazeGen.instance = new mazeGen.class(grid, mazeGen.options);
 	mazeSolver = undefined;
 	pause = false;
@@ -62,7 +65,7 @@ const stepBtn = document.querySelector('.step') as HTMLButtonElement;
 stepBtn.addEventListener('click', () => {
 	if (mazeGen.instance && !mazeGen.instance.isComplete) {
 		mazeGen.instance.step();
-		if (mazeGen.instance.draw) mazeGen.instance.draw(ctx);
+		mazeGen.instance.draw(ctx);
 	} else if (mazeSolver && !mazeSolver.isComplete) {
 		mazeSolver.step();
 		mazeSolver.draw(ctx);
@@ -214,8 +217,8 @@ exportAsGraphBtn.addEventListener('click', () => {
 	const simplifiedGraph: { [key: string]: string[] } = {};
 
 	let idCounter = 0;
-	const nodeIdMap = new Map<Node, string>();
-	function getNodeId(node: Node) {
+	const nodeIdMap = new Map<GraphNode, string>();
+	function getNodeId(node: GraphNode) {
 		let id = nodeIdMap.get(node);
 		if (!id) {
 			id = (++idCounter).toString(16);
@@ -362,7 +365,7 @@ let prevTime = Date.now();
 
 	if (mazeGen.instance && !mazeGen.instance.isComplete) {
 		if (!pause && stepRunners) mazeGen.instance.step();
-		if (mazeGen.instance.draw) mazeGen.instance.draw(ctx);
+		mazeGen.instance.draw(ctx);
 	} else if (mazeSolver) {
 		if (!mazeSolver.isComplete && !pause && stepRunners) mazeSolver.step();
 		mazeSolver.draw(ctx);

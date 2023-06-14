@@ -21,31 +21,32 @@ export class Cell {
     }
     drawWalls(ctx) {
         // Walls
-        ctx.strokeStyle = 'white';
-        const path = new Path2D();
+        ctx.beginPath();
         for (let i = 0; i < 4; i++) {
             if (this.walls[i]) {
                 switch (i) {
                     case 0: // Top
-                        path.moveTo(this.screenX, this.screenY);
-                        path.lineTo(this.screenX + this.size, this.screenY);
+                        ctx.moveTo(this.screenX, this.screenY);
+                        ctx.lineTo(this.screenX + this.size, this.screenY);
                         break;
                     case 1: // Right
-                        path.moveTo(this.screenX + this.size, this.screenY);
-                        path.lineTo(this.screenX + this.size, this.screenY + this.size);
+                        ctx.moveTo(this.screenX + this.size, this.screenY);
+                        ctx.lineTo(this.screenX + this.size, this.screenY + this.size);
                         break;
                     case 2: // Bottom
-                        path.moveTo(this.screenX + this.size, this.screenY + this.size);
-                        path.lineTo(this.screenX, this.screenY + this.size);
+                        ctx.moveTo(this.screenX + this.size, this.screenY + this.size);
+                        ctx.lineTo(this.screenX, this.screenY + this.size);
                         break;
                     case 3: // Left
-                        path.moveTo(this.screenX, this.screenY + this.size);
-                        path.lineTo(this.screenX, this.screenY);
+                        ctx.moveTo(this.screenX, this.screenY + this.size);
+                        ctx.lineTo(this.screenX, this.screenY);
                         break;
                 }
             }
         }
-        ctx.stroke(path);
+        ctx.strokeStyle = 'white';
+        ctx.lineWidth = 1;
+        ctx.stroke();
     }
 }
 export class Grid {

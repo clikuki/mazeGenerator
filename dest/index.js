@@ -7,6 +7,7 @@ const ctx = canvas.getContext('2d');
 canvas.width = innerHeight;
 canvas.height = innerHeight;
 let grid = new Grid(10, 10, canvas);
+// let grid = new Grid(3, 3, canvas);
 let mazeSolver;
 let solveStartIndex = null;
 const mazeGen = {
@@ -27,12 +28,14 @@ let pause = false;
 const simulationSpeed = {
     capped: false,
     sps: 60,
+    // capped: true,
+    // sps: 1,
 };
 // Controls and displays
 function restart({ colCnt = grid.colCnt, rowCnt = grid.rowCnt }) {
+    grid = new Grid(colCnt, rowCnt, canvas);
     if (!mazeGen.class)
         return;
-    grid = new Grid(colCnt, rowCnt, canvas);
     mazeGen.instance = new mazeGen.class(grid, mazeGen.options);
     mazeSolver = undefined;
     pause = false;
@@ -48,8 +51,7 @@ const stepBtn = document.querySelector('.step');
 stepBtn.addEventListener('click', () => {
     if (mazeGen.instance && !mazeGen.instance.isComplete) {
         mazeGen.instance.step();
-        if (mazeGen.instance.draw)
-            mazeGen.instance.draw(ctx);
+        mazeGen.instance.draw(ctx);
     }
     else if (mazeSolver && !mazeSolver.isComplete) {
         mazeSolver.step();
@@ -300,8 +302,7 @@ let prevTime = Date.now();
     if (mazeGen.instance && !mazeGen.instance.isComplete) {
         if (!pause && stepRunners)
             mazeGen.instance.step();
-        if (mazeGen.instance.draw)
-            mazeGen.instance.draw(ctx);
+        mazeGen.instance.draw(ctx);
     }
     else if (mazeSolver) {
         if (!mazeSolver.isComplete && !pause && stepRunners)

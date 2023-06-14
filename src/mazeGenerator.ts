@@ -34,7 +34,7 @@ function checkIfComplete(grid: Grid) {
 }
 
 export interface MazeOptions {
-	[BinaryTreeAlgorithm.key]: {
+	[BinaryTree.key]: {
 		horizontal: Horizontal;
 		vertical: Vertical;
 	};
@@ -267,7 +267,7 @@ export class RecursiveBacktracking {
 		this.directions = [-grid.colCnt, 1, grid.colCnt, -1];
 		this.stack = [
 			{
-				cell: grid.cells[0],
+				cell: grid.cells[getRandomUnvisitedCellIndex(grid)],
 			},
 		];
 		this.stack[0].cell.open = true;
@@ -486,7 +486,7 @@ export class AldousBroderWilsonHybrid {
 
 type Vertical = 'NORTH' | 'SOUTH';
 type Horizontal = 'EAST' | 'WEST';
-export class BinaryTreeAlgorithm {
+export class BinaryTree {
 	static readonly key = 'Binary Tree';
 	grid: Grid;
 	isComplete = false;
@@ -497,7 +497,7 @@ export class BinaryTreeAlgorithm {
 		return this.y * this.grid.colCnt + this.x;
 	}
 	constructor(grid: Grid, options: MazeOptions) {
-		const { horizontal, vertical } = options[BinaryTreeAlgorithm.key];
+		const { horizontal, vertical } = options[BinaryTree.key];
 		this.grid = grid;
 		this.directions = [
 			horizontal === 'EAST' ? 1 : -1,
@@ -540,9 +540,163 @@ export class BinaryTreeAlgorithm {
 		}
 	}
 	draw(ctx: CanvasRenderingContext2D) {
+		if (this.isComplete) return;
+
 		ctx.fillStyle = '#0a0';
 		const cell = this.grid.cells[this.index];
 		ctx.fillRect(cell.screenX, cell.screenY, cell.size, cell.size);
+	}
+}
+
+type RGB = [number, number, number];
+interface TreeNode {
+	index: number;
+	clr: RGB;
+	parent: TreeNode | null;
+	// Children is only needed for the finding branch size
+	children: TreeNode[];
+}
+type Edge = [index: number, dir: number];
+function findTreeRoot(node: TreeNode) {
+	while (node.parent) {
+		node = node.parent;
+	}
+	return node;
+}
+function findBranchSize(node: TreeNode): number {
+	let nodes = [node];
+	for (let i = 0; i < nodes.length; i++) {
+		const node = nodes[i];
+		nodes.push(...node.children);
+	}
+	return nodes.length;
+}
+function randomRGB(max: number): RGB {
+	const r = (max: number) => Math.floor(Math.random() * max);
+	return [r(max), r(max), r(max)];
+}
+export class Kruskals {
+	static readonly key = "Kruskal's";
+	grid: Grid;
+	isComplete = false;
+	cellTrees = new Map<Cell, TreeNode>();
+	edges: Edge[] = [];
+	curEdge: Edge | undefined;
+	constructor(grid: Grid) {
+		this.grid = grid;
+		for (const cell of grid.cells) {
+			cell.open = true;
+			this.cellTrees.set(cell, {
+				index: cell.gridIndex,
+				parent: null,
+				clr: randomRGB(150),
+				children: [],
+			});
+		}
+		for (let x = 0; x < grid.colCnt; x++) {
+			for (let y = 0; y < grid.rowCnt; y++) {
+				const index = y * grid.colCnt + x;
+				if (x + 1 < grid.colCnt) this.edges.push([index, 1]);
+				if (y + 1 < grid.rowCnt) this.edges.push([index, grid.colCnt]);
+			}
+		}
+		this.edges = shuffle(this.edges);
+	}
+	iterCnt = 0;
+	step() {
+		if (this.isComplete) return;
+
+		this.curEdge = randomItemInArray(this.edges);
+		const [index, dir] = this.curEdge;
+		let node1 = this.cellTrees.get(this.grid.cells[index])!;
+		let node2 = this.cellTrees.get(this.grid.cells[index + dir])!;
+		let root1 = findTreeRoot(node1);
+		let root2 = findTreeRoot(node2);
+		if (root1 !== root2) {
+			carveWall(this.grid.cells[node1.index], this.grid.cells[node2.index], dir);
+
+			// Not needed technically, I could just pick one tree to always take precedence
+			// But during animation, the color change causes big flashes when a big tree's color changes
+			const size1 = findBranchSize(root1);
+			const size2 = findBranchSize(root2);
+			if (size1 > size2) {
+				root2.parent = node1;
+				node1.children.push(root2);
+			} else {
+				root1.parent = node2;
+				node2.children.push(root1);
+			}
+
+			if (size1 + size2 === this.grid.cells.length) {
+				this.isComplete = true;
+				return;
+			}
+		}
+		this.edges = this.edges.filter((e) => e !== this.curEdge);
+
+		if (this.edges.length === 0) {
+			this.isComplete = true;
+		}
+	}
+	draw(ctx: CanvasRenderingContext2D) {
+		if (this.isComplete) return;
+
+		// Tree colors
+		const allVisited = new Set<TreeNode>();
+		for (const [, tree] of this.cellTrees) {
+			const visited = new Set<TreeNode>([tree]);
+			let root = tree;
+			while (root.parent) {
+				visited.add(root);
+				root = root.parent;
+			}
+			const {
+				clr: [r, g, b],
+			} = root;
+			for (const { index } of visited) {
+				const { screenX, screenY, size } = this.grid.cells[index];
+				ctx.fillStyle = `rgb(${r},${g},${b})`;
+				ctx.fillRect(screenX, screenY, size, size);
+			}
+			visited.forEach((t) => allVisited.add(t));
+		}
+
+		// Current edge
+		if (this.curEdge) {
+			const [index, dir] = this.curEdge;
+			const cell = this.grid.cells[index];
+			let wallIndex: number;
+			ctx.beginPath();
+			for (const i of [-1, 1]) {
+				switch (dir) {
+					case -this.grid.colCnt: // Top
+						ctx.moveTo(cell.screenX, cell.screenY + i);
+						ctx.lineTo(cell.screenX + cell.size, cell.screenY + i);
+						wallIndex = 0;
+						break;
+					case 1: // Right
+						ctx.moveTo(cell.screenX + cell.size + i, cell.screenY);
+						ctx.lineTo(cell.screenX + cell.size + i, cell.screenY + cell.size);
+						wallIndex = 1;
+						break;
+					case this.grid.colCnt: // Bottom
+						ctx.moveTo(cell.screenX + cell.size, cell.screenY + cell.size - i);
+						ctx.lineTo(cell.screenX, cell.screenY + cell.size - i);
+						wallIndex = 2;
+						break;
+					case -1: // Left
+						ctx.moveTo(cell.screenX - i, cell.screenY + cell.size);
+						ctx.lineTo(cell.screenX - i, cell.screenY);
+						wallIndex = 3;
+						break;
+					default:
+						throw 'Impossible direction';
+				}
+			}
+			ctx.strokeStyle = cell.walls[wallIndex!] ? '#a00' : '#0a0';
+			ctx.lineWidth = 5;
+			ctx.stroke();
+		}
 	}
 }
 
@@ -552,5 +706,6 @@ export const Algorithms = [
 	Wilsons,
 	AldousBroder,
 	AldousBroderWilsonHybrid,
-	BinaryTreeAlgorithm,
+	BinaryTree,
+	Kruskals,
 ];

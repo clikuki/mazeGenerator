@@ -1,11 +1,11 @@
 import { Cell, Grid } from './grid.js';
-import { Node, convertGridToGraph } from './utils.js';
+import { GraphNode, convertGridToGraph } from './utils.js';
 
 // Only works for perfect mazes, which are the only mazes I make
-function nodeToPath(start: Node, filled: Set<Node>) {
-	const visited = new Set<Node>();
+function nodeToPath(start: GraphNode, filled: Set<GraphNode>) {
+	const visited = new Set<GraphNode>();
 	const path = [];
-	let current: Node | null = start;
+	let current: GraphNode | null = start;
 	mainLoop: while (current !== null) {
 		visited.add(current);
 		path.push(current.cell);
@@ -40,10 +40,10 @@ export class MazeSolver {
 	to: number;
 	isComplete = false;
 	directions: [number, number, number, number];
-	corridorsToFill: (Node | null)[] = [];
-	filledNodes = new Set<Node>();
-	graph: Map<Cell, Node>;
-	current: Node;
+	corridorsToFill: (GraphNode | null)[] = [];
+	filledNodes = new Set<GraphNode>();
+	graph: Map<Cell, GraphNode>;
+	current: GraphNode;
 	grayOutFilledNodes = false;
 	pathDrawMethod: pathDrawMethods = pathDrawMethodList[0];
 	path?: Cell[];

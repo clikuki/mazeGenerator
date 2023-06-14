@@ -122,8 +122,8 @@
 								Very quick - Can quickly split large spaces into smaller chambers
 							</li>
 							<li>
-								Ugly - Has obvious walls and bottlenecks due to how recursively cut
-								rectangles into smaller and smaller rectangles within itself
+								Has obvious walls and bottlenecks due to how recursively cut rectangles
+								into smaller and smaller rectangles within itself
 							</li>
 							<li>Guaranteed to finish</li>
 						</ul>
@@ -192,8 +192,8 @@
 							<li>Quick</li>
 							<li>Creates a binary tree, as the name suggests</li>
 							<li>
-								Ugly - Has a strong diagonal bias, as well as long corridors at the two
-								end edges
+								Has a strong diagonal bias, as well as long corridors at the two end
+								edges
 							</li>
 							<li>
 								Memory efficient - Its main selling point. As it only looks at the
@@ -202,6 +202,23 @@
 								when needed. This allows for absolutely massive mazes that don't use too
 								much memory
 							</li>
+							<li>Guaranteed to finish</li>
+						</ul>
+					</li>
+					<li>
+						<span>Kruskal's</span>
+						<ul>
+							<li>
+								Gather a list of all edges in the maze. Pick one at random, and if the
+								cells at each side of the edge are disconnected, carve the wall between
+								them. Remove the edge from the list, then repeat picking and carving
+								until all edges have been picked or the maze is completly connected
+							</li>
+							<li>
+								Slow - the number of edges are directly proportional to the width and
+								height of the grid
+							</li>
+							<li>Creates many short dead-ends</li>
 							<li>Guaranteed to finish</li>
 						</ul>
 					</li>
