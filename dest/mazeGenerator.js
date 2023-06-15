@@ -59,7 +59,7 @@ function findValidDirections(grid, index) {
         return true;
     });
 }
-export class AldousBroder {
+class AldousBroder {
     static key = 'Aldous-Broder';
     index;
     isComplete = false;
@@ -99,7 +99,7 @@ export class AldousBroder {
         ctx.restore();
     }
 }
-export class Wilsons {
+class Wilsons {
     static key = "Wilson's";
     index;
     isComplete = false;
@@ -222,7 +222,7 @@ export class Wilsons {
         ctx.restore();
     }
 }
-export class RecursiveBacktracking {
+class RecursiveBacktracking {
     static key = 'Recursive Backtracking';
     grid;
     isComplete = false;
@@ -281,7 +281,7 @@ export class RecursiveBacktracking {
         ctx.restore();
     }
 }
-export class RecursiveDivision {
+class RecursiveDivision {
     static key = 'Recursive Division';
     isComplete = false;
     chambers;
@@ -380,7 +380,7 @@ export class RecursiveDivision {
         ctx.fillRect(chamber[0] * this.grid.cellSize, chamber[1] * this.grid.cellSize, chamber[2] * this.grid.cellSize, chamber[3] * this.grid.cellSize);
     }
 }
-export class AldousBroderWilsonHybrid {
+class AldousBroderWilsonHybrid {
     static key = "Aldous-Broder + Wilson's";
     phase = 0;
     isComplete = false;
@@ -412,7 +412,7 @@ export class AldousBroderWilsonHybrid {
         this.walker.draw(ctx);
     }
 }
-export class BinaryTree {
+class BinaryTree {
     static key = 'Binary Tree';
     grid;
     isComplete = false;
@@ -472,11 +472,11 @@ export class BinaryTree {
         ctx.fillRect(cell.screenX, cell.screenY, cell.size, cell.size);
     }
 }
-export class Kruskals {
+class Kruskals {
     static key = "Kruskal's";
     grid;
     isComplete = false;
-    cellTrees = [];
+    cellNodes = [];
     cellClrs = []; // For presentation
     edges = [];
     curEdge;
@@ -484,7 +484,7 @@ export class Kruskals {
         this.grid = grid;
         for (const cell of grid.cells) {
             cell.open = true;
-            this.cellTrees[cell.gridIndex] = {
+            this.cellNodes[cell.gridIndex] = {
                 index: cell.gridIndex,
                 parent: null,
                 children: [],
@@ -508,8 +508,8 @@ export class Kruskals {
             return;
         this.curEdge = randomItemInArray(this.edges);
         const [index, dir] = this.curEdge;
-        let node1 = this.cellTrees[index];
-        let node2 = this.cellTrees[index + dir];
+        let node1 = this.cellNodes[index];
+        let node2 = this.cellNodes[index + dir];
         let root1 = findTreeRoot(node1);
         let root2 = findTreeRoot(node2);
         if (root1 !== root2) {
@@ -541,7 +541,7 @@ export class Kruskals {
             return;
         // Tree colors
         const allVisited = new Set();
-        for (const tree of this.cellTrees) {
+        for (const tree of this.cellNodes) {
             const visited = new Set([tree]);
             let root = tree;
             while (root.parent) {
@@ -594,7 +594,7 @@ export class Kruskals {
         }
     }
 }
-export class Prims {
+class Prims {
     static key = "Prim's";
     isComplete = false;
     grid;
@@ -646,28 +646,248 @@ export class Prims {
     }
 }
 // TODO: Eller's Algorithm
-export class Ellers {
+class Ellers {
     static key = "Eller's";
     isComplete = false;
     grid;
-    cellTrees = [];
     index = 0;
-    constructor(grid) {
+    idList = [];
+    sets = [];
+    idsInUse = new Set();
+    curEdge;
+    bridgeDown = [];
+    joinSetEdges;
+    phase = 0;
+    #idCounter = 1;
+    constructor(grid, options) {
+        const { "Eller's": { joinSetEdges }, } = options;
+        this.joinSetEdges = joinSetEdges;
         this.grid = grid;
     }
     step() {
         if (this.isComplete)
             return;
-        if (!this.cellTrees[this.index])
-            this.cellTrees[this.index] = {
-                index: this.index,
-                parent: null,
-                children: [],
-            };
+        const index = this.index++;
+        const atRightEdge = (index + 1) % this.grid.colCnt === 0;
+        switch (this.phase) {
+            case 0:
+                // Group cells in their own sets, but randomly merge some together
+                {
+                    if (this.idsInUse instanceof Array)
+                        throw "Can't be an array";
+                    if (this.idList[index] === undefined) {
+                        const newId = this.#idCounter++;
+                        this.idList[index] = newId;
+                        this.idsInUse.add(newId);
+                        this.sets[newId] = [index];
+                    }
+                    const id = this.idList[index];
+                    const cell = this.grid.cells[index];
+                    cell.open = true;
+                    if (atRightEdge) {
+                        const rowIsLast = index / this.grid.colCnt >= this.grid.rowCnt - 1;
+                        if (rowIsLast) {
+                            if (this.idsInUse.size === 1) {
+                                this.isComplete = true;
+                                return;
+                            }
+                            this.phase = 3;
+                            this.idsInUse = [...this.idsInUse];
+                        }
+                        else {
+                            this.phase = 1;
+                            // Return index to start of row
+                            const y = Math.floor(index / this.grid.colCnt);
+                            this.index = y * this.grid.colCnt;
+                            // Pick bridges ahead of time to make it look better
+                            const idsInRow = new Set();
+                            for (let i = this.index; i < (y + 1) * this.grid.colCnt; i++) {
+                                const id = this.idList[i];
+                                idsInRow.add(id);
+                            }
+                            for (const id of idsInRow) {
+                                const indicesInRow = this.sets[id].filter((i) => i / this.grid.colCnt >= y);
+                                const bridgeIndex = randomItemInArray(indicesInRow);
+                                this.bridgeDown[bridgeIndex] = true;
+                            }
+                        }
+                    }
+                    else if (Math.random() < 2 / 3) {
+                        const nextIndex = index + 1;
+                        const nextCell = this.grid.cells[nextIndex];
+                        const nextId = this.idList[nextIndex];
+                        if (nextId === undefined) {
+                            this.grid.cells[nextIndex].open = true;
+                            this.idList[nextIndex] = id;
+                            this.sets[id].push(nextIndex);
+                        }
+                        else {
+                            // Merge next to current
+                            const nextSet = this.sets[nextId];
+                            this.sets[id] = this.sets[id].concat(nextSet);
+                            for (const i of nextSet) {
+                                this.idList[i] = id;
+                            }
+                            // Remove merged set
+                            delete this.sets[nextId];
+                            this.idsInUse.delete(nextId);
+                        }
+                        carveWall(cell, nextCell, 1);
+                    }
+                }
+                break;
+            case 1:
+                // Connect current row to next row
+                {
+                    if (this.bridgeDown[index]) {
+                        const curCell = this.grid.cells[index];
+                        const curId = this.idList[index];
+                        const nextIndex = index + this.grid.colCnt;
+                        const nextCell = this.grid.cells[nextIndex];
+                        nextCell.open = true;
+                        this.idList[nextIndex] = curId;
+                        this.sets[curId].push(nextIndex);
+                        carveWall(curCell, nextCell, this.grid.colCnt);
+                    }
+                    if (atRightEdge) {
+                        const nextRowIsLast = (index + 1) / this.grid.colCnt >= this.grid.rowCnt - 1;
+                        if (!this.joinSetEdges && nextRowIsLast)
+                            this.phase = 2;
+                        else
+                            this.phase = 0;
+                    }
+                }
+                break;
+            case 2:
+                // ENDING 1
+                // Connect every cell in last row together
+                {
+                    const curCell = this.grid.cells[index];
+                    curCell.open = true;
+                    if (atRightEdge)
+                        this.isComplete = true;
+                    else {
+                        const nextCell = this.grid.cells[index + 1];
+                        carveWall(curCell, nextCell, 1);
+                    }
+                }
+                break;
+            case 3:
+                // ENDING 2
+                // Keep joining sets until one set remains
+                // Might prevent having maze be completely connected at the bottom
+                // Wouldn't work for mazes that are infinite tho
+                {
+                    if (this.idsInUse instanceof Set)
+                        throw "Can't be a set";
+                    const id = randomItemInArray(this.idsInUse);
+                    const set = this.sets[id];
+                    const edges = set.flatMap((i) => {
+                        const directions = [-this.grid.colCnt, 1, this.grid.colCnt, -1];
+                        return directions
+                            .filter((dir) => {
+                            const newIndex = i + dir;
+                            const newY = (newIndex / this.grid.colCnt) | 0;
+                            const oldY = (i / this.grid.colCnt) | 0;
+                            return (this.idList[newIndex] !== id &&
+                                newIndex >= 0 &&
+                                newIndex < this.grid.cells.length &&
+                                (Math.abs(dir) !== 1 || newY === oldY));
+                        })
+                            .map((dir) => [i, dir]);
+                    });
+                    this.curEdge = randomItemInArray(edges);
+                    const [index, dir] = this.curEdge;
+                    const cell1 = this.grid.cells[index];
+                    const cell2 = this.grid.cells[index + dir];
+                    carveWall(cell1, cell2, dir);
+                    const mergeId = this.idList[index + dir];
+                    const mergeSet = this.sets[mergeId];
+                    this.sets[id] = this.sets[id].concat(mergeSet);
+                    for (const i of mergeSet) {
+                        this.idList[i] = id;
+                    }
+                    // Remove merged set
+                    delete this.sets[mergeId];
+                    this.idsInUse = this.idsInUse.filter((n) => n !== mergeId);
+                    if (this.idsInUse.length === 1)
+                        this.isComplete = true;
+                }
+                break;
+        }
     }
+    iter = 0;
     draw(ctx) {
         if (this.isComplete)
             return;
+        const cellSize = this.grid.cellSize;
+        // Row
+        const y = Math.floor(this.index / this.grid.colCnt);
+        ctx.fillStyle = '#a00a';
+        ctx.fillRect(0, y * cellSize, this.grid.colCnt * cellSize, cellSize);
+        // Current cell
+        const curCell = this.grid.cells[this.index];
+        if (curCell) {
+            ctx.fillStyle = this.phase === 1 ? '#00aa' : '#0a0a';
+            ctx.fillRect(curCell.screenX, curCell.screenY, cellSize, cellSize);
+        }
+        // Current edge
+        if (this.curEdge) {
+            const [index, dir] = this.curEdge;
+            const cell = this.grid.cells[index];
+            ctx.beginPath();
+            switch (dir) {
+                case -this.grid.colCnt: // Top
+                    ctx.moveTo(cell.screenX, cell.screenY);
+                    ctx.lineTo(cell.screenX + cell.size, cell.screenY);
+                    break;
+                case 1: // Right
+                    ctx.moveTo(cell.screenX + cell.size, cell.screenY);
+                    ctx.lineTo(cell.screenX + cell.size, cell.screenY + cell.size);
+                    break;
+                case this.grid.colCnt: // Bottom
+                    ctx.moveTo(cell.screenX + cell.size, cell.screenY + cell.size);
+                    ctx.lineTo(cell.screenX, cell.screenY + cell.size);
+                    break;
+                case -1: // Left
+                    ctx.moveTo(cell.screenX, cell.screenY + cell.size);
+                    ctx.lineTo(cell.screenX, cell.screenY);
+                    break;
+                default:
+                    throw 'Impossible direction';
+                    break;
+            }
+            ctx.strokeStyle = '#0a0';
+            ctx.lineWidth = 5;
+            ctx.stroke();
+        }
+        // Cell ids
+        for (let i = 0; i < this.idList.length; i++) {
+            const id = this.idList[i];
+            if (id !== undefined) {
+                const { screenX, screenY, size } = this.grid.cells[i];
+                const x = screenX + size / 2;
+                const y = screenY + size / 2;
+                ctx.fillStyle = '#fff';
+                ctx.font = `${cellSize / 3}px monospace`;
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillText(String(id), x, y);
+            }
+        }
+        // // Bridges
+        // for (let i = 0; i < this.grid.cells.length; i++) {
+        // 	if (this.bridgeDown[i]) {
+        // 		const curCell = this.grid.cells[i];
+        // 		ctx.fillStyle = '#00a';
+        // 		ctx.fillRect(
+        // 			curCell.screenX,
+        // 			curCell.screenY + (cellSize / 4) * 3,
+        // 			cellSize,
+        // 			cellSize / 2,
+        // 		);
+        // 	}
+        // }
     }
 }
 // TODO: Sidewinder Algorithm
@@ -682,6 +902,7 @@ export const Algorithms = [
     BinaryTree,
     Kruskals,
     Prims,
+    Ellers,
 ];
 // Some boilerplate
 // export class ALGO_NAME {

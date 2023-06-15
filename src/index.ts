@@ -37,6 +37,9 @@ const mazeGen: {
 			horizontal: 'EAST',
 			vertical: 'SOUTH',
 		},
+		"Eller's": {
+			joinSetEdges: false,
+		},
 	},
 };
 if (mazeGen.class) {
@@ -288,16 +291,33 @@ algoTypeSelection.addEventListener('change', () => {
 const binaryTreeSelection = document.querySelector(
 	'.binaryTree select',
 ) as HTMLSelectElement;
+const binaryTreeOptions = mazeGen.options['Binary Tree'];
+binaryTreeSelection.value =
+	binaryTreeOptions.vertical + '-' + binaryTreeOptions.horizontal;
 binaryTreeSelection.addEventListener('change', () => {
-	const [vertical, horizontal] = binaryTreeSelection.value.split('-') as [
-		any,
-		any,
-	];
-	const options = mazeGen.options['Binary Tree'];
-	if (options.horizontal === horizontal && options.vertical === vertical) return;
-	options.horizontal = horizontal;
-	options.vertical = vertical;
+	const [vertical, horizontal] = binaryTreeSelection.value.split('-') as any;
+	if (
+		binaryTreeOptions.horizontal === horizontal &&
+		binaryTreeOptions.vertical === vertical
+	)
+		return;
+	binaryTreeOptions.horizontal = horizontal;
+	binaryTreeOptions.vertical = vertical;
 	restart({});
+});
+
+const ellersJoinSetEdges = document.querySelector(
+	'.ellersJoinSetEdges button',
+) as HTMLButtonElement;
+const ellersOptions = mazeGen.options["Eller's"];
+ellersJoinSetEdges.textContent = ellersOptions.joinSetEdges
+	? 'Enabled'
+	: 'Disabled';
+ellersJoinSetEdges.addEventListener('click', () => {
+	ellersOptions.joinSetEdges = !ellersOptions.joinSetEdges;
+	ellersJoinSetEdges.textContent = ellersOptions.joinSetEdges
+		? 'Enabled'
+		: 'Disabled';
 });
 
 let prevTime = Date.now();

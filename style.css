@@ -73,6 +73,10 @@ button:disabled {
 	font-weight: bold;
 }
 
+.algorithm-list ol > li::marker {
+	font-weight: bold;
+}
+
 .options {
 	margin: 0.3rem 0;
 }
@@ -83,12 +87,13 @@ button:disabled {
 } */
 
 .buttons {
-	padding-top: 0.5rem;
 	display: flex;
 	flex-wrap: wrap;
 	gap: 0.2rem;
 	width: 10rem;
 	height: min-content;
+	border-top: 2px solid black;
+	padding: 0.5rem 0.3rem 0 0.3rem;
 }
 
 .buttons > button {
@@ -100,6 +105,8 @@ button:disabled {
 	display: flex;
 	flex-direction: column;
 	gap: 0.2rem;
+	border-top: 2px solid black;
+	padding: 0 0.3rem;
 }
 
 :where(.misc, .mazeAlgo) > div {

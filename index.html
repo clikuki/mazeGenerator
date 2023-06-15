@@ -53,7 +53,6 @@
 						>
 							Export as graph
 						</button>
-						<br />
 					</div>
 					<div class="misc">
 						<div class="algoType">
@@ -87,6 +86,10 @@
 								<option value="SOUTH-WEST">South-West</option>
 								<option value="SOUTH-EAST">South-East</option>
 							</select>
+						</div>
+						<div class="ellersJoinSetEdges">
+							<label>Eller's: Join set edges</label>
+							<button></button>
 						</div>
 					</div>
 				</div>
@@ -237,6 +240,36 @@
 								All paths tend to go back to the algorithm's starting point, which may
 								undesirable
 							</li>
+							<li>Guaranteed to finish</li>
+						</ul>
+					</li>
+					<li>
+						<span>Eller's</span>
+						<ol>
+							<li>In a row, put each cell into their own set.</li>
+							<li>Randomly merge cells that are disjoint/in separate sets.</li>
+							<li>Pick one cell from each set and carve down into the next row.</li>
+							<li>
+								Put the remaining closed cells of the next row into their own set
+							</li>
+							<li>Repeat steps 2 - 4 until the last row is reached.</li>
+							<li>
+								Connect every disjoint cell in the last row so that every set is
+								combined into one
+								<br />
+								<span style="font-style: italic; font-weight: bold;">OR</span>
+								<br />
+								While there is more than one set, randomly carve walls between disjoint
+								sets and merge them
+								<br />
+							</li>
+						</ol>
+						<ul>
+							<li>
+								Slow/Quick - Can be fast if set operations are fast and went row-by-row
+								instead cell by cell
+							</li>
+							<li>Can create infinitely long or tall mazes</li>
 							<li>Guaranteed to finish</li>
 						</ul>
 					</li>
