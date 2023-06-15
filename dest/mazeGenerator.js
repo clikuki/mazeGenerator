@@ -399,8 +399,8 @@ class AldousBroderWilsonHybrid {
             return;
         }
         if (this.phase === 0) {
-            const visitedCellCount = this.grid.cells.filter(({ open: visited }) => visited).length;
-            if (visitedCellCount >= (this.grid.rowCnt * this.grid.colCnt) / 3) {
+            const visitedCellCount = this.grid.cells.filter(({ open }) => open).length;
+            if (visitedCellCount >= (this.grid.rowCnt * this.grid.colCnt) / 8) {
                 this.phase = 1;
                 this.walker = new Wilsons(this.grid);
             }
