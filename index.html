@@ -91,6 +91,27 @@
 							<label>Eller's: Join set edges</label>
 							<button></button>
 						</div>
+						<div class="growingTree">
+							<label for="growingTreeInput">Growing Tree picking style</label>
+							<select id="growingTreeInput">
+								<option value="NEWEST">Newest - Recursive Backtracking</option>
+								<option value="RANDOM">Random - Prim's</option>
+								<option value="OLDEST">Oldest</option>
+								<option value="MIDDLE">Middle</option>
+								<!-- newest/random -->
+								<option value="NEWEST-RANDOM-3-1">Newest/Random - 3/1</option>
+								<option value="NEWEST-RANDOM-1-1">Newest/Random - 1/1</option>
+								<option value="NEWEST-RANDOM-1-3">Newest/Random - 1/3</option>
+								<!-- random/oldest -->
+								<option value="RANDOM-OLDEST-3-1">Random/Oldest - 3/1</option>
+								<option value="RANDOM-OLDEST-1-1">Random/Oldest - 1/1</option>
+								<option value="RANDOM-OLDEST-1-3">Random/Oldest - 1/3</option>
+								<!-- newest/oldest -->
+								<option value="NEWEST-OLDEST-3-1">Newest/Oldest - 3/1</option>
+								<option value="NEWEST-OLDEST-1-1">Newest/Oldest - 1/1</option>
+								<option value="NEWEST-OLDEST-1-3">Newest/Oldest - 1/3</option>
+							</select>
+						</div>
 					</div>
 				</div>
 			</div>
@@ -108,7 +129,6 @@
 								Creates a path while avoiding itself and the walls. When a dead-end is
 								reached, it backtracks until it reaches open space to branch away
 							</li>
-							<li>Slow - Only updates one cell per step</li>
 							<li>Long, winding corridors</li>
 							<li>Few branches</li>
 						</ul>
@@ -230,7 +250,6 @@
 								then carve a wall from it to an open neigbor. Repeat until all cells are
 								connected
 							</li>
-							<li>Slow - Only updates one cell per step</li>
 							<li>Creates many short dead-ends</li>
 							<li>
 								All paths tend to go back to the algorithm's starting point, which may
@@ -297,7 +316,6 @@
 							<li>
 								It is impossible for northern dead-ends to occur with this algorithm
 							</li>
-							<li>Slow - Only updates one cell per step</li>
 						</ul>
 					</li>
 					<li>
@@ -322,6 +340,36 @@
 							<li>
 								Slow - Only updates one cell per step and can take some time to find an
 								unvisited cell when in the hunt phase
+							</li>
+						</ul>
+					</li>
+					<li>
+						<span>Growing Tree</span>
+						<ol>
+							<li>Create a list and initialize it with a random cell</li>
+							<li>Pick a cell from the list</li>
+							<li>
+								Select one of its neighbors to carve to and add it to the list. If there
+								are no unvisited neighbors, remove that cell from the list
+							</li>
+							<li>Repeat 2 - 3 until the list is empty</li>
+						</ol>
+						<ul>
+							<li>
+								While simple, the fun of this algorithm comes from how you pick cells
+								from the list
+								<ul>
+									<li>
+										Picking the newest/last leads it to act like the Recursive
+										Backtracking Algorithm
+									</li>
+									<li>Picking randomly leads it to act like Prim's</li>
+									<li>
+										Picking the oldest/first leads it to create long straight corridors
+									</li>
+								</ul>
+								You can also mix these picking styles to create interesting and varied
+								mazes
 							</li>
 						</ul>
 					</li>

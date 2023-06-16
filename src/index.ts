@@ -40,6 +40,11 @@ const mazeGen: {
 		"Eller's": {
 			joinSetEdges: false,
 		},
+		'Growing Tree': {
+			pickingStyle: {
+				NEWEST: 1,
+			},
+		},
 	},
 };
 if (mazeGen.class) {
@@ -319,6 +324,45 @@ ellersJoinSetEdges.addEventListener('click', () => {
 	ellersJoinSetEdges.textContent = ellersOptions.joinSetEdges
 		? 'Enabled'
 		: 'Disabled';
+});
+
+const growingTreePickingStyleSelection = document.querySelector(
+	'.growingTree select',
+) as HTMLSelectElement;
+const growingTreeOptions = mazeGen.options['Growing Tree'];
+{
+	const pickStyleEntries = Object.entries(growingTreeOptions.pickingStyle);
+	const initValue =
+		pickStyleEntries.length === 1
+			? pickStyleEntries[0][0]
+			: pickStyleEntries
+					// :>
+					.reduce(
+						([nl, cl], [n, c]) =>
+							[
+								[...nl, n],
+								[...cl, c],
+							] as [string[], number[]], // :<
+						[[], []] as [string[], number[]],
+					)
+					.flat()
+					.join('-');
+	// console.log(initValue);
+	growingTreePickingStyleSelection.value = initValue;
+}
+growingTreePickingStyleSelection.addEventListener('change', () => {
+	const value = growingTreePickingStyleSelection.value as any;
+	if (value.includes('-')) {
+		const [style1, style2, chance1, chance2] = value.split('-');
+		growingTreeOptions.pickingStyle = {
+			[style1]: +chance1,
+			[style2]: +chance2,
+		};
+	} else {
+		const pickingStyle = value;
+		growingTreeOptions.pickingStyle = { [pickingStyle]: 1 };
+	}
+	restart({});
 });
 
 let prevTime = Date.now();

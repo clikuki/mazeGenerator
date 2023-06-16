@@ -1,7 +1,21 @@
 import { Cell, Grid } from './grid.js';
 import { randomItemInArray, shuffle } from './utils.js';
 
+export interface MazeOptions {
+	[BinaryTree.key]: {
+		horizontal: Horizontal;
+		vertical: Vertical;
+	};
+	[Ellers.key]: {
+		joinSetEdges: boolean;
+	};
+	[GrowingTree.key]: {
+		pickingStyle: Partial<Record<GrowingTreePickingStyle, number>>;
+	};
+}
+
 type RGB = [number, number, number];
+type GrowingTreePickingStyle = 'NEWEST' | 'RANDOM' | 'OLDEST' | 'MIDDLE';
 
 // Tree Graph types and heler functions
 interface TreeNode {
@@ -61,6 +75,7 @@ function checkIfComplete(grid: Grid) {
 	return grid.cells.every(({ open: visited }) => visited);
 }
 
+// Does not check if direction's cell is visited, that is left to the specific algorithm
 function findValidDirections(grid: Grid, index: number) {
 	const cell = grid.cells[index];
 	return [-grid.colCnt, 1, grid.colCnt, -1].filter((dir) => {
@@ -78,16 +93,6 @@ function findValidDirections(grid: Grid, index: number) {
 
 function randIntBetween(min: number, max: number) {
 	return Math.floor(Math.random() * (max - min + 1)) + min;
-}
-
-export interface MazeOptions {
-	[BinaryTree.key]: {
-		horizontal: Horizontal;
-		vertical: Vertical;
-	};
-	[Ellers.key]: {
-		joinSetEdges: boolean;
-	};
 }
 
 class AldousBroder {
@@ -325,13 +330,10 @@ class RecursiveBacktracking {
 		if (this.isComplete || !this.stack.length) return;
 
 		ctx.fillStyle = '#f004';
-		for (const { cell } of this.stack) {
-			ctx.fillRect(
-				cell.screenX,
-				cell.screenY,
-				this.grid.cellSize,
-				this.grid.cellSize,
-			);
+		for (const {
+			cell: { screenX, screenY, size },
+		} of this.stack) {
+			ctx.fillRect(screenX, screenY, size, size);
 		}
 
 		ctx.save();
@@ -1121,7 +1123,79 @@ class HuntAndKill {
 	}
 }
 
-// TODO: Customizable "Growing Tree" Algorithm
+class GrowingTree {
+	static readonly key = 'Growing Tree';
+	isComplete = false;
+	grid: Grid;
+	bag: number[];
+	pickingStyle: GrowingTreePickingStyle[] = [];
+	constructor(grid: Grid, { 'Growing Tree': { pickingStyle } }: MazeOptions) {
+		this.grid = grid;
+		this.bag = [getRandomUnvisitedCellIndex(grid)];
+		grid.cells[this.bag[0]].open = true;
+
+		for (const name in pickingStyle) {
+			const chance = pickingStyle[name as GrowingTreePickingStyle]!;
+			this.pickingStyle.push(...Array(chance).fill(name));
+		}
+	}
+	step() {
+		if (this.isComplete) return;
+
+		const index = this.#chooseCell();
+		const directions = shuffle(findValidDirections(this.grid, index));
+		for (const dir of directions) {
+			const nextCell = this.grid.cells[index + dir];
+			if (!nextCell.open) {
+				const cell = this.grid.cells[index];
+				carveWall(cell, nextCell, dir);
+				nextCell.open = true;
+				this.bag.push(index + dir);
+				return;
+			}
+		}
+
+		this.bag = this.bag.filter((i) => i !== index);
+		if (this.bag.length === 0) {
+			this.isComplete = true;
+		}
+	}
+	#chooseCell() {
+		switch (randomItemInArray(this.pickingStyle)) {
+			case 'NEWEST':
+				return this.bag[this.bag.length - 1];
+			case 'RANDOM':
+				return randomItemInArray(this.bag);
+			case 'OLDEST':
+				return this.bag[0];
+			case 'MIDDLE':
+				return this.bag[Math.floor(this.bag.length / 2)];
+			default:
+				throw 'Invalid picking style';
+		}
+	}
+	draw(ctx: CanvasRenderingContext2D) {
+		if (this.isComplete) return;
+
+		for (let i = 0; i < this.bag.length; i++) {
+			const index = this.bag[i];
+
+			// Cell clr
+			const { screenX, screenY, size } = this.grid.cells[index];
+			ctx.fillStyle = '#f004';
+			ctx.fillRect(screenX, screenY, size, size);
+
+			// Age
+			const x = screenX + size / 2;
+			const y = screenY + size / 2;
+			ctx.fillStyle = '#fff';
+			ctx.font = `${size / 3}px monospace`;
+			ctx.textAlign = 'center';
+			ctx.textBaseline = 'middle';
+			ctx.fillText(String(i), x, y);
+		}
+	}
+}
 
 export const Algorithms = [
 	RecursiveBacktracking,
@@ -1135,6 +1209,7 @@ export const Algorithms = [
 	Ellers,
 	Sidewinder,
 	HuntAndKill,
+	GrowingTree,
 ];
 
 // Some boilerplate
