@@ -297,6 +297,32 @@
 							<li>
 								It is impossible for northern dead-ends to occur with this algorithm
 							</li>
+							<li>Slow - Only updates one cell per step</li>
+						</ul>
+					</li>
+					<li>
+						<span>Hunt And Kill</span>
+						<ul>
+							<li>
+								Creates a path while avoiding itself and the walls. When a dead-end is
+								reached, it "hunts" for an unvisited cell neighboring a visited cell and
+								restarts the algorithm from their until no cells are unvisited
+							</li>
+							<li>
+								Very similar to the recursive backtracking in features and generation,
+								the only difference is that instead of backtracking to find an open
+								cell, it searches the maze for an open cell instead. This makesit
+								somewhat simpler, especially when
+							</li>
+							<li>
+								My implementation includes an optimization where it remembers the row it
+								last found an unvisited cell, which speeds up the later phases when most
+								of the maze is already visited
+							</li>
+							<li>
+								Slow - Only updates one cell per step and can take some time to find an
+								unvisited cell when in the hunt phase
+							</li>
 						</ul>
 					</li>
 					<span

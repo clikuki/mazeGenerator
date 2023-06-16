@@ -249,7 +249,7 @@ class RecursiveBacktracking {
         }
         const directions = head.directionsToTry ||
             shuffle(findValidDirections(this.grid, head.cell.gridIndex));
-        if (!directions.length) {
+        if (directions.length === 0) {
             this.stack.pop();
             return;
         }
@@ -933,7 +933,86 @@ class Sidewinder {
         }
     }
 }
-// TODO: "Hunt and Kill" Algorithm
+class HuntAndKill {
+    static key = 'Hunt and Kill';
+    isComplete = false;
+    grid;
+    index;
+    phase = 0;
+    huntStart = 0;
+    mazeCheckUntil;
+    constructor(grid) {
+        this.grid = grid;
+        this.index = getRandomUnvisitedCellIndex(grid);
+        grid.cells[this.index].open = true;
+    }
+    step() {
+        if (this.isComplete)
+            return;
+        const curCell = this.grid.cells[this.index];
+        switch (this.phase) {
+            case 0:
+                {
+                    const directions = findValidDirections(this.grid, this.index);
+                    for (const dir of shuffle(directions)) {
+                        const nextCell = this.grid.cells[this.index + dir];
+                        if (!nextCell.open) {
+                            nextCell.open = true;
+                            carveWall(curCell, nextCell, dir);
+                            this.index += dir;
+                            return;
+                        }
+                    }
+                    // Begin hunting for new index
+                    this.phase = 1;
+                    this.index = this.huntStart * this.grid.colCnt;
+                }
+                break;
+            case 1:
+                {
+                    if (this.index >= Number(this.mazeCheckUntil)) {
+                        this.isComplete = true;
+                        return;
+                    }
+                    if (!curCell.open) {
+                        const directions = findValidDirections(this.grid, this.index);
+                        for (const dir of shuffle(directions)) {
+                            const mazeCell = this.grid.cells[this.index + dir];
+                            if (mazeCell.open) {
+                                curCell.open = true;
+                                carveWall(curCell, mazeCell, dir);
+                                this.huntStart = Math.floor(this.index / this.grid.colCnt);
+                                this.phase = 0;
+                                this.mazeCheckUntil = undefined;
+                                return;
+                            }
+                        }
+                    }
+                    // Final check if maze is truly complete
+                    if (++this.index >= this.grid.cells.length) {
+                        if (this.mazeCheckUntil !== undefined) {
+                            this.isComplete = true;
+                            return;
+                        }
+                        const { colCnt, rowCnt } = this.grid;
+                        this.mazeCheckUntil = Math.min(this.huntStart + 1, rowCnt - 1) * colCnt;
+                        this.huntStart = 0;
+                        this.index = 0;
+                    }
+                }
+                break;
+        }
+    }
+    draw(ctx) {
+        if (this.isComplete)
+            return;
+        const curCell = this.grid.cells[this.index];
+        if (curCell) {
+            ctx.fillStyle = this.phase === 0 ? '#0a0a' : '#a00a';
+            ctx.fillRect(curCell.screenX, curCell.screenY, this.grid.cellSize, this.grid.cellSize);
+        }
+    }
+}
 // TODO: Customizable "Growing Tree" Algorithm
 export const Algorithms = [
     RecursiveBacktracking,
@@ -946,6 +1025,7 @@ export const Algorithms = [
     Prims,
     Ellers,
     Sidewinder,
+    HuntAndKill,
 ];
 // Some boilerplate
 // class ALGO_NAME {
