@@ -76,6 +76,10 @@ function findValidDirections(grid: Grid, index: number) {
 	});
 }
 
+function randIntBetween(min: number, max: number) {
+	return Math.floor(Math.random() * (max - min + 1)) + min;
+}
+
 export interface MazeOptions {
 	[BinaryTree.key]: {
 		horizontal: Horizontal;
@@ -727,7 +731,6 @@ class Prims {
 	}
 }
 
-// TODO: Eller's Algorithm
 class Ellers {
 	static readonly key = "Eller's";
 	isComplete = false;
@@ -989,7 +992,45 @@ class Ellers {
 	}
 }
 
-// TODO: Sidewinder Algorithm
+class Sidewinder {
+	static readonly key = 'Sidewinder';
+	isComplete = false;
+	grid: Grid;
+	index = 0;
+	runStart = 0;
+	constructor(grid: Grid) {
+		this.grid = grid;
+		this.grid.cells[0].open = true;
+	}
+	step() {
+		if (this.isComplete) return;
+
+		const index = this.index++;
+		const width = this.grid.colCnt;
+		const x = index % width;
+		const atEndColumn = x + 1 >= width;
+
+		const nextCell = this.grid.cells[index + 1];
+		if (nextCell) nextCell.open = true;
+		else this.isComplete = true;
+
+		if (index >= width && (atEndColumn || Math.random() < 1 / 3)) {
+			// End run and carve north
+			const bridgeIndex = randIntBetween(this.runStart, index);
+			const bridgeCell = this.grid.cells[bridgeIndex];
+			const toCell = this.grid.cells[bridgeIndex - width];
+			carveWall(bridgeCell, toCell, -width);
+			this.runStart = index + 1;
+		} else if (!atEndColumn) {
+			// Carve east
+			const curCell = this.grid.cells[index];
+			carveWall(curCell, nextCell, 1);
+		} else {
+			// First row end reached
+			this.runStart = index + 1;
+		}
+	}
+}
 
 // TODO: "Hunt and Kill" Algorithm
 
@@ -1005,10 +1046,11 @@ export const Algorithms = [
 	Kruskals,
 	Prims,
 	Ellers,
+	Sidewinder,
 ];
 
 // Some boilerplate
-// export class ALGO_NAME {
+// class ALGO_NAME {
 // 	static readonly key = "ALGO_NAME";
 // 	isComplete = false;
 // 	grid: Grid;

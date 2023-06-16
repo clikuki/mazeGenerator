@@ -111,7 +111,6 @@
 							<li>Slow - Only updates one cell per step</li>
 							<li>Long, winding corridors</li>
 							<li>Few branches</li>
-							<li>Guaranteed to finish</li>
 						</ul>
 					</li>
 					<li>
@@ -128,7 +127,6 @@
 								Has obvious walls and bottlenecks due to how recursively cut rectangles
 								into smaller and smaller rectangles within itself
 							</li>
-							<li>Guaranteed to finish</li>
 						</ul>
 					</li>
 					<li>
@@ -164,7 +162,7 @@
 								Very slow - Slow at the start as there is less visited cells, but gets
 								faster as it creates more corridors for it to path back to
 							</li>
-							<li>Not guaranteed to finish</li>
+							<li>Not guaranteed to finish - Could keep generating for forever!</li>
 						</ul>
 					</li>
 					<li>
@@ -182,7 +180,7 @@
 								Average to slow - Faster than its constituent algorithms but still takes
 								longer than other algorithms due to its randomness
 							</li>
-							<li>Not guaranteed to finish</li>
+							<li>Not guaranteed to finish - Could keep generating for forever!</li>
 						</ul>
 					</li>
 					<li>
@@ -205,7 +203,6 @@
 								when needed. This allows for absolutely massive mazes that don't use too
 								much memory
 							</li>
-							<li>Guaranteed to finish</li>
 						</ul>
 					</li>
 					<li>
@@ -222,7 +219,6 @@
 								height of the grid
 							</li>
 							<li>Creates many short dead-ends</li>
-							<li>Guaranteed to finish</li>
 						</ul>
 					</li>
 					<li>
@@ -240,7 +236,6 @@
 								All paths tend to go back to the algorithm's starting point, which may
 								undesirable
 							</li>
-							<li>Guaranteed to finish</li>
 						</ul>
 					</li>
 					<li>
@@ -270,7 +265,38 @@
 								instead cell by cell
 							</li>
 							<li>Can create infinitely long or tall mazes</li>
-							<li>Guaranteed to finish</li>
+							<li>
+								Usually creates a long corridor at the end where most paths pass through
+							</li>
+						</ul>
+					</li>
+					<li>
+						<span>Sidewinder</span>
+						<ol>
+							<li>Create an empty set</li>
+							<li>Add the current cell to the set</li>
+							<li>decide whether we want to carve to the next cell or not</li>
+							<ul>
+								<li>When on the first row, carve to the next cell</li>
+								<li>When at the end of the column, do not carve</li>
+								<li>Otherwise, pick randomly</li>
+							</ul>
+							<li>If we carved, set the next cell as the new current head</li>
+							<li>
+								Otherwise, pick a random cell from the set and carve upwards, connecting
+								this set to the maze. Empty the set and start on the next cell
+							</li>
+							<li>Repeat until all rows are complete</li>
+						</ol>
+						<ul>
+							<li>
+								The Sidewinder is called so because you can solve the maze from bottom
+								to top by winding side to side and going up when possible
+							</li>
+							<li>Creates a long corridor at the top where most paths pass through</li>
+							<li>
+								It is impossible for northern dead-ends to occur with this algorithm
+							</li>
 						</ul>
 					</li>
 					<span

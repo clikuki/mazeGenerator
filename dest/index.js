@@ -54,7 +54,9 @@ const stepBtn = document.querySelector('.step');
 stepBtn.addEventListener('click', () => {
     if (mazeGen.instance && !mazeGen.instance.isComplete) {
         mazeGen.instance.step();
-        mazeGen.instance.draw(ctx);
+        // @ts-ignore
+        if (mazeGen.instance.draw)
+            mazeGen.instance.draw(ctx);
     }
     else if (mazeSolver && !mazeSolver.isComplete) {
         mazeSolver.step();
@@ -319,7 +321,9 @@ let prevTime = Date.now();
     if (mazeGen.instance && !mazeGen.instance.isComplete) {
         if (!pause && stepRunners)
             mazeGen.instance.step();
-        mazeGen.instance.draw(ctx);
+        // @ts-ignore
+        if (mazeGen.instance.draw)
+            mazeGen.instance.draw(ctx);
     }
     else if (mazeSolver) {
         if (!mazeSolver.isComplete && !pause && stepRunners)
