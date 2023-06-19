@@ -293,7 +293,9 @@ class RecursiveDivision {
     isComplete = false;
     chambers;
     grid;
-    constructor(grid) {
+    useBFS;
+    constructor(grid, { 'Recursive Division': { useBFS } }) {
+        this.useBFS = useBFS;
         for (const cell of grid.cells) {
             cell.open = true;
             cell.walls = [false, false, false, false];
@@ -320,7 +322,11 @@ class RecursiveDivision {
     step() {
         if (this.isComplete)
             return;
-        const chamber = this.chambers.pop();
+        let chamber;
+        if (this.useBFS)
+            chamber = this.chambers.shift();
+        else
+            chamber = this.chambers.pop();
         if (!chamber) {
             this.isComplete = true;
             return;
@@ -383,7 +389,7 @@ class RecursiveDivision {
         const chamber = this.chambers[this.chambers.length - 1];
         if (!chamber)
             return;
-        ctx.fillStyle = '#f003';
+        ctx.fillStyle = '#f00a';
         const cellSize = this.grid.cellSize;
         ctx.fillRect(chamber[0] * cellSize, chamber[1] * cellSize, chamber[2] * cellSize, chamber[3] * cellSize);
     }

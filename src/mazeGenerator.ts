@@ -2,6 +2,9 @@ import { Cell, Grid } from './grid.js';
 import { randomItemInArray, shuffle } from './utils.js';
 
 export interface MazeOptions {
+	[RecursiveDivision.key]: {
+		useBFS: boolean;
+	};
 	[BinaryTree.key]: {
 		horizontal: Horizontal;
 		vertical: Vertical;
@@ -365,7 +368,9 @@ class RecursiveDivision {
 	isComplete = false;
 	chambers: [x: number, y: number, w: number, h: number][];
 	grid: Grid;
-	constructor(grid: Grid) {
+	useBFS: boolean;
+	constructor(grid: Grid, { 'Recursive Division': { useBFS } }: MazeOptions) {
+		this.useBFS = useBFS;
 		for (const cell of grid.cells) {
 			cell.open = true;
 			cell.walls = [false, false, false, false];
@@ -385,7 +390,9 @@ class RecursiveDivision {
 	step() {
 		if (this.isComplete) return;
 
-		const chamber = this.chambers.pop();
+		let chamber;
+		if (this.useBFS) chamber = this.chambers.shift();
+		else chamber = this.chambers.pop();
 		if (!chamber) {
 			this.isComplete = true;
 			return;
@@ -446,7 +453,7 @@ class RecursiveDivision {
 		if (this.isComplete) return;
 		const chamber = this.chambers[this.chambers.length - 1];
 		if (!chamber) return;
-		ctx.fillStyle = '#f003';
+		ctx.fillStyle = '#f00a';
 		const cellSize = this.grid.cellSize;
 		ctx.fillRect(
 			chamber[0] * cellSize,

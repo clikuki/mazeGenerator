@@ -33,6 +33,9 @@ const mazeGen: {
 	class: undefined,
 	instance: undefined,
 	options: {
+		'Recursive Division': {
+			useBFS: false,
+		},
 		'Binary Tree': {
 			horizontal: 'EAST',
 			vertical: 'SOUTH',
@@ -294,6 +297,17 @@ algoTypeSelection.addEventListener('change', () => {
 	throw 'Invalid algorithm chosen';
 });
 
+const rdTraversalSelection = document.querySelector(
+	'.recursiveDivisionTraversal select',
+) as HTMLSelectElement;
+const rdOption = mazeGen.options['Recursive Division'];
+rdTraversalSelection.value = rdOption.useBFS ? 'BFS' : 'DFS';
+rdTraversalSelection.addEventListener('click', () => {
+	const method = rdTraversalSelection.value === 'BFS' ? true : false;
+	rdOption.useBFS = method;
+	if (mazeGen.class?.key === 'Recursive Division') restart({});
+});
+
 const binaryTreeSelection = document.querySelector(
 	'.binaryTree select',
 ) as HTMLSelectElement;
@@ -302,15 +316,14 @@ binaryTreeSelection.value =
 	binaryTreeOptions.vertical + '-' + binaryTreeOptions.horizontal;
 binaryTreeSelection.addEventListener('change', () => {
 	const [vertical, horizontal] = binaryTreeSelection.value.split('-') as any;
-	if (
-		binaryTreeOptions.horizontal === horizontal &&
-		binaryTreeOptions.vertical === vertical
-	)
-		return;
 	binaryTreeOptions.horizontal = horizontal;
 	binaryTreeOptions.vertical = vertical;
-	restart({});
+	if (mazeGen.class?.key === 'Binary Tree') restart({});
 });
+
+function toSigFigs(n: number, sigFigCnt: number) {
+	return +n.toPrecision(sigFigCnt);
+}
 
 const ellersCarveChanceInput = document.querySelector(
 	'.ellersCarveChance input',
@@ -319,15 +332,17 @@ const ellersOptions = mazeGen.options["Eller's"];
 ellersCarveChanceInput.valueAsNumber =
 	Math.floor(ellersOptions.mergeChance * 100) / 100;
 ellersCarveChanceInput.addEventListener('change', () => {
-	const newChance = Math.floor(ellersCarveChanceInput.valueAsNumber * 100) / 100;
+	const newChance = toSigFigs(ellersCarveChanceInput.valueAsNumber, 2);
 	if (isNaN(newChance) || newChance < 0 || newChance > 1) {
-		ellersCarveChanceInput.valueAsNumber =
-			Math.floor(ellersOptions.mergeChance * 100) / 100;
+		ellersCarveChanceInput.valueAsNumber = toSigFigs(
+			ellersOptions.mergeChance,
+			2,
+		);
 		return;
 	}
 	ellersOptions.mergeChance = newChance;
 	ellersCarveChanceInput.valueAsNumber = newChance;
-	restart({});
+	if (mazeGen.class?.key === "Eller's") restart({});
 });
 
 const growingTreePickingStyleSelection = document.querySelector(
@@ -365,7 +380,7 @@ growingTreePickingStyleSelection.addEventListener('change', () => {
 		const pickingStyle = value;
 		growingTreeOptions.pickingStyle = { [pickingStyle]: 1 };
 	}
-	restart({});
+	if (mazeGen.class?.key === 'Growing Tree') restart({});
 });
 
 let prevTime = Date.now();
