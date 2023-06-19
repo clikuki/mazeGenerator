@@ -18,9 +18,6 @@ const mazeGen = {
             horizontal: 'EAST',
             vertical: 'SOUTH',
         },
-        "Eller's": {
-            joinSetEdges: false,
-        },
         'Growing Tree': {
             pickingStyle: {
                 NEWEST: 1,
@@ -167,8 +164,8 @@ exportAsGridBtn.addEventListener('click', () => {
     if (!mazeGen.instance || !mazeGen.instance.isComplete)
         return;
     const simplifiedGrid = grid.cells.map((cell) => ({
-        x: cell.gridX,
-        y: cell.gridY,
+        x: cell.x,
+        y: cell.y,
         top: cell.walls[0],
         right: cell.walls[1],
         bottom: cell.walls[2],
@@ -253,17 +250,6 @@ binaryTreeSelection.addEventListener('change', () => {
     binaryTreeOptions.horizontal = horizontal;
     binaryTreeOptions.vertical = vertical;
     restart({});
-});
-const ellersJoinSetEdges = document.querySelector('.ellersJoinSetEdges button');
-const ellersOptions = mazeGen.options["Eller's"];
-ellersJoinSetEdges.textContent = ellersOptions.joinSetEdges
-    ? 'Enabled'
-    : 'Disabled';
-ellersJoinSetEdges.addEventListener('click', () => {
-    ellersOptions.joinSetEdges = !ellersOptions.joinSetEdges;
-    ellersJoinSetEdges.textContent = ellersOptions.joinSetEdges
-        ? 'Enabled'
-        : 'Disabled';
 });
 const growingTreePickingStyleSelection = document.querySelector('.growingTree select');
 const growingTreeOptions = mazeGen.options['Growing Tree'];

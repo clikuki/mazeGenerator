@@ -1,64 +1,14 @@
-export class Cell {
-	gridIndex: number;
-	gridX: number;
-	gridY: number;
+export interface Cell {
+	index: number;
+	x: number;
+	y: number;
 	screenX: number;
 	screenY: number;
-	size: number;
-	open = false;
-	walls = [true, true, true, true];
-	constructor(grid: Grid, i: number, j: number, s: number) {
-		this.gridIndex = j * grid.colCnt + i;
-		this.gridX = i;
-		this.gridY = j;
-		this.screenX = Math.floor(i * s);
-		this.screenY = Math.floor(j * s);
-		this.size = s;
-	}
-	grayOut(canvas: HTMLCanvasElement, ctx: CanvasRenderingContext2D) {
-		ctx.fillStyle = `hsla(0, 0%, 15%)`;
-		ctx.fillRect(
-			Math.floor(this.screenX + (!this.screenX && this.walls[3] ? 0 : 1)),
-			Math.floor(this.screenY + (!this.screenY && this.walls[0] ? 0 : 1)),
-			Math.ceil(
-				this.size + (this.screenX >= canvas.width && this.walls[1] ? 0 : 1),
-			),
-			Math.ceil(
-				this.size + (this.screenY >= canvas.height && this.walls[2] ? 0 : 1),
-			),
-		);
-	}
-	drawWalls(ctx: CanvasRenderingContext2D) {
-		// Walls
-		ctx.beginPath();
-		for (let i = 0; i < 4; i++) {
-			if (this.walls[i]) {
-				switch (i) {
-					case 0: // Top
-						ctx.moveTo(this.screenX, this.screenY);
-						ctx.lineTo(this.screenX + this.size, this.screenY);
-						break;
-					case 1: // Right
-						ctx.moveTo(this.screenX + this.size, this.screenY);
-						ctx.lineTo(this.screenX + this.size, this.screenY + this.size);
-						break;
-					case 2: // Bottom
-						ctx.moveTo(this.screenX + this.size, this.screenY + this.size);
-						ctx.lineTo(this.screenX, this.screenY + this.size);
-						break;
-					case 3: // Left
-						ctx.moveTo(this.screenX, this.screenY + this.size);
-						ctx.lineTo(this.screenX, this.screenY);
-						break;
-				}
-			}
-		}
-		ctx.strokeStyle = 'white';
-		ctx.lineWidth = 1;
-		ctx.stroke();
-	}
+	open: boolean;
+	walls: [boolean, boolean, boolean, boolean];
 }
 
+// TODO: Speed up grid drawing
 export class Grid {
 	colCnt: number;
 	rowCnt: number;
@@ -72,21 +22,77 @@ export class Grid {
 		this.cellSize = Math.min(canvas.width / colCnt, canvas.height / rowCnt);
 		this.centerOffsetX = (this.cellSize / 2) * Math.max(rowCnt - colCnt, 0);
 		this.centerOffsetY = (this.cellSize / 2) * Math.max(colCnt - rowCnt, 0);
-		for (let j = 0; j < rowCnt; j++) {
-			for (let i = 0; i < colCnt; i++) {
-				const cell = new Cell(this, i, j, this.cellSize);
-				this.cells[j * colCnt + i] = cell;
+		for (let y = 0; y < rowCnt; y++) {
+			for (let x = 0; x < colCnt; x++) {
+				const cell: Cell = {
+					index: y * colCnt + x,
+					x,
+					y,
+					screenX: Math.floor(x * this.cellSize),
+					screenY: Math.floor(y * this.cellSize),
+					open: false,
+					walls: [true, true, true, true],
+				};
+				this.cells[y * colCnt + x] = cell;
 			}
 		}
 	}
 	drawWalls(ctx: CanvasRenderingContext2D) {
-		for (const cell of this.cells) {
-			if (cell.open) cell.drawWalls(ctx);
+		ctx.beginPath();
+		const cellSize = this.cellSize;
+		for (const { walls, x, y, screenX, screenY, open } of this.cells) {
+			if (!open) continue;
+			for (let i = 0; i < 4; i++) {
+				if (walls[i]) {
+					switch (i) {
+						case 0: // Top
+							if (y <= 0) break;
+							ctx.moveTo(screenX, screenY);
+							ctx.lineTo(screenX + cellSize, screenY);
+							break;
+						case 1: // Right
+							if (x >= this.colCnt - 1) break;
+							ctx.moveTo(screenX + cellSize, screenY);
+							ctx.lineTo(screenX + cellSize, screenY + cellSize);
+							break;
+						case 2: // Bottom
+							if (y >= this.rowCnt - 1) break;
+							ctx.moveTo(screenX + cellSize, screenY + cellSize);
+							ctx.lineTo(screenX, screenY + cellSize);
+							break;
+						case 3: // Left
+							if (x <= 0) break;
+							ctx.moveTo(screenX, screenY + cellSize);
+							ctx.lineTo(screenX, screenY);
+							break;
+					}
+				}
+			}
 		}
+		ctx.strokeStyle = 'white';
+		ctx.lineWidth = 1;
+		ctx.stroke();
 	}
 	drawGrayedCells(canvas: HTMLCanvasElement, ctx: CanvasRenderingContext2D) {
-		for (const cell of this.cells) {
-			if (!cell.open) cell.grayOut(canvas, ctx);
+		const cellSize = this.cellSize;
+		ctx.beginPath();
+		for (const { walls, screenX: x, screenY: y, open } of this.cells) {
+			if (!open) {
+				// Do all this to fix the spaces between cells on larger grids
+				const w = Math.ceil(
+					cellSize + (screenX >= canvas.width && walls[1] ? 0 : 1),
+				);
+				const h = Math.ceil(
+					cellSize + (screenY >= canvas.height && walls[2] ? 0 : 1),
+				);
+				ctx.moveTo(x, y);
+				ctx.lineTo(x + w, y);
+				ctx.lineTo(x + w, y + h);
+				ctx.lineTo(x, y + h);
+				ctx.moveTo(x, y);
+			}
 		}
+		ctx.fillStyle = '#333';
+		ctx.fill();
 	}
 }

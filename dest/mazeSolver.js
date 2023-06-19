@@ -54,8 +54,8 @@ export class MazeSolver {
             const cell = grid.cells[i];
             const cellWallCount = cell.walls.filter((w) => w).length;
             if (cell.open &&
-                cell.gridIndex !== this.from &&
-                cell.gridIndex !== this.to &&
+                cell.index !== this.from &&
+                cell.index !== this.to &&
                 cellWallCount >= 3) {
                 this.corridorsToFill.push(this.graph.get(cell));
             }
@@ -142,12 +142,13 @@ export class MazeSolver {
         }
         else {
             const grayPath = new Path2D();
-            for (const { cell } of this.filledNodes) {
-                grayPath.moveTo(cell.screenX, cell.screenY);
-                grayPath.lineTo(cell.screenX + cell.size, cell.screenY);
-                grayPath.lineTo(cell.screenX + cell.size, cell.screenY + cell.size);
-                grayPath.lineTo(cell.screenX, cell.screenY + cell.size);
-                grayPath.lineTo(cell.screenX, cell.screenY);
+            const cellSize = this.grid.cellSize;
+            for (const { cell: { screenX, screenY }, } of this.filledNodes) {
+                grayPath.moveTo(screenX, screenY);
+                grayPath.lineTo(screenX + cellSize, screenY);
+                grayPath.lineTo(screenX + cellSize, screenY + cellSize);
+                grayPath.lineTo(screenX, screenY + cellSize);
+                grayPath.lineTo(screenX, screenY);
             }
             ctx.fillStyle = '#fff2';
             ctx.fill(grayPath);

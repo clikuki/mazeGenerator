@@ -34,7 +34,7 @@ function carveWall(prevCell, curCell, offset) {
 function getRandomUnvisitedCellIndex(grid) {
     const mazePartIndices = grid.cells
         .filter(({ open: visited }) => visited)
-        .map(({ gridIndex }) => gridIndex);
+        .map(({ index: gridIndex }) => gridIndex);
     while (true) {
         const randCellIndex = Math.floor(Math.random() * grid.colCnt * grid.rowCnt);
         if (!mazePartIndices.includes(randCellIndex)) {
@@ -97,7 +97,8 @@ class AldousBroder {
         ctx.translate(this.grid.cellSize / 2, this.grid.cellSize / 2);
         ctx.beginPath();
         const headCell = this.grid.cells[this.index];
-        ctx.ellipse(headCell.screenX, headCell.screenY, this.grid.cellSize / 4, this.grid.cellSize / 4, 0, 0, Math.PI * 2);
+        const cellSize = this.grid.cellSize;
+        ctx.ellipse(headCell.screenX, headCell.screenY, cellSize / 4, cellSize / 4, 0, 0, Math.PI * 2);
         ctx.fillStyle = 'rgb(0, 255, 0)';
         ctx.fill();
         ctx.restore();
@@ -167,17 +168,18 @@ class Wilsons {
     draw(ctx) {
         if (this.isComplete)
             return;
+        const cellSize = this.grid.cellSize;
         // Full path
         for (const index of this.walkedCells) {
             const cell = this.grid.cells[index];
             ctx.fillStyle = 'rgb(255, 0, 0)';
-            ctx.fillRect(cell.screenX, cell.screenY, cell.size - 2, cell.size - 2);
+            ctx.fillRect(cell.screenX, cell.screenY, cellSize - 2, cellSize - 2);
         }
         // True path
         let pathIndex = this.startIndex;
         const truePath = new Set([this.index]);
         while (true) {
-            const { screenX, screenY, size } = this.grid.cells[pathIndex];
+            const { screenX, screenY } = this.grid.cells[pathIndex];
             const dir = this.cellDirection[pathIndex];
             if (dir === undefined || truePath.has(pathIndex))
                 break;
@@ -185,7 +187,7 @@ class Wilsons {
             pathIndex += dir;
             // draw direction of cell
             ctx.save();
-            ctx.translate(screenX + size / 2, screenY + size / 2);
+            ctx.translate(screenX + cellSize / 2, screenY + cellSize / 2);
             let rot;
             if (dir === -this.grid.colCnt)
                 rot = 0;
@@ -199,16 +201,16 @@ class Wilsons {
                 throw 'Impossible direction encountered!';
             ctx.rotate(rot);
             ctx.beginPath();
-            ctx.moveTo(0, size / 4);
-            ctx.lineTo(0, -size / 4);
-            ctx.moveTo(-size / 4, 0);
-            ctx.lineTo(0, -size / 4);
-            ctx.moveTo(size / 4, 0);
-            ctx.lineTo(0, -size / 4);
+            ctx.moveTo(0, cellSize / 4);
+            ctx.lineTo(0, -cellSize / 4);
+            ctx.moveTo(-cellSize / 4, 0);
+            ctx.lineTo(0, -cellSize / 4);
+            ctx.moveTo(cellSize / 4, 0);
+            ctx.lineTo(0, -cellSize / 4);
             ctx.strokeStyle = 'rgb(0, 255, 0)';
             const prevLineWidth = ctx.lineWidth;
             ctx.lineWidth = 5;
-            if (26 > this.grid.cellSize)
+            if (26 > cellSize)
                 ctx.lineWidth = 2;
             ctx.lineCap = 'round';
             ctx.stroke();
@@ -249,7 +251,7 @@ class RecursiveBacktracking {
             return;
         }
         const directions = head.directionsToTry ||
-            shuffle(findValidDirections(this.grid, head.cell.gridIndex));
+            shuffle(findValidDirections(this.grid, head.cell.index));
         if (directions.length === 0) {
             this.stack.pop();
             return;
@@ -257,7 +259,7 @@ class RecursiveBacktracking {
         head.directionsToTry ||= directions;
         while (directions.length) {
             const direction = directions.shift();
-            const cell = this.grid.cells[head.cell.gridIndex + direction];
+            const cell = this.grid.cells[head.cell.index + direction];
             if (!cell.open) {
                 head.directionsToTry = directions;
                 cell.open = true;
@@ -272,8 +274,9 @@ class RecursiveBacktracking {
         if (this.isComplete || !this.stack.length)
             return;
         ctx.fillStyle = '#f004';
-        for (const { cell: { screenX, screenY, size }, } of this.stack) {
-            ctx.fillRect(screenX, screenY, size, size);
+        const cellSize = this.grid.cellSize;
+        for (const { cell: { screenX, screenY }, } of this.stack) {
+            ctx.fillRect(screenX, screenY, cellSize, cellSize);
         }
         ctx.save();
         ctx.translate(this.grid.cellSize / 2, this.grid.cellSize / 2);
@@ -294,13 +297,13 @@ class RecursiveDivision {
         for (const cell of grid.cells) {
             cell.open = true;
             cell.walls = [false, false, false, false];
-            if (cell.gridX === 0)
+            if (cell.x === 0)
                 cell.walls[3] = true;
-            if (cell.gridY === 0)
+            if (cell.y === 0)
                 cell.walls[0] = true;
-            if (cell.gridX === grid.colCnt - 1)
+            if (cell.x === grid.colCnt - 1)
                 cell.walls[1] = true;
-            if (cell.gridY === grid.rowCnt - 1)
+            if (cell.y === grid.rowCnt - 1)
                 cell.walls[2] = true;
         }
         this.grid = grid;
@@ -381,7 +384,8 @@ class RecursiveDivision {
         if (!chamber)
             return;
         ctx.fillStyle = '#f003';
-        ctx.fillRect(chamber[0] * this.grid.cellSize, chamber[1] * this.grid.cellSize, chamber[2] * this.grid.cellSize, chamber[3] * this.grid.cellSize);
+        const cellSize = this.grid.cellSize;
+        ctx.fillRect(chamber[0] * cellSize, chamber[1] * cellSize, chamber[2] * cellSize, chamber[3] * cellSize);
     }
 }
 class AldousBroderWilsonHybrid {
@@ -473,7 +477,8 @@ class BinaryTree {
             return;
         ctx.fillStyle = '#0a0';
         const cell = this.grid.cells[this.index];
-        ctx.fillRect(cell.screenX, cell.screenY, cell.size, cell.size);
+        const cellSize = this.grid.cellSize;
+        ctx.fillRect(cell.screenX, cell.screenY, cellSize, cellSize);
     }
 }
 class Kruskals {
@@ -488,12 +493,12 @@ class Kruskals {
         this.grid = grid;
         for (const cell of grid.cells) {
             cell.open = true;
-            this.cellNodes[cell.gridIndex] = {
-                index: cell.gridIndex,
+            this.cellNodes[cell.index] = {
+                index: cell.index,
                 parent: null,
                 children: [],
             };
-            this.cellClrs[cell.gridIndex] = randomRGB(150);
+            this.cellClrs[cell.index] = randomRGB(150);
         }
         for (let x = 0; x < grid.colCnt; x++) {
             for (let y = 0; y < grid.rowCnt; y++) {
@@ -543,6 +548,7 @@ class Kruskals {
     draw(ctx) {
         if (this.isComplete)
             return;
+        const cellSize = this.grid.cellSize;
         // Tree colors
         const allVisited = new Set();
         for (const tree of this.cellNodes) {
@@ -554,9 +560,9 @@ class Kruskals {
             }
             const [r, g, b] = this.cellClrs[root.index];
             for (const { index } of visited) {
-                const { screenX, screenY, size } = this.grid.cells[index];
+                const { screenX, screenY } = this.grid.cells[index];
                 ctx.fillStyle = `rgb(${r},${g},${b})`;
-                ctx.fillRect(screenX, screenY, size, size);
+                ctx.fillRect(screenX, screenY, cellSize, cellSize);
             }
             visited.forEach((t) => allVisited.add(t));
         }
@@ -570,21 +576,21 @@ class Kruskals {
                 switch (dir) {
                     case -this.grid.colCnt: // Top
                         ctx.moveTo(cell.screenX, cell.screenY + i);
-                        ctx.lineTo(cell.screenX + cell.size, cell.screenY + i);
+                        ctx.lineTo(cell.screenX + cellSize, cell.screenY + i);
                         wallIndex = 0;
                         break;
                     case 1: // Right
-                        ctx.moveTo(cell.screenX + cell.size + i, cell.screenY);
-                        ctx.lineTo(cell.screenX + cell.size + i, cell.screenY + cell.size);
+                        ctx.moveTo(cell.screenX + cellSize + i, cell.screenY);
+                        ctx.lineTo(cell.screenX + cellSize + i, cell.screenY + cellSize);
                         wallIndex = 1;
                         break;
                     case this.grid.colCnt: // Bottom
-                        ctx.moveTo(cell.screenX + cell.size, cell.screenY + cell.size - i);
-                        ctx.lineTo(cell.screenX, cell.screenY + cell.size - i);
+                        ctx.moveTo(cell.screenX + cellSize, cell.screenY + cellSize - i);
+                        ctx.lineTo(cell.screenX, cell.screenY + cellSize - i);
                         wallIndex = 2;
                         break;
                     case -1: // Left
-                        ctx.moveTo(cell.screenX - i, cell.screenY + cell.size);
+                        ctx.moveTo(cell.screenX - i, cell.screenY + cellSize);
                         ctx.lineTo(cell.screenX - i, cell.screenY);
                         wallIndex = 3;
                         break;
@@ -642,10 +648,11 @@ class Prims {
     draw(ctx) {
         if (this.isComplete)
             return;
+        const cellSize = this.grid.cellSize;
         for (const index of this.frontier) {
-            const { screenX, screenY, size } = this.grid.cells[index];
+            const { screenX, screenY } = this.grid.cells[index];
             ctx.fillStyle = `#a00a`;
-            ctx.fillRect(screenX, screenY, size, size);
+            ctx.fillRect(screenX, screenY, cellSize, cellSize);
         }
     }
 }
@@ -657,14 +664,10 @@ class Ellers {
     idList = [];
     sets = [];
     idsInUse = new Set();
-    curEdge;
     bridgeDown = [];
-    joinSetEdges;
     phase = 0;
     #idCounter = 1;
-    constructor(grid, options) {
-        const { "Eller's": { joinSetEdges }, } = options;
-        this.joinSetEdges = joinSetEdges;
+    constructor(grid) {
         this.grid = grid;
     }
     step() {
@@ -676,8 +679,6 @@ class Ellers {
             case 0:
                 // Group cells in their own sets, but randomly merge some together
                 {
-                    if (this.idsInUse instanceof Array)
-                        throw "Can't be an array";
                     if (this.idList[index] === undefined) {
                         const newId = this.#idCounter++;
                         this.idList[index] = newId;
@@ -688,31 +689,20 @@ class Ellers {
                     const cell = this.grid.cells[index];
                     cell.open = true;
                     if (atRightEdge) {
-                        const rowIsLast = index / this.grid.colCnt >= this.grid.rowCnt - 1;
-                        if (rowIsLast) {
-                            if (this.idsInUse.size === 1) {
-                                this.isComplete = true;
-                                return;
-                            }
-                            this.phase = 3;
-                            this.idsInUse = [...this.idsInUse];
+                        this.phase = 1;
+                        // Return index to start of row
+                        const y = Math.floor(index / this.grid.colCnt);
+                        this.index = y * this.grid.colCnt;
+                        // Pick bridges ahead of time to make it look better
+                        const idsInRow = new Set();
+                        for (let i = this.index; i < (y + 1) * this.grid.colCnt; i++) {
+                            const id = this.idList[i];
+                            idsInRow.add(id);
                         }
-                        else {
-                            this.phase = 1;
-                            // Return index to start of row
-                            const y = Math.floor(index / this.grid.colCnt);
-                            this.index = y * this.grid.colCnt;
-                            // Pick bridges ahead of time to make it look better
-                            const idsInRow = new Set();
-                            for (let i = this.index; i < (y + 1) * this.grid.colCnt; i++) {
-                                const id = this.idList[i];
-                                idsInRow.add(id);
-                            }
-                            for (const id of idsInRow) {
-                                const indicesInRow = this.sets[id].filter((i) => i / this.grid.colCnt >= y);
-                                const bridgeIndex = randomItemInArray(indicesInRow);
-                                this.bridgeDown[bridgeIndex] = true;
-                            }
+                        for (const id of idsInRow) {
+                            const indicesInRow = this.sets[id].filter((i) => i / this.grid.colCnt >= y);
+                            const bridgeIndex = randomItemInArray(indicesInRow);
+                            this.bridgeDown[bridgeIndex] = true;
                         }
                     }
                     else if (Math.random() < 2 / 3) {
@@ -754,7 +744,7 @@ class Ellers {
                     }
                     if (atRightEdge) {
                         const nextRowIsLast = (index + 1) / this.grid.colCnt >= this.grid.rowCnt - 1;
-                        if (!this.joinSetEdges && nextRowIsLast)
+                        if (nextRowIsLast)
                             this.phase = 2;
                         else
                             this.phase = 0;
@@ -762,7 +752,6 @@ class Ellers {
                 }
                 break;
             case 2:
-                // ENDING 1
                 // Connect every cell in last row together
                 {
                     const curCell = this.grid.cells[index];
@@ -775,47 +764,7 @@ class Ellers {
                     }
                 }
                 break;
-            case 3:
-                // ENDING 2
-                // Keep joining sets until one set remains
-                // Might prevent having maze be completely connected at the bottom
-                // Wouldn't work for mazes that are infinite tho
-                {
-                    if (this.idsInUse instanceof Set)
-                        throw "Can't be a set";
-                    const id = randomItemInArray(this.idsInUse);
-                    const set = this.sets[id];
-                    const edges = set.flatMap((i) => {
-                        const directions = [-this.grid.colCnt, 1, this.grid.colCnt, -1];
-                        return directions
-                            .filter((dir) => {
-                            const newIndex = i + dir;
-                            const newY = (newIndex / this.grid.colCnt) | 0;
-                            const oldY = (i / this.grid.colCnt) | 0;
-                            return (this.idList[newIndex] !== id &&
-                                newIndex >= 0 &&
-                                newIndex < this.grid.cells.length &&
-                                (Math.abs(dir) !== 1 || newY === oldY));
-                        })
-                            .map((dir) => [i, dir]);
-                    });
-                    this.curEdge = randomItemInArray(edges);
-                    const [index, dir] = this.curEdge;
-                    const cell1 = this.grid.cells[index];
-                    const cell2 = this.grid.cells[index + dir];
-                    carveWall(cell1, cell2, dir);
-                    const mergeId = this.idList[index + dir];
-                    const mergeSet = this.sets[mergeId];
-                    this.sets[id] = this.sets[id].concat(mergeSet);
-                    for (const i of mergeSet) {
-                        this.idList[i] = id;
-                    }
-                    // Remove merged set
-                    delete this.sets[mergeId];
-                    this.idsInUse = this.idsInUse.filter((n) => n !== mergeId);
-                    if (this.idsInUse.length === 1)
-                        this.isComplete = true;
-                }
+            default:
                 break;
         }
     }
@@ -834,43 +783,13 @@ class Ellers {
             ctx.fillStyle = this.phase === 1 ? '#00aa' : '#0a0a';
             ctx.fillRect(curCell.screenX, curCell.screenY, cellSize, cellSize);
         }
-        // Current edge
-        if (this.curEdge) {
-            const [index, dir] = this.curEdge;
-            const cell = this.grid.cells[index];
-            ctx.beginPath();
-            switch (dir) {
-                case -this.grid.colCnt: // Top
-                    ctx.moveTo(cell.screenX, cell.screenY);
-                    ctx.lineTo(cell.screenX + cell.size, cell.screenY);
-                    break;
-                case 1: // Right
-                    ctx.moveTo(cell.screenX + cell.size, cell.screenY);
-                    ctx.lineTo(cell.screenX + cell.size, cell.screenY + cell.size);
-                    break;
-                case this.grid.colCnt: // Bottom
-                    ctx.moveTo(cell.screenX + cell.size, cell.screenY + cell.size);
-                    ctx.lineTo(cell.screenX, cell.screenY + cell.size);
-                    break;
-                case -1: // Left
-                    ctx.moveTo(cell.screenX, cell.screenY + cell.size);
-                    ctx.lineTo(cell.screenX, cell.screenY);
-                    break;
-                default:
-                    throw 'Impossible direction';
-                    break;
-            }
-            ctx.strokeStyle = '#0a0';
-            ctx.lineWidth = 5;
-            ctx.stroke();
-        }
         // Cell ids
         for (let i = 0; i < this.idList.length; i++) {
             const id = this.idList[i];
             if (id !== undefined) {
-                const { screenX, screenY, size } = this.grid.cells[i];
-                const x = screenX + size / 2;
-                const y = screenY + size / 2;
+                const { screenX, screenY } = this.grid.cells[i];
+                const x = screenX + cellSize / 2;
+                const y = screenY + cellSize / 2;
                 ctx.fillStyle = '#fff';
                 ctx.font = `${cellSize / 3}px monospace`;
                 ctx.textAlign = 'center';
@@ -1066,17 +985,18 @@ class GrowingTree {
     draw(ctx) {
         if (this.isComplete)
             return;
+        const cellSize = this.grid.cellSize;
         for (let i = 0; i < this.bag.length; i++) {
             const index = this.bag[i];
             // Cell clr
-            const { screenX, screenY, size } = this.grid.cells[index];
+            const { screenX, screenY } = this.grid.cells[index];
             ctx.fillStyle = '#f004';
-            ctx.fillRect(screenX, screenY, size, size);
+            ctx.fillRect(screenX, screenY, cellSize, cellSize);
             // Age
-            const x = screenX + size / 2;
-            const y = screenY + size / 2;
+            const x = screenX + cellSize / 2;
+            const y = screenY + cellSize / 2;
             ctx.fillStyle = '#fff';
-            ctx.font = `${size / 3}px monospace`;
+            ctx.font = `${cellSize / 3}px monospace`;
             ctx.textAlign = 'center';
             ctx.textBaseline = 'middle';
             ctx.fillText(String(i), x, y);

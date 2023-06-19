@@ -20,7 +20,7 @@ export function convertGridToGraph(grid, start = grid.cells[0]) {
         nodeMap.set(cell, node);
         node.neighbors = directions
             .map((dir, i) => {
-            const neighbor = grid.cells[cell.gridIndex + dir];
+            const neighbor = grid.cells[cell.index + dir];
             if (neighbor === undefined || cell.walls[i]) {
                 return [];
             }

@@ -29,7 +29,7 @@ export function convertGridToGraph(grid: Grid, start = grid.cells[0]) {
 
 		node.neighbors = directions
 			.map((dir, i): GraphNode | [] => {
-				const neighbor = grid.cells[cell.gridIndex + dir];
+				const neighbor = grid.cells[cell.index + dir];
 				if (neighbor === undefined || cell.walls[i]) {
 					return [];
 				}
