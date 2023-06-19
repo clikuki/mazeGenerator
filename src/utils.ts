@@ -16,31 +16,57 @@ export function convertGridToGraph(grid: Grid, start = grid.cells[0]) {
 	const directions = [-grid.colCnt, 1, grid.colCnt, -1];
 	const visited = new Set<Cell>();
 	const nodeMap = new Map<Cell, GraphNode>();
-	function convert(cell: Cell) {
-		if (visited.has(cell)) return nodeMap.get(cell)!;
 
+	// function convert(cell: Cell) {
+	// 	if (visited.has(cell)) return nodeMap.get(cell)!;
+
+	// 	const node: GraphNode = {
+	// 		cell: cell,
+	// 		neighbors: [],
+	// 		walls: cell.walls.filter((w) => w).length,
+	// 	};
+
+	// 	visited.add(cell);
+	// 	nodeMap.set(cell, node);
+
+	// 	node.neighbors = directions.flatMap((dir, i): GraphNode | [] => {
+	// 		const neighbor = grid.cells[cell.index + dir];
+	// 		if (neighbor === undefined || cell.walls[i]) {
+	// 			return [];
+	// 		}
+	// 		return convert(neighbor);
+	// 	});
+
+	// 	return node;
+	// }
+
+	const stack: [Cell | null, Cell][] = [[null, start]];
+	function convert([parent, cell]: (typeof stack)[number]) {
 		const node: GraphNode = {
 			cell: cell,
 			neighbors: [],
 			walls: cell.walls.filter((w) => w).length,
 		};
+		if (parent) {
+			nodeMap.get(parent)!.neighbors.push(node);
+		}
 
 		visited.add(cell);
 		nodeMap.set(cell, node);
 
-		node.neighbors = directions
-			.map((dir, i): GraphNode | [] => {
-				const neighbor = grid.cells[cell.index + dir];
-				if (neighbor === undefined || cell.walls[i]) {
-					return [];
-				}
-				return convert(neighbor);
-			})
-			.flat();
-
-		return node;
+		for (let i = 0; i < directions.length; i++) {
+			const dir = directions[i];
+			const neighbor = grid.cells[cell.index + dir];
+			if (neighbor !== undefined && !cell.walls[i]) {
+				if (visited.has(neighbor)) node.neighbors.push(nodeMap.get(neighbor)!);
+				else stack.push([cell, neighbor]);
+			}
+		}
 	}
-	convert(start);
+
+	while (stack.length) {
+		convert(stack.pop()!);
+	}
 	return nodeMap;
 }
 

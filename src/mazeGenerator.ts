@@ -799,9 +799,6 @@ class Ellers {
 							const indicesInRow = this.sets[id].filter(
 								(i) => i / this.grid.colCnt >= y,
 							);
-							// const bridgeIndex =
-							// 	indicesInRow[this.flip ? 0 : indicesInRow.length - 1];
-							// this.flip = !this.flip;
 							const bridgeIndex = randomItemInArray(indicesInRow);
 							this.bridgeDown[bridgeIndex] = true;
 						}
