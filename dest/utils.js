@@ -4,29 +4,10 @@ export function randomItemInArray(arr) {
     const index = Math.floor(Math.random() * arr.length);
     return arr[index];
 }
-// TODO: use stack/array instead of recursion
 export function convertGridToGraph(grid, start = grid.cells[0]) {
     const directions = [-grid.colCnt, 1, grid.colCnt, -1];
     const visited = new Set();
     const nodeMap = new Map();
-    // function convert(cell: Cell) {
-    // 	if (visited.has(cell)) return nodeMap.get(cell)!;
-    // 	const node: GraphNode = {
-    // 		cell: cell,
-    // 		neighbors: [],
-    // 		walls: cell.walls.filter((w) => w).length,
-    // 	};
-    // 	visited.add(cell);
-    // 	nodeMap.set(cell, node);
-    // 	node.neighbors = directions.flatMap((dir, i): GraphNode | [] => {
-    // 		const neighbor = grid.cells[cell.index + dir];
-    // 		if (neighbor === undefined || cell.walls[i]) {
-    // 			return [];
-    // 		}
-    // 		return convert(neighbor);
-    // 	});
-    // 	return node;
-    // }
     const stack = [[null, start]];
     function convert([parent, cell]) {
         const node = {

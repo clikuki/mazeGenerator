@@ -1,4 +1,3 @@
-// TODO: Speed up grid drawing
 export class Grid {
     colCnt;
     rowCnt;

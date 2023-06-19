@@ -11,34 +11,10 @@ export interface GraphNode {
 	neighbors: GraphNode[];
 	walls: number;
 }
-// TODO: use stack/array instead of recursion
 export function convertGridToGraph(grid: Grid, start = grid.cells[0]) {
 	const directions = [-grid.colCnt, 1, grid.colCnt, -1];
 	const visited = new Set<Cell>();
 	const nodeMap = new Map<Cell, GraphNode>();
-
-	// function convert(cell: Cell) {
-	// 	if (visited.has(cell)) return nodeMap.get(cell)!;
-
-	// 	const node: GraphNode = {
-	// 		cell: cell,
-	// 		neighbors: [],
-	// 		walls: cell.walls.filter((w) => w).length,
-	// 	};
-
-	// 	visited.add(cell);
-	// 	nodeMap.set(cell, node);
-
-	// 	node.neighbors = directions.flatMap((dir, i): GraphNode | [] => {
-	// 		const neighbor = grid.cells[cell.index + dir];
-	// 		if (neighbor === undefined || cell.walls[i]) {
-	// 			return [];
-	// 		}
-	// 		return convert(neighbor);
-	// 	});
-
-	// 	return node;
-	// }
 
 	const stack: [Cell | null, Cell][] = [[null, start]];
 	function convert([parent, cell]: (typeof stack)[number]) {

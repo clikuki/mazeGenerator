@@ -8,7 +8,6 @@ export interface Cell {
 	walls: [boolean, boolean, boolean, boolean];
 }
 
-// TODO: Speed up grid drawing
 export class Grid {
 	colCnt: number;
 	rowCnt: number;

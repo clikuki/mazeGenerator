@@ -351,7 +351,6 @@ const growingTreeOptions = mazeGen.options['Growing Tree'];
 					)
 					.flat()
 					.join('-');
-	// console.log(initValue);
 	growingTreePickingStyleSelection.value = initValue;
 }
 growingTreePickingStyleSelection.addEventListener('change', () => {
