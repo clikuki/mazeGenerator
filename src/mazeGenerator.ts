@@ -586,7 +586,7 @@ class Kruskals {
 	step() {
 		if (this.isComplete) return;
 
-		this.curEdge = randomItemInArray(this.edges);
+		this.curEdge = this.edges.pop()!;
 		const [index, dir] = this.curEdge;
 		let node1 = this.cellNodes[index];
 		let node2 = this.cellNodes[index + dir];
@@ -612,7 +612,6 @@ class Kruskals {
 				return;
 			}
 		}
-		this.edges = this.edges.filter((e) => e !== this.curEdge);
 
 		if (this.edges.length === 0) {
 			this.isComplete = true;
