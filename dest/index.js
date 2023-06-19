@@ -18,6 +18,9 @@ const mazeGen = {
             horizontal: 'EAST',
             vertical: 'SOUTH',
         },
+        "Eller's": {
+            mergeChance: 0.66,
+        },
         'Growing Tree': {
             pickingStyle: {
                 NEWEST: 1,
@@ -249,6 +252,21 @@ binaryTreeSelection.addEventListener('change', () => {
         return;
     binaryTreeOptions.horizontal = horizontal;
     binaryTreeOptions.vertical = vertical;
+    restart({});
+});
+const ellersCarveChanceInput = document.querySelector('.ellersCarveChance input');
+const ellersOptions = mazeGen.options["Eller's"];
+ellersCarveChanceInput.valueAsNumber =
+    Math.floor(ellersOptions.mergeChance * 100) / 100;
+ellersCarveChanceInput.addEventListener('change', () => {
+    const newChance = Math.floor(ellersCarveChanceInput.valueAsNumber * 100) / 100;
+    if (isNaN(newChance) || newChance < 0 || newChance > 1) {
+        ellersCarveChanceInput.valueAsNumber =
+            Math.floor(ellersOptions.mergeChance * 100) / 100;
+        return;
+    }
+    ellersOptions.mergeChance = newChance;
+    ellersCarveChanceInput.valueAsNumber = newChance;
     restart({});
 });
 const growingTreePickingStyleSelection = document.querySelector('.growingTree select');

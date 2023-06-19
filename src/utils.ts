@@ -11,6 +11,7 @@ export interface GraphNode {
 	neighbors: GraphNode[];
 	walls: number;
 }
+// TODO: use stack/array instead of recursion
 export function convertGridToGraph(grid: Grid, start = grid.cells[0]) {
 	const directions = [-grid.colCnt, 1, grid.colCnt, -1];
 	const visited = new Set<Cell>();

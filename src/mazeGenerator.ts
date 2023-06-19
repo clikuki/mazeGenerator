@@ -6,6 +6,9 @@ export interface MazeOptions {
 		horizontal: Horizontal;
 		vertical: Vertical;
 	};
+	[Ellers.key]: {
+		mergeChance: number;
+	};
 	[GrowingTree.key]: {
 		pickingStyle: Partial<Record<GrowingTreePickingStyle, number>>;
 	};
@@ -750,11 +753,14 @@ class Ellers {
 	sets: number[][] = [];
 	idsInUse: Set<number> = new Set<number>();
 	bridgeDown: boolean[] = [];
+	mergeChance: number;
 	phase: 0 | 1 | 2 = 0;
 	#idCounter = 1;
-	constructor(grid: Grid) {
+	constructor(grid: Grid, { "Eller's": { mergeChance } }: MazeOptions) {
 		this.grid = grid;
+		this.mergeChance = mergeChance;
 	}
+	flip = false;
 	step() {
 		if (this.isComplete) return;
 		const index = this.index++;
@@ -793,10 +799,13 @@ class Ellers {
 							const indicesInRow = this.sets[id].filter(
 								(i) => i / this.grid.colCnt >= y,
 							);
+							// const bridgeIndex =
+							// 	indicesInRow[this.flip ? 0 : indicesInRow.length - 1];
+							// this.flip = !this.flip;
 							const bridgeIndex = randomItemInArray(indicesInRow);
 							this.bridgeDown[bridgeIndex] = true;
 						}
-					} else if (Math.random() < 2 / 3) {
+					} else if (Math.random() < this.mergeChance) {
 						const nextIndex = index + 1;
 						const nextCell = this.grid.cells[nextIndex];
 						const nextId = this.idList[nextIndex];

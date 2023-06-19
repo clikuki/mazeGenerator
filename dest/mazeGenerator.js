@@ -665,11 +665,14 @@ class Ellers {
     sets = [];
     idsInUse = new Set();
     bridgeDown = [];
+    mergeChance;
     phase = 0;
     #idCounter = 1;
-    constructor(grid) {
+    constructor(grid, { "Eller's": { mergeChance } }) {
         this.grid = grid;
+        this.mergeChance = mergeChance;
     }
+    flip = false;
     step() {
         if (this.isComplete)
             return;
@@ -701,11 +704,14 @@ class Ellers {
                         }
                         for (const id of idsInRow) {
                             const indicesInRow = this.sets[id].filter((i) => i / this.grid.colCnt >= y);
+                            // const bridgeIndex =
+                            // 	indicesInRow[this.flip ? 0 : indicesInRow.length - 1];
+                            // this.flip = !this.flip;
                             const bridgeIndex = randomItemInArray(indicesInRow);
                             this.bridgeDown[bridgeIndex] = true;
                         }
                     }
-                    else if (Math.random() < 2 / 3) {
+                    else if (Math.random() < this.mergeChance) {
                         const nextIndex = index + 1;
                         const nextCell = this.grid.cells[nextIndex];
                         const nextId = this.idList[nextIndex];
