@@ -119,8 +119,8 @@ columnInput.valueAsNumber = grid.colCnt;
 const rowInput = document.querySelector('.inputs .row') as HTMLInputElement;
 rowInput.valueAsNumber = grid.rowCnt;
 
-const minDimensions = 3;
-const maxDimensions = 150;
+const minDimensions = 2;
+const maxDimensions = 200;
 columnInput.addEventListener('change', () => {
 	const newVal = columnInput.valueAsNumber;
 	if (isNaN(newVal) || newVal < minDimensions || newVal > maxDimensions) {
