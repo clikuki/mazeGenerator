@@ -451,8 +451,10 @@ class RecursiveDivision {
 	}
 	draw(ctx: CanvasRenderingContext2D) {
 		if (this.isComplete) return;
-		const chamber = this.chambers[this.chambers.length - 1];
+
+		const chamber = this.chambers[this.useBFS ? 0 : this.chambers.length - 1];
 		if (!chamber) return;
+
 		ctx.fillStyle = '#f00a';
 		const cellSize = this.grid.cellSize;
 		ctx.fillRect(

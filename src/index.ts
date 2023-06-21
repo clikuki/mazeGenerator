@@ -19,8 +19,8 @@ type UndefinedOr<T> = T | undefined;
 
 const canvas = document.querySelector('canvas')!;
 const ctx = canvas.getContext('2d')!;
-canvas.width = innerHeight;
-canvas.height = innerHeight;
+canvas.width = Math.min(innerHeight, innerWidth);
+canvas.height = Math.min(innerHeight, innerWidth);
 let grid = new Grid(10, 10, canvas);
 // let grid = new Grid(3, 3, canvas);
 let mazeSolver: MazeSolver | undefined;
