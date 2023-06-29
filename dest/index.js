@@ -372,7 +372,7 @@ let prevTime = Date.now();
     // Center draws
     ctx.save();
     ctx.translate(grid.centerOffsetX, grid.centerOffsetY);
-    grid.drawGrayedCells(canvas, ctx);
+    grid.drawGrayedCells(ctx);
     if (mazeGen.instance && !mazeGen.instance.isComplete) {
         if (!pause && stepRunners)
             mazeGen.instance.step();

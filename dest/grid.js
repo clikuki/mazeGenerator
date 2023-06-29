@@ -67,14 +67,14 @@ export class Grid {
         ctx.lineWidth = 1;
         ctx.stroke();
     }
-    drawGrayedCells(canvas, ctx) {
+    drawGrayedCells(ctx) {
         const cellSize = this.cellSize;
         ctx.beginPath();
         for (const { walls, screenX: x, screenY: y, open } of this.cells) {
             if (!open) {
                 // Do all this to fix the spaces between cells on larger grids
-                const w = Math.ceil(cellSize + (screenX >= canvas.width && walls[1] ? 0 : 1));
-                const h = Math.ceil(cellSize + (screenY >= canvas.height && walls[2] ? 0 : 1));
+                const w = Math.ceil(cellSize + (walls[1] ? 0 : 1));
+                const h = Math.ceil(cellSize + (walls[2] ? 0 : 1));
                 ctx.moveTo(x, y);
                 ctx.lineTo(x + w, y);
                 ctx.lineTo(x + w, y + h);

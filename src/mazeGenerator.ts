@@ -716,17 +716,6 @@ class Prims {
 			this.frontier.push(index);
 		}
 
-		// Converting to set then spreading back to an array feels wrong...
-		// this.frontier = [
-		// 	...new Set(
-		// 		this.frontier.concat(
-		// 			this.#findValidDirections(pickedIndex)
-		// 				.map((dir) => pickedIndex + dir)
-		// 				.filter((i) => !this.grid.cells[i].open),
-		// 		),
-		// 	),
-		// ];
-
 		const dir = randomItemInArray(
 			findValidDirections(this.grid, pickedIndex).filter(
 				(dir) => this.grid.cells[pickedIndex + dir].open,
@@ -759,16 +748,15 @@ class Ellers {
 	index = 0;
 	idList: number[] = [];
 	sets: number[][] = [];
-	idsInUse: Set<number> = new Set<number>();
+	idsInUse = new Set<number>();
 	bridgeDown: boolean[] = [];
 	mergeChance: number;
 	phase: 0 | 1 | 2 = 0;
-	#idCounter = 1;
+	idCounter = 1;
 	constructor(grid: Grid, { "Eller's": { mergeChance } }: MazeOptions) {
 		this.grid = grid;
 		this.mergeChance = mergeChance;
 	}
-	flip = false;
 	step() {
 		if (this.isComplete) return;
 		const index = this.index++;
@@ -779,7 +767,7 @@ class Ellers {
 				// Group cells in their own sets, but randomly merge some together
 				{
 					if (this.idList[index] === undefined) {
-						const newId = this.#idCounter++;
+						const newId = this.idCounter++;
 						this.idList[index] = newId;
 						this.idsInUse.add(newId);
 						this.sets[newId] = [index];
@@ -874,7 +862,6 @@ class Ellers {
 				break;
 		}
 	}
-	iter = 0;
 	draw(ctx: CanvasRenderingContext2D) {
 		if (this.isComplete) return;
 
@@ -1128,9 +1115,144 @@ class GrowingTree {
 	}
 }
 
+class BlobbyRecursiveDivision {
+	static readonly key = 'Blobby Recursive Division';
+	isComplete = false;
+	grid: Grid;
+	regions: number[][] = [[]];
+	currRegion = new Set<number>();
+	subregionA = new Set<number>();
+	subregionB = new Set<number>();
+	bag: number[] = [];
+	edges: Edge[] = [];
+	wallMap: { [key: number]: number };
+	constructor(grid: Grid) {
+		this.grid = grid;
+		this.wallMap = {
+			[-this.grid.colCnt]: 0,
+			[1]: 1,
+			[this.grid.colCnt]: 2,
+			[-1]: 3,
+		};
+
+		grid.cells.forEach((c, i) => {
+			this.regions[0][i] = i;
+
+			c.open = true;
+			c.walls = [false, false, false, false];
+			if (c.x === 0) c.walls[3] = true;
+			if (c.y === 0) c.walls[0] = true;
+			if (c.x === grid.colCnt - 1) c.walls[1] = true;
+			if (c.y === grid.rowCnt - 1) c.walls[2] = true;
+		});
+
+		const a = randomItemInArray(this.regions[0]);
+		let b;
+		do {
+			b = randomItemInArray(this.regions[0]);
+		} while (b === a);
+
+		this.currRegion = new Set(this.regions[0]);
+		this.subregionA.add(a);
+		this.subregionB.add(b);
+		this.bag.push(a, b);
+	}
+	getOccupancy(index: number) {
+		if (this.subregionA.has(index)) return 'A';
+		if (this.subregionB.has(index)) return 'B';
+		return 'NONE';
+	}
+	step() {
+		if (this.isComplete) return;
+
+		if (this.bag.length === 0) {
+			// Bag is empty; start on new region
+
+			// Carve hole in wall
+			const [index, dir] = randomItemInArray(this.edges);
+			carveWall(this.grid.cells[index], this.grid.cells[index + dir], dir);
+			this.edges.length = 0;
+
+			// Add subregions to stack
+			this.regions.length--;
+			for (const subregion of [this.subregionA, this.subregionB]) {
+				// Only add if subregion is bigger than a given threshold
+				// TODO: fix solving algo to allow for larger threshold
+				if (subregion.size > 3) {
+					this.regions.push(Array.from(subregion));
+				}
+				subregion.clear();
+			}
+
+			// If stack is empty, end algorthim
+			if (this.regions.length === 0) {
+				this.isComplete = true;
+				return;
+			}
+
+			// Choose starting points
+			const region = this.regions[this.regions.length - 1];
+			const a = randomItemInArray(region);
+			let b;
+			do {
+				b = randomItemInArray(region);
+			} while (b === a);
+
+			this.currRegion = new Set(region);
+			this.subregionA.add(a);
+			this.subregionB.add(b);
+			this.bag.push(a, b);
+		} else {
+			const _i = randIntBetween(0, this.bag.length - 1);
+			const index = this.bag[_i];
+			const last = this.bag.length - 1;
+			[this.bag[_i], this.bag[last]] = [this.bag[last], this.bag[_i]];
+			this.bag.length -= 1;
+
+			const occupancy = this.getOccupancy(index);
+			for (const dir of findValidDirections(this.grid, index)) {
+				const neighbor = index + dir;
+				const neighborOccupancy = this.getOccupancy(neighbor);
+				if (!this.currRegion.has(neighbor)) continue;
+				if (neighborOccupancy === 'NONE') {
+					// add unassociated cell to bag and subregion
+					this.bag.push(neighbor);
+					if (occupancy === 'A') this.subregionA.add(neighbor);
+					else this.subregionB.add(neighbor);
+				} else if (neighborOccupancy !== occupancy) {
+					// add wall against opposite set
+					const cells = this.grid.cells;
+					cells[index].walls[this.wallMap[dir]] = true;
+					cells[neighbor].walls[this.wallMap[-dir]] = true;
+					this.edges.push([index, dir]);
+				}
+			}
+		}
+	}
+	draw(ctx: CanvasRenderingContext2D) {
+		if (this.isComplete) return;
+
+		const cellSize = this.grid.cellSize;
+
+		// subregion coloring
+		for (const [subregion, clr] of [
+			[this.subregionA, '#00f'],
+			[this.subregionB, '#f00'],
+		] as const) {
+			for (const index of subregion) {
+				const { screenX, screenY } = this.grid.cells[index];
+				const opacity = this.bag.includes(index) ? 'a' : '4';
+				ctx.fillStyle = clr + opacity;
+				ctx.fillRect(screenX, screenY, cellSize, cellSize);
+			}
+		}
+	}
+}
+
 export const Algorithms = [
 	RecursiveBacktracking,
 	RecursiveDivision,
+	BlobbyRecursiveDivision,
 	Wilsons,
 	AldousBroder,
 	AldousBroderWilsonHybrid,
