@@ -24,9 +24,7 @@ export function convertGridToGraph(grid, start = grid.cells[0]) {
             const dir = directions[i];
             const neighbor = grid.cells[cell.index + dir];
             if (neighbor !== undefined && !cell.walls[i]) {
-                if (visited.has(neighbor))
-                    node.neighbors.push(nodeMap.get(neighbor));
-                else
+                if (!visited.has(neighbor))
                     stack.push([cell, neighbor]);
             }
         }

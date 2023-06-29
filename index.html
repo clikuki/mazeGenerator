@@ -139,22 +139,37 @@
 				<ul>
 					<li>
 						<span>Recursive Backtracking</span>
-						<ul>
+						<ol>
+							<li>Create a walker, starting from a random spot on the grid</li>
+							<li>Walk to a random unvisited neighbor and carve a wall in between</li>
 							<li>
-								Creates a path while avoiding itself and the walls. When a dead-end is
-								reached, it backtracks until it reaches open space to branch away
+								If all neighbors are visited, backtrack to the last cell and try again
 							</li>
-							<li>Long, winding corridors</li>
-							<li>Few branches</li>
+							<li>
+								The maze is finished when we backtrack all the way back to the start
+							</li>
+						</ol>
+						<ul>
+							<li>Creates long, winding corridors</li>
+							<li>
+								Few branches - can only create branches when a dead-end is reached
+							</li>
 						</ul>
 					</li>
 					<li>
 						<span>Recursive Division</span>
-						<ul>
+						<ol>
+							<li>Collect all of the cells into a chamber</li>
 							<li>
-								Splits an area into two smaller and smaller pieces until an area is as
-								small as it can be
+								Split the chamber with a wall horizontally or vertically, then cut a
+								hole in the wall
 							</li>
+							<li>
+								Repeat for each subchamber until a region cannot be split anymore or a
+								size threshold is reached
+							</li>
+						</ol>
+						<ul>
 							<li>
 								Very quick - Can quickly split large spaces into smaller chambers
 							</li>
@@ -165,12 +180,61 @@
 						</ul>
 					</li>
 					<li>
-						<span>Aldous-Broder algorithm</span>
+						<span>Blobby Recursive Division</span>
+						<br />
+						<em
+							>Algorithm from
+							<a
+								href="https://weblog.jamisbuck.org/2015/1/15/better-recursive-division-algorithm.html"
+								>Jamis Buck's blog</a
+							></em
+						>
+						<ol>
+							<li>Collect all the cells in the maze into a single region.</li>
+							<li>
+								Split the region into two, using the following process:
+								<ol>
+									<li>
+										Choose two cells from the region at random as “seeds”. Identify one as
+										subregion A and one as subregion B. Put them into a set S.
+									</li>
+									<li>Choose a cell at random from S. Remove it from the set.</li>
+									<li>
+										For each of that cell's neighbors, if the neighbor is not already
+										associated with a subregion, add it to S, and associate it with the
+										same subregion as the cell itself.
+									</li>
+									<li>
+										Repeat 2.2 and 2.3 until the entire region has been split into two.
+									</li>
+								</ol>
+							</li>
+							<li>
+								Construct a wall between the two regions by identifying cells in one
+								region that have neighbors in the other region. Leave a gap by omitting
+								the wall from one such cell pair.
+							</li>
+							<li>Repeat 2 and 3 for each subregion, recursively.</li>
+						</ol>
 						<ul>
 							<li>
-								Walks randomly around the grid, carving walls between cells when
-								reaching an unvisited cell
+								Based off of the recursive division algorithm, but avoid the issue of
+								straight lines by creating more natural walls
 							</li>
+							<li>Much slower than the original algorithm</li>
+						</ul>
+					</li>
+					<li>
+						<span>Aldous-Broder algorithm</span>
+						<ol>
+							<li>Create a walker, starting from a random spot on the grid</li>
+							<li>
+								Walk to a random neighbor, carving a hole in between if that neighbor is
+								unvisited
+							</li>
+							<li>Repeat until all cells are visited</li>
+						</ol>
+						<ul>
 							<li>
 								Creates a uniformly spanning tree, ie. corridors, dead-ends, and
 								junctions are completely random, and the maze has no distinguishable
@@ -185,17 +249,29 @@
 					</li>
 					<li>
 						<span>Wilson's algorithm</span>
-						<ul>
+						<ol>
 							<li>
-								Walks randomly around the grid, keeping track of its starting cell and
-								the directions it took from each cell. When it encounters a visited
-								cell, it creates a corridor from the path it took, then repeats the
-								process until all cells are visited
+								Create a walker, starting from a random spot on the grid. Initialize one
+								of the cells as part of the maze
 							</li>
+							<li>
+								Randomly walk around the grid, keeping track of the direction taken when
+								leaving a cell
+							</li>
+							<li>
+								When the walker arrives at a part of the maze, return to the walker's
+								start and follow the directions taken at each cell
+							</li>
+							<li>
+								Move the walker to a random unvisited cell and repeat the walk until all
+								cells are visited
+							</li>
+						</ol>
+						<ul>
 							<li>Creates a uniformly spanning tree</li>
 							<li>
-								Very slow - Slow at the start as there is less visited cells, but gets
-								faster as it creates more corridors for it to path back to
+								Very slow - Slow at the start, but gets faster as it creates more cells
+								for it to path back to
 							</li>
 							<li>Not guaranteed to finish - Could keep generating for forever!</li>
 						</ul>
@@ -220,12 +296,18 @@
 					</li>
 					<li>
 						<span>Binary Tree</span>
-						<ul>
+						<ol>
 							<li>
-								For each cell, it randomly picks between 2 perpendicular directions and
-								carves a wall in that direction
+								Start at the corner of the grid opposite to a chosen directional bias
+								(eg. south-east, north-west)
 							</li>
-							<li>Quick</li>
+							<li>
+								For each cell, carve a wall randomly in one of the chosen directions
+								(horizontal or vertical). If a direction is blocked, choose the other.
+							</li>
+							<li>When the last cell is reached, the maze is complet</li>
+						</ol>
+						<ul>
 							<li>Creates a binary tree, as the name suggests</li>
 							<li>
 								Has a strong diagonal bias, as well as long corridors at the two end
@@ -233,7 +315,7 @@
 							</li>
 							<li>
 								Memory efficient - Its main selling point. As it only looks at the
-								current cell, it doesn't need any state. If using a seedable RNG,
+								current cell, it needs very little state. If using a seedable PRNG,
 								instead of keeping the maze in memory, it can just regenerate the maze
 								when needed. This allows for absolutely massive mazes that don't use too
 								much memory
@@ -242,13 +324,20 @@
 					</li>
 					<li>
 						<span>Kruskal's</span>
-						<ul>
+						<ol>
+							<li>Make a set E of all edges in the maze</li>
 							<li>
-								Gather a list of all edges in the maze. Pick one at random, and if the
-								cells at each side of the edge are disconnected, carve the wall between
-								them. Remove the edge from the list, then repeat picking and carving
-								until all edges have been picked or the maze is completly connected
+								While E is not empty:
+								<ol>
+									<li>Set A as a random edge from E and remove it from the set</li>
+									<li>
+										If the sets at each side of A are disjoint, remove/carve A from the
+										maze.
+									</li>
+								</ol>
 							</li>
+						</ol>
+						<ul>
 							<li>
 								Slow - the number of edges are directly proportional to the width and
 								height of the grid
@@ -258,40 +347,44 @@
 					</li>
 					<li>
 						<span>Prim's</span>
-						<ul>
+						<ol>
 							<li>
-								Open a random cell in the grid, and add its neighbors to a list. Pick
-								and remove a random cell in the list, add its neighbors to the list,
-								then carve a wall from it to an open neigbor. Repeat until all cells are
-								connected
+								Choose a random cell as the starting point, and add its neighbors to the
+								set F
 							</li>
+							<li>
+								While set F is not empty:
+								<ol>
+									<li>Set C as a random cell in F and remove it from the set</li>
+									<li>Carve a wall from C to any adjacent visited cell</li>
+									<li>Add all unvisited neighbors of C to F</li>
+								</ol>
+							</li>
+						</ol>
+						<ul>
 							<li>Creates many short dead-ends</li>
 							<li>
 								All paths tend to go back to the algorithm's starting point, which may
-								undesirable
+								be undesirable
 							</li>
 						</ul>
 					</li>
 					<li>
 						<span>Eller's</span>
 						<ol>
-							<li>In a row, put each cell into their own set.</li>
-							<li>Randomly merge cells that are disjoint/in separate sets.</li>
-							<li>Pick one cell from each set and carve down into the next row.</li>
+							<li>Initialize the first row by adding each cell into their own set</li>
 							<li>
-								Put the remaining closed cells of the next row into their own set
+								For each row except the last:
+								<ol>
+									<li>Merge some of the sets together</li>
+									<li>
+										For each set, pick a random cell in the set and carve down to the next
+										row.
+									</li>
+									<li>Initialize the next row's remaining cells in their own set</li>
+								</ol>
 							</li>
-							<li>Repeat steps 2 - 4 until the last row is reached.</li>
-							<li>
-								Connect every disjoint cell in the last row so that every set is
-								combined into one
-								<br />
-								<span style="font-style: italic; font-weight: bold;">OR</span>
-								<br />
-								While there is more than one set, randomly carve walls between disjoint
-								sets and merge them
-								<br />
-							</li>
+							<li>On the last row, connect every disjoint cell together</li>
 						</ol>
 						<ul>
 							<li>
@@ -307,20 +400,23 @@
 					<li>
 						<span>Sidewinder</span>
 						<ol>
-							<li>Create an empty set</li>
-							<li>Add the current cell to the set</li>
-							<li>decide whether we want to carve to the next cell or not</li>
-							<ul>
-								<li>When on the first row, carve to the next cell</li>
-								<li>When at the end of the column, do not carve</li>
-								<li>Otherwise, pick randomly</li>
-							</ul>
-							<li>If we carved, set the next cell as the new current head</li>
+							<li>Start from the corner cell, and create set R</li>
 							<li>
-								Otherwise, pick a random cell from the set and carve upwards, connecting
-								this set to the maze. Empty the set and start on the next cell
+								For each cell C:
+								<ol>
+									<li>Add C to R</li>
+									<li>Decide whether to carve to the next cell or not</li>
+									<ul>
+										<li>If on the first row, carve to the next cell</li>
+										<li>If at the end of the column, do not carve</li>
+										<li>Otherwise, pick randomly</li>
+									</ul>
+									<li>
+										If we did not carve, pick a random cell to carve vertically from.
+										Empty set R
+									</li>
+								</ol>
 							</li>
-							<li>Repeat until all rows are complete</li>
 						</ol>
 						<ul>
 							<li>
@@ -335,17 +431,22 @@
 					</li>
 					<li>
 						<span>Hunt And Kill</span>
-						<ul>
+						<ol>
+							<li>Create a walker, starting from a random spot on the grid</li>
+							<li>Walk to a random unvisited neighbor and carve a wall in between</li>
 							<li>
-								Creates a path while avoiding itself and the walls. When a dead-end is
-								reached, it "hunts" for an unvisited cell neighboring a visited cell and
-								restarts the algorithm from their until no cells are unvisited
+								If all neighbors are visited, "hunt" for an unvisited cell neighboring a
+								visited cell and start the walker from there
 							</li>
 							<li>
+								The maze is finished when we can no longer find any unvisited cells
+							</li>
+						</ol>
+						<ul>
+							<li>
 								Very similar to the recursive backtracking in features and generation,
-								the only difference is that instead of backtracking to find an open
-								cell, it searches the maze for an open cell instead. This makesit
-								somewhat simpler, especially when
+								the only difference is that instead of backtracking, it searches through
+								the maze instead.
 							</li>
 							<li>
 								My implementation includes an optimization where it remembers the row it
@@ -361,13 +462,17 @@
 					<li>
 						<span>Growing Tree</span>
 						<ol>
-							<li>Create a list and initialize it with a random cell</li>
-							<li>Pick a cell from the list</li>
+							<li>Create list S and initialize it with a random cell</li>
 							<li>
-								Select one of its neighbors to carve to and add it to the list. If there
-								are no unvisited neighbors, remove that cell from the list
+								While S is not empty:
+								<ol>
+									<li>Pick cell C from the list</li>
+									<li>
+										Select a neighbor of C to carve to and add it to the S. If there are
+										no unvisited neighbors, remove C from S
+									</li>
+								</ol>
 							</li>
-							<li>Repeat 2 - 3 until the list is empty</li>
 						</ol>
 						<ul>
 							<li>
@@ -394,16 +499,24 @@
 					>
 					<li>
 						<span>Flood-Fill Algorithm</span>
+						<ol>
+							<li>Create a list L of all dead-ends in the maze</li>
+							<li>
+								While L is not empty:
+								<ol>
+									<li>Pick a random dead-end D and fill it in</li>
+									<li>
+										If D has a neighbor with a wall count (including filled in cells)
+										greater than 1, add it to L
+									</li>
+								</ol>
+							</li>
+						</ol>
 						<ul>
 							<li>
-								Finds every dead-end in the maze and fills them in until it reaches a
-								junction. This keeps into account filled-in cells by the algorithm until
-								no cell can be fill in anymore.
-							</li>
-							<li>
 								If a maze is imperfect (has loops, multiple solutions), it will feature
-								two unfilled paths. A BFS algorithm or similar can be used to find the
-								shortest route
+								multiple unfilled paths. BFS, A*, or a similar algorithm could then be
+								used to find the shortest route among them
 							</li>
 							<li>
 								Requires full knowledge of the maze, unlike other algorithms that use

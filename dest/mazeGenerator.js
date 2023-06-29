@@ -1031,11 +1031,13 @@ class BlobbyRecursiveDivision {
             if (c.y === grid.rowCnt - 1)
                 c.walls[2] = true;
         });
-        const a = randomItemInArray(this.regions[0]);
+        let a = randomItemInArray(this.regions[0]);
         let b;
         do {
             b = randomItemInArray(this.regions[0]);
         } while (b === a);
+        if (a > b)
+            [a, b] = [b, a];
         this.currRegion = new Set(this.regions[0]);
         this.subregionA.add(a);
         this.subregionB.add(b);
@@ -1074,11 +1076,13 @@ class BlobbyRecursiveDivision {
             }
             // Choose starting points
             const region = this.regions[this.regions.length - 1];
-            const a = randomItemInArray(region);
+            let a = randomItemInArray(region);
             let b;
             do {
                 b = randomItemInArray(region);
             } while (b === a);
+            if (a > b)
+                [a, b] = [b, a];
             this.currRegion = new Set(region);
             this.subregionA.add(a);
             this.subregionB.add(b);
@@ -1132,7 +1136,21 @@ class BlobbyRecursiveDivision {
         }
     }
 }
+// DEBUG ONLY
+class EmptyGrid {
+    static key = 'Empty Grid';
+    isComplete = true;
+    constructor(grid) {
+        grid.cells.forEach((c) => {
+            c.open = true;
+            c.walls.fill(false);
+        });
+    }
+    step() { }
+    draw() { }
+}
 export const Algorithms = [
+    // EmptyGrid, // DEBUG ONLY
     RecursiveBacktracking,
     RecursiveDivision,
     BlobbyRecursiveDivision,
