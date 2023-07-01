@@ -15,7 +15,6 @@ import { GraphNode, convertGridToGraph } from './utils.js';
 */
 
 type MazeGeneratorClass = (typeof mazeGenerators)[number];
-type UndefinedOr<T> = T | undefined;
 
 const canvas = document.querySelector('canvas')!;
 const ctx = canvas.getContext('2d')!;
@@ -26,8 +25,8 @@ let grid = new Grid(10, 10, canvas);
 let mazeSolver: MazeSolver | undefined;
 let solveStartIndex: number | null = null;
 const mazeGen: {
-	class: UndefinedOr<MazeGeneratorClass>;
-	instance: UndefinedOr<InstanceType<MazeGeneratorClass>>;
+	class?: MazeGeneratorClass;
+	instance?: InstanceType<MazeGeneratorClass>;
 	options: MazeOptions;
 } = {
 	class: undefined,

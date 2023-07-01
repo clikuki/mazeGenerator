@@ -1251,19 +1251,26 @@ class BlobbyRecursiveDivision {
 	}
 }
 
-// DEBUG ONLY
-class EmptyGrid {
-	static readonly key = 'Empty Grid';
-	isComplete = true;
-	constructor(grid: Grid) {
-		grid.cells.forEach((c) => {
-			c.open = true;
-			c.walls.fill(false);
-		});
-	}
-	step() {}
-	draw() {}
-}
+// // DEBUG ONLY
+// class EmptyGrid {
+// 	static readonly key = 'Empty Grid';
+// 	isComplete = true;
+// 	constructor(grid: Grid) {
+// 		grid.cells.forEach((c) => {
+// 			c.open = true;
+// 			c.walls = [false, false, false, false];
+// 			if (c.x === 0) c.walls[3] = true;
+// 			if (c.y === 0) c.walls[0] = true;
+// 			if (c.x === grid.colCnt - 1) c.walls[1] = true;
+// 			if (c.y === grid.rowCnt - 1) c.walls[2] = true;
+
+// 			// if (c.x === Math.floor(grid.colCnt / 2)) c.walls[3] = true;
+// 			// if (c.x === Math.floor(grid.colCnt / 2 - 1)) c.walls[1] = true;
+// 		});
+// 	}
+// 	step() {}
+// 	draw() {}
+// }
 
 export const Algorithms = [
 	// EmptyGrid, // DEBUG ONLY

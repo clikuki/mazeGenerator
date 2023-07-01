@@ -1,22 +1,15 @@
 import { Cell, Grid } from './grid.js';
 import { GraphNode, convertGridToGraph } from './utils.js';
 
-// Only works for perfect mazes, which are the only mazes I make
-function nodeToPath(start: GraphNode, filled: Set<GraphNode>) {
-	const visited = new Set<GraphNode>();
-	const path = [];
-	let current: GraphNode | null = start;
-	mainLoop: while (current !== null) {
-		visited.add(current);
-		path.push(current.cell);
-		for (const neighbor of current.neighbors) {
-			if (filled.has(neighbor) || visited.has(neighbor)) continue;
-			current = neighbor;
-			continue mainLoop;
-		}
-		current = null;
+function tracePath(nodes: AStarNode[], dest: number) {
+	const path: number[] = [];
+	let node = nodes[dest];
+	while (node.parent !== undefined) {
+		path.push(node.index);
+		node = nodes[node.parent];
 	}
-	return path;
+	path.push(node.index);
+	return path.reverse();
 }
 
 type Color = [number, number, number];
@@ -71,6 +64,14 @@ while(open.length) {
 }
 */
 
+interface AStarNode {
+	index: number;
+	parent?: number;
+	f: number;
+	g: number;
+	h: number;
+}
+
 export const pathDrawMethodList = ['GRADIENT', 'LINE'] as const;
 export type pathDrawMethods = (typeof pathDrawMethodList)[number];
 export class MazeSolver {
@@ -78,19 +79,25 @@ export class MazeSolver {
 	from: number;
 	to: number;
 	isComplete = false;
-	directions: [number, number, number, number];
-	corridorsToFill: (GraphNode | null)[] = [];
-	filledNodes = new Set<GraphNode>();
+	deadEndsAreFilled = false;
+	pathDrawMethod: pathDrawMethods = pathDrawMethodList[0];
+	path?: number[];
+
+	// Dead-end filling
 	graph: Map<Cell, GraphNode>;
 	current: GraphNode;
+	deadEnds: GraphNode[] = [];
+	filledNodes = new Set<GraphNode>();
 	grayOutFilledNodes = false;
-	pathDrawMethod: pathDrawMethods = pathDrawMethodList[0];
-	path?: Cell[];
+
+	// A*
+	nodes: AStarNode[] = [];
+	open: number[] = [];
+	closed = new Set<number>();
 	constructor(grid: Grid, from: number, to: number) {
 		this.grid = grid;
 		this.from = from;
 		this.to = to;
-		this.directions = [-grid.colCnt, 1, grid.colCnt, -1];
 
 		// Precompute some data
 		this.graph = convertGridToGraph(grid, grid.cells[from]);
@@ -98,83 +105,165 @@ export class MazeSolver {
 		for (let i = 0; i < grid.cells.length; i++) {
 			const cell = grid.cells[i];
 			const cellWallCount = cell.walls.filter((w) => w).length;
-			if (
-				cell.open &&
-				cell.index !== this.from &&
-				cell.index !== this.to &&
-				cellWallCount >= 3
-			) {
-				this.corridorsToFill.push(this.graph.get(cell)!);
+			if (cell.open && ![from, to].includes(cell.index) && cellWallCount >= 3) {
+				this.deadEnds.push(this.graph.get(cell)!);
 			}
+
+			this.nodes[i] = {
+				index: i,
+				f: Infinity,
+				g: Infinity,
+				h: Infinity,
+			};
 		}
+
+		this.nodes[from] = {
+			index: from,
+			f: 0,
+			g: 0,
+			h: 0,
+		};
+		this.open.push(from);
+	}
+	calculateHueristics(from: number) {
+		const x1 = from % this.grid.colCnt;
+		const y1 = Math.floor(from / this.grid.colCnt);
+		const x2 = this.to % this.grid.colCnt;
+		const y2 = Math.floor(this.to / this.grid.colCnt);
+		// Manhattan distance
+		return Math.abs(x2 - x1) + Math.abs(y2 - y1);
 	}
 	step() {
 		if (this.isComplete) return;
 
-		// Dead-end filling
-		let hasReplacedCell = false;
-		for (let i = 0; i < this.corridorsToFill.length; i++) {
-			const node = this.corridorsToFill[i];
-			if (!node) continue;
-			this.filledNodes.add(node);
-
-			this.corridorsToFill[i] = null;
-			for (const neighbor of node.neighbors) {
-				if (
-					neighbor.walls++ < 2 ||
-					this.filledNodes.has(neighbor) ||
-					neighbor.cell === this.grid.cells[this.from] ||
-					neighbor.cell === this.grid.cells[this.to]
-				) {
-					continue;
-				}
-				this.corridorsToFill[i] = neighbor;
-				hasReplacedCell = true;
-				break;
+		if (this.deadEndsAreFilled) {
+			// A* to narrow paths
+			// TODO: optimize for larger grids, and just in general
+			if (this.open.length === 0) {
+				this.isComplete = true;
+				throw 'A* cannot reach destination';
 			}
-		}
+			const nodeIndex = this.open.reduce((lowest, index) => {
+				if (this.nodes[index].f < this.nodes[lowest].f) return index;
+				return lowest;
+			});
+			const node = this.nodes[nodeIndex];
+			this.open = this.open.filter((i) => i !== nodeIndex);
+			this.closed.add(nodeIndex);
 
-		if (!hasReplacedCell) {
-			this.isComplete = true;
-			this.path = nodeToPath(
-				this.graph.get(this.grid.cells[this.from])!,
-				this.filledNodes,
-			);
-			return;
+			if (nodeIndex === this.to) {
+				// Destination reached!
+				this.isComplete = true;
+				this.path = tracePath(this.nodes, this.to);
+				return;
+			}
+
+			const directions = [-this.grid.colCnt, 1, this.grid.colCnt, -1];
+			for (let i = 0; i < directions.length; i++) {
+				const dir = directions[i];
+				const neighborIndex = node.index + dir;
+				const neighbor = this.grid.cells[neighborIndex];
+
+				if (!neighbor) continue;
+
+				// Prevent Walker from going over left and right edges
+				if (
+					Math.abs(dir) === 1 &&
+					neighbor.screenY !== this.grid.cells[node.index].screenY
+				)
+					continue;
+
+				if (this.grid.cells[nodeIndex].walls[i]) continue;
+				if (this.filledNodes.has(this.graph.get(neighbor)!)) continue;
+				if (this.closed.has(neighborIndex)) continue;
+
+				const newG = node.g + 0; // TODO: add input to change g
+				const newH = this.calculateHueristics(neighborIndex);
+				const newF = newG + newH;
+				if (this.nodes[neighborIndex].f > newF) {
+					this.open.push(neighborIndex);
+					this.nodes[neighborIndex] = {
+						index: neighborIndex,
+						parent: nodeIndex,
+						f: newF,
+						g: newG,
+						h: newH,
+					};
+				}
+			}
+		} else {
+			// Dead-end filling
+			const newDeadEnds: GraphNode[] = [];
+			for (let i = 0; i < this.deadEnds.length; i++) {
+				const node = this.deadEnds[i];
+				this.filledNodes.add(node);
+
+				for (const neighbor of node.neighbors) {
+					if (
+						neighbor.walls++ < 2 ||
+						this.filledNodes.has(neighbor) ||
+						[this.from, this.to].includes(neighbor.cell.index)
+					) {
+						continue;
+					}
+					newDeadEnds.push(neighbor);
+					break;
+				}
+			}
+			this.deadEnds = newDeadEnds;
+
+			if (this.deadEnds.length === 0) this.deadEndsAreFilled = true;
 		}
 	}
 	draw(ctx: CanvasRenderingContext2D) {
+		const cellSize = this.grid.cellSize;
 		const fromCell = this.grid.cells[this.from];
 		const toCell = this.grid.cells[this.to];
 		if (!this.isComplete || this.pathDrawMethod === 'LINE') {
 			ctx.fillStyle = arrayToClrStr(startColor);
-			ctx.fillRect(
-				fromCell.screenX,
-				fromCell.screenY,
-				this.grid.cellSize,
-				this.grid.cellSize,
-			);
+			ctx.fillRect(fromCell.screenX, fromCell.screenY, cellSize, cellSize);
 			ctx.fillStyle = arrayToClrStr(endColor);
-			ctx.fillRect(
-				toCell.screenX,
-				toCell.screenY,
-				this.grid.cellSize,
-				this.grid.cellSize,
-			);
+			ctx.fillRect(toCell.screenX, toCell.screenY, cellSize, cellSize);
+		}
+		if (!this.isComplete && this.deadEndsAreFilled) {
+			for (const node of this.nodes) {
+				if (this.filledNodes.has(this.graph.get(this.grid.cells[node.index])!))
+					continue;
+
+				// F number
+				const { screenX, screenY } = this.grid.cells[node.index];
+				const x = screenX + cellSize / 2;
+				const y = screenY + cellSize / 2;
+				ctx.fillStyle = '#fff';
+				ctx.font = `${cellSize / 3}px monospace`;
+				ctx.textAlign = 'center';
+				ctx.textBaseline = 'middle';
+				if (node.f === Infinity) ctx.fillText('∞', x, y);
+				else ctx.fillText(String(+node.f.toPrecision(2)), x, y);
+
+				// Cell clr
+				let color;
+				if (this.open.includes(node.index)) color = '#0e0a';
+				else if (this.closed.has(node.index)) color = '#e00a';
+				if (color) {
+					ctx.fillStyle = color;
+					ctx.fillRect(screenX, screenY, cellSize, cellSize);
+				}
+			}
 		}
 		if (this.isComplete && this.path) {
 			switch (this.pathDrawMethod) {
 				case 'GRADIENT':
 					for (let i = 0; i < this.path.length; i++) {
-						const cell = this.path[i];
+						const { screenX, screenY } = this.grid.cells[this.path[i]];
 						const progress = i / (this.path.length - 1);
 						const color = lerpClr(startColor, endColor, progress);
 						ctx.fillStyle = arrayToClrStr(color);
 						ctx.fillRect(
-							Math.floor(cell.screenX),
-							Math.floor(cell.screenY),
-							Math.ceil(this.grid.cellSize),
-							Math.ceil(this.grid.cellSize),
+							Math.floor(screenX),
+							Math.floor(screenY),
+							Math.ceil(cellSize),
+							Math.ceil(cellSize),
 						);
 					}
 					break;
@@ -182,19 +271,20 @@ export class MazeSolver {
 					{
 						const linePath = new Path2D();
 						let isStartCell = true;
-						for (const cell of this.path) {
-							if (isStartCell) linePath.moveTo(cell.screenX, cell.screenY);
-							else linePath.lineTo(cell.screenX, cell.screenY);
+						for (const index of this.path) {
+							const { screenX, screenY } = this.grid.cells[index];
+							if (isStartCell) linePath.moveTo(screenX, screenY);
+							else linePath.lineTo(screenX, screenY);
 							isStartCell = false;
 						}
 
 						const circlePath = new Path2D();
-						const circleRX = this.grid.cellSize * 0.05;
-						const circleRY = this.grid.cellSize * 0.05;
-						for (const cell of [fromCell, toCell]) {
+						const circleRX = cellSize * 0.05;
+						const circleRY = cellSize * 0.05;
+						for (const { screenX, screenY } of [fromCell, toCell]) {
 							circlePath.ellipse(
-								cell.screenX,
-								cell.screenY,
+								screenX,
+								screenY,
 								circleRX,
 								circleRY,
 								0,
@@ -204,7 +294,7 @@ export class MazeSolver {
 						}
 
 						ctx.save();
-						ctx.translate(this.grid.cellSize / 2, this.grid.cellSize / 2);
+						ctx.translate(this.grid.cellSize / 2, cellSize / 2);
 						ctx.strokeStyle = '#0f0';
 						ctx.stroke(linePath);
 						ctx.fillStyle = ctx.strokeStyle;
@@ -217,7 +307,6 @@ export class MazeSolver {
 			}
 		} else {
 			const grayPath = new Path2D();
-			const cellSize = this.grid.cellSize;
 			for (const {
 				cell: { screenX, screenY },
 			} of this.filledNodes) {
