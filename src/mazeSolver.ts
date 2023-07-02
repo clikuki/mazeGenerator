@@ -25,45 +25,6 @@ function arrayToClrStr([r, g, b]: Color) {
 	return `rgb(${r}, ${g}, ${b})`;
 }
 
-/*
-
-A star pseudocode
-
-interface cell {
-	index: number;
-	parent: cell | null;
-	f: number;
-	g: number;
-	h: number;
-}
-
-let open = [startCell];
-const closed = [];
-while(open.length) {
-	const q = open.reduce((lowest, cell) => {
-		if(cell.f < lowest.cell) return cell;
-		return lowest
-	})
-	open = open.filter(c => c !== q);
-	for(const neighbor of neighbors) {
-		neighbor.parent = q;
-
-		if(neighbor === goalCell) return;
-		
-		neighbor.g = q.g + 1;
-		neighbor.h = calculateHueristic(neighbor); // distance from goal to successor - Manhattan, Diagonal, Euclidean
-		neighbor.f = neighbor.g + neighbor.h;
-
-		if(open.has(neighbor) && open.get(neighbor).f < neighbor) continue;
-		if(closed.has(neighbor)) {
-			if(closed.get(neighbor).f < neighbor.f) continue;
-			open.push(neighbor);
-		}
-	}
-	closed.push(q);
-}
-*/
-
 interface AStarNode {
 	index: number;
 	parent?: number;
@@ -139,6 +100,7 @@ export class MazeSolver {
 		if (this.deadEndsAreFilled) {
 			// A* to narrow paths
 			// TODO: optimize for larger grids, and just in general
+			// TODO: Fix this, since code doesn't actually match my step-by-step or wikipedia's pseudocode lol
 			if (this.open.length === 0) {
 				this.isComplete = true;
 				throw 'A* cannot reach destination';

@@ -81,6 +81,7 @@ export class MazeSolver {
         if (this.deadEndsAreFilled) {
             // A* to narrow paths
             // TODO: optimize for larger grids, and just in general
+            // TODO: Fix this, since code doesn't actually match my step-by-step or wikipedia's pseudocode lol
             if (this.open.length === 0) {
                 this.isComplete = true;
                 throw 'A* cannot reach destination';

@@ -3,7 +3,11 @@ import { randomItemInArray, shuffle } from './utils.js';
 
 export interface MazeOptions {
 	[RecursiveDivision.key]: {
-		useBFS: boolean;
+		useBfs: boolean;
+	};
+	[BlobbyRecursiveDivision.key]: {
+		useBfs: boolean;
+		roomSize: number;
 	};
 	[BinaryTree.key]: {
 		horizontal: Horizontal;
@@ -368,9 +372,9 @@ class RecursiveDivision {
 	isComplete = false;
 	chambers: [x: number, y: number, w: number, h: number][];
 	grid: Grid;
-	useBFS: boolean;
-	constructor(grid: Grid, { 'Recursive Division': { useBFS } }: MazeOptions) {
-		this.useBFS = useBFS;
+	useBfs: boolean;
+	constructor(grid: Grid, { 'Recursive Division': { useBfs } }: MazeOptions) {
+		this.useBfs = useBfs;
 		for (const cell of grid.cells) {
 			cell.open = true;
 			cell.walls = [false, false, false, false];
@@ -391,7 +395,7 @@ class RecursiveDivision {
 		if (this.isComplete) return;
 
 		let chamber;
-		if (this.useBFS) chamber = this.chambers.shift();
+		if (this.useBfs) chamber = this.chambers.shift();
 		else chamber = this.chambers.pop();
 		if (!chamber) {
 			this.isComplete = true;
@@ -452,7 +456,7 @@ class RecursiveDivision {
 	draw(ctx: CanvasRenderingContext2D) {
 		if (this.isComplete) return;
 
-		const chamber = this.chambers[this.useBFS ? 0 : this.chambers.length - 1];
+		const chamber = this.chambers[this.useBfs ? 0 : this.chambers.length - 1];
 		if (!chamber) return;
 
 		ctx.fillStyle = '#f00a';
@@ -1126,7 +1130,12 @@ class BlobbyRecursiveDivision {
 	bag: number[] = [];
 	edges: Edge[] = [];
 	wallMap: { [key: number]: number };
-	constructor(grid: Grid) {
+	useBfs: boolean;
+	roomSize: number;
+	constructor(
+		grid: Grid,
+		{ 'Blobby Recursive Division': { roomSize, useBfs } }: MazeOptions,
+	) {
 		this.grid = grid;
 		this.wallMap = {
 			[-this.grid.colCnt]: 0,
@@ -1134,6 +1143,9 @@ class BlobbyRecursiveDivision {
 			[this.grid.colCnt]: 2,
 			[-1]: 3,
 		};
+
+		this.useBfs = useBfs;
+		this.roomSize = roomSize;
 
 		grid.cells.forEach((c, i) => {
 			this.regions[0][i] = i;
@@ -1178,8 +1190,7 @@ class BlobbyRecursiveDivision {
 			this.regions.length--;
 			for (const subregion of [this.subregionA, this.subregionB]) {
 				// Only add if subregion is bigger than a given threshold
-				// TODO: fix solving algo to allow for larger threshold
-				if (subregion.size > 3) {
+				if (subregion.size > this.roomSize) {
 					this.regions.push(Array.from(subregion));
 				}
 				subregion.clear();
@@ -1192,7 +1203,7 @@ class BlobbyRecursiveDivision {
 			}
 
 			// Choose starting points
-			const region = this.regions[this.regions.length - 1];
+			const region = this.regions[this.useBfs ? 0 : this.regions.length - 1];
 			let a = randomItemInArray(region);
 			let b;
 			do {

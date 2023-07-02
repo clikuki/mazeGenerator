@@ -79,13 +79,20 @@
 					</div>
 					<div class="mazeAlgo">
 						<div class="recursiveDivisionTraversal">
-							<label for="recursiveDivisionTraversalInput"
+							<label
+								title="Includes both versions of recursive division"
+								for="recursiveDivisionTraversalInput"
 								>Recursive Division Traversal Method</label
 							>
 							<select id="recursiveDivisionTraversalInput">
 								<option value="DFS">Depth-First</option>
 								<option value="BFS">Breadth-First</option>
 							</select>
+						</div>
+						<div class="blobbyDivisionGInput">
+							<label
+								>Blobby Division Room Size<input type="number" class="column" min="1"
+							/></label>
 						</div>
 						<div class="binaryTree">
 							<label for="binaryTreeInput">Binary Tree Direction</label>
@@ -495,7 +502,7 @@
 					</li>
 					<span
 						style="font-style: italic; color: #222; margin-top: .5rem; display: inline-block;"
-						>EXTRA: Maze Solver algorithm</span
+						>EXTRA: Maze Solver algorithms</span
 					>
 					<li>
 						<span>Flood-Fill Algorithm</span>
@@ -521,6 +528,67 @@
 							<li>
 								Requires full knowledge of the maze, unlike other algorithms that use
 								walkers
+							</li>
+						</ul>
+					</li>
+					<li>
+						<span>A*</span>
+						<br />
+						<span>
+							Better explanation:
+							<a href="https://en.wikipedia.org/wiki/A*_search_algorithm">
+								Wikipedia</a
+							></span
+						>
+						<ol>
+							<li>
+								Create the following:
+								<ul>
+									<li>Set O containing the set of all open/fringe/frontier nodes</li>
+									<li>Map G containing the cost of traveling to a node</li>
+									<li>
+										Function H that calculates the hueristic for any given cell, which can
+										be the distance from the node to the end node
+									</li>
+									<li>Map F to store the sum of a node's G and H</li>
+									<li>Map P to store a nodes parent</li>
+								</ul>
+								Let start be the start of the maze, and initialize O, G[start], and
+								F[start] with start, 0 and H(start), respectively
+							</li>
+							<li>
+								While O is not empty:
+								<ol>
+									<li>
+										Let N be the node in O with the lowest F, and remove it from the set
+									</li>
+									<li>
+										If N is the destination, end the search and trace the path by
+										following P[goal] until start is reached
+									</li>
+									<li>
+										For each of N's neighbors M:
+										<ol>
+											<li>Let New_G be the cost of going from N to M</li>
+											<li>
+												If New_G &lt; G[M], then:
+												<ol>
+													<li>Add M to O</li>
+													<li>Set P[M] to N</li>
+													<li>Set G[M] to New_G</li>
+													<li>Set F[M] to New_G + H(M)</li>
+												</ol>
+											</li>
+										</ol>
+									</li>
+								</ol>
+							</li>
+							<li>If O is empty, the search has failed</li>
+						</ol>
+						<ul>
+							<li>
+								Used to trace the path from the dead-end filling or to solve mazes with
+								rooms, as is the case with blobby recursive division
 							</li>
 						</ul>
 					</li>

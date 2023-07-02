@@ -33,7 +33,11 @@ const mazeGen: {
 	instance: undefined,
 	options: {
 		'Recursive Division': {
-			useBFS: false,
+			useBfs: false,
+		},
+		'Blobby Recursive Division': {
+			useBfs: false,
+			roomSize: 3,
 		},
 		'Binary Tree': {
 			horizontal: 'EAST',
@@ -300,11 +304,31 @@ const rdTraversalSelection = document.querySelector(
 	'.recursiveDivisionTraversal select',
 ) as HTMLSelectElement;
 const rdOption = mazeGen.options['Recursive Division'];
-rdTraversalSelection.value = rdOption.useBFS ? 'BFS' : 'DFS';
+const brdOption = mazeGen.options['Blobby Recursive Division'];
+rdTraversalSelection.value = rdOption.useBfs ? 'BFS' : 'DFS';
 rdTraversalSelection.addEventListener('click', () => {
 	const method = rdTraversalSelection.value === 'BFS' ? true : false;
-	rdOption.useBFS = method;
-	if (mazeGen.class?.key === 'Recursive Division') restart({});
+	brdOption.useBfs = rdOption.useBfs = method;
+	if (
+		['Recursive Division', 'Blobby Recursive Division'].includes(
+			mazeGen.class?.key!,
+		)
+	)
+		restart({});
+});
+
+const brdSizeInput = document.querySelector(
+	'.blobbyDivisionGInput input',
+) as HTMLInputElement;
+brdSizeInput.valueAsNumber = brdOption.roomSize;
+brdSizeInput.addEventListener('change', () => {
+	const newSize = brdSizeInput.valueAsNumber;
+	if (isNaN(newSize) || newSize < 1) {
+		brdSizeInput.valueAsNumber = brdOption.roomSize;
+		return;
+	}
+	brdOption.roomSize = newSize;
+	if (mazeGen.class?.key === 'Blobby Recursive Division') restart({});
 });
 
 const binaryTreeSelection = document.querySelector(
