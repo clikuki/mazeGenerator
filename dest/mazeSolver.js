@@ -38,7 +38,7 @@ export class MazeSolver {
         this.grid = grid;
         this.from = from;
         this.to = to;
-        this.aStarPhase = options.useDeadEndFilling;
+        this.aStarPhase = !options.useDeadEndFilling;
         this.distanceMethod = options.distanceMethod;
         this.hMult = options.hMult;
         // Precompute some data

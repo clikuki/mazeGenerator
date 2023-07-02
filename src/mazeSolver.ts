@@ -55,7 +55,7 @@ export class MazeSolver {
 		this.from = from;
 		this.to = to;
 
-		this.aStarPhase = options.useDeadEndFilling;
+		this.aStarPhase = !options.useDeadEndFilling;
 		this.distanceMethod = options.distanceMethod;
 		this.hMult = options.hMult;
 
