@@ -38,6 +38,11 @@ const mazeGen = {
 if (mazeGen.class) {
     mazeGen.instance = new mazeGen.class(grid, mazeGen.options);
 }
+const solverOptions = {
+    useDeadEndFilling: true,
+    distanceMethod: 'EUCLIDEAN',
+    hMult: 1,
+};
 let pathDrawMethod = pathDrawMethodList[0];
 let pause = false;
 const simulationSpeed = {
@@ -332,6 +337,40 @@ growingTreePickingStyleSelection.addEventListener('change', () => {
     if (mazeGen.class?.key === 'Growing Tree')
         restart({});
 });
+function restartSolver() {
+    mazeSolver = new MazeSolver(grid, mazeSolver.from, mazeSolver.to, solverOptions);
+}
+const distanceMethodSelection = document.querySelector('.distanceMethod select');
+distanceMethodSelection.value = solverOptions.distanceMethod;
+distanceMethodSelection.addEventListener('change', () => {
+    // @ts-ignore
+    solverOptions.distanceMethod = distanceMethodSelection.value;
+    if (mazeSolver)
+        restartSolver();
+});
+const useDeadEndFillingBtn = document.querySelector('.useDeadEndFilling button');
+useDeadEndFillingBtn.textContent = solverOptions.useDeadEndFilling
+    ? 'Enabled'
+    : 'Disabled';
+useDeadEndFillingBtn.addEventListener('click', () => {
+    solverOptions.useDeadEndFilling = !solverOptions.useDeadEndFilling;
+    useDeadEndFillingBtn.textContent = solverOptions.useDeadEndFilling
+        ? 'Enabled'
+        : 'Disabled';
+    if (mazeSolver)
+        restartSolver();
+});
+const hMultInput = document.querySelector('.hMult input');
+hMultInput.valueAsNumber = solverOptions.hMult;
+hMultInput.addEventListener('change', () => {
+    const newVal = hMultInput.valueAsNumber;
+    if (isNaN(newVal)) {
+        hMultInput.valueAsNumber = solverOptions.hMult;
+        return;
+    }
+    solverOptions.hMult = newVal;
+    restartSolver();
+});
 let prevTime = Date.now();
 (function loop() {
     requestAnimationFrame(loop);
@@ -423,7 +462,7 @@ canvas.addEventListener('click', (e) => {
             return;
         const cellIndex = cellY * grid.colCnt + cellX;
         if (solveStartIndex !== null && solveStartIndex !== cellIndex) {
-            mazeSolver = new MazeSolver(grid, solveStartIndex, cellIndex);
+            mazeSolver = new MazeSolver(grid, solveStartIndex, cellIndex, solverOptions);
             mazeSolver.pathDrawMethod = pathDrawMethod;
             solveStartIndex = null;
             pauseBtn.disabled = false;

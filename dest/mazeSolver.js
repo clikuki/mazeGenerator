@@ -1,14 +1,4 @@
-import { convertGridToGraph } from './utils.js';
-function tracePath(comeFrom, dest) {
-    const path = [];
-    let index = dest;
-    while (comeFrom[index] !== undefined) {
-        path.push(index);
-        index = comeFrom[index];
-    }
-    path.push(index);
-    return path.reverse();
-}
+import { convertGridToGraph, PriorityQueue } from './utils.js';
 const startColor = [0, 0, 255];
 const endColor = [255, 0, 0];
 function lerp(a, b, p) {
@@ -20,59 +10,13 @@ function lerpClr([a1, a2, a3], [b1, b2, b3], p) {
 function arrayToClrStr([r, g, b]) {
     return `rgb(${r}, ${g}, ${b})`;
 }
-const swap = (arr, i, j) => {
-    [arr[i], arr[j]] = [arr[j], arr[i]];
-};
-class PriorityQueue {
-    heap;
-    isGreater;
-    constructor(comparator, init = []) {
-        this.heap = init;
-        this.isGreater = (a, b) => comparator(init[a], init[b]) > 0;
-    }
-    get size() {
-        return this.heap.length;
-    }
-    peek() {
-        return this.heap[0];
-    }
-    add(value) {
-        this.heap.push(value);
-        this.#siftUp();
-    }
-    poll(heap = this.heap, value = heap[0], length = heap.length) {
-        if (length)
-            swap(heap, 0, length - 1);
-        heap.pop();
-        this.#siftDown();
-        return value;
-    }
-    #siftUp(node = this.size - 1, parent = ((node + 1) >>> 1) - 1) {
-        for (; node && this.isGreater(node, parent); node = parent, parent = ((node + 1) >>> 1) - 1) {
-            swap(this.heap, node, parent);
-        }
-    }
-    #siftDown(size = this.size, node = 0, isGreater = this.isGreater) {
-        while (true) {
-            const leftNode = (node << 1) + 1;
-            const rightNode = leftNode + 1;
-            if ((leftNode >= size || isGreater(node, leftNode)) &&
-                (rightNode >= size || isGreater(node, rightNode))) {
-                break;
-            }
-            const maxChild = rightNode < size && isGreater(rightNode, leftNode) ? rightNode : leftNode;
-            swap(this.heap, node, maxChild);
-            node = maxChild;
-        }
-    }
-}
 export const pathDrawMethodList = ['GRADIENT', 'LINE'];
 export class MazeSolver {
     grid;
     from;
     to;
     isComplete = false;
-    deadEndsAreFilled = false;
+    aStarPhase = false;
     pathDrawMethod = pathDrawMethodList[0];
     path;
     // Dead-end filling
@@ -87,12 +31,16 @@ export class MazeSolver {
     gScore = [];
     fScore = [];
     hMem = [];
-    hMult = 1; // TODO: Setting to 0 should make it act like djikstra (dist * 0 = 0), but instead its acting weird. Might have to do with the queue?
     comeFrom = [];
-    constructor(grid, from, to) {
+    hMult = 1; // TODO: Setting to 0 should make it act like djikstra (dist * 0 = 0), but instead its acting weird. Might have to do with the queue?
+    distanceMethod;
+    constructor(grid, from, to, options) {
         this.grid = grid;
         this.from = from;
         this.to = to;
+        this.aStarPhase = options.useDeadEndFilling;
+        this.distanceMethod = options.distanceMethod;
+        this.hMult = options.hMult;
         // Precompute some data
         this.graph = convertGridToGraph(grid, grid.cells[from]);
         this.current = this.graph.get(grid.cells[from]);
@@ -115,17 +63,32 @@ export class MazeSolver {
             const y1 = Math.floor(from / this.grid.colCnt);
             const x2 = this.to % this.grid.colCnt;
             const y2 = Math.floor(this.to / this.grid.colCnt);
-            // // Manhattan distance
-            // this.hMem[from] = (Math.abs(x2 - x1) + Math.abs(y2 - y1)) * this.hMult;
-            // Euclidean distance
-            this.hMem[from] = Math.sqrt((x2 - x1) ** 2 + (y2 - y1) ** 2) * this.hMult;
+            switch (this.distanceMethod) {
+                case 'EUCLIDEAN':
+                    this.hMem[from] = Math.sqrt((x2 - x1) ** 2 + (y2 - y1) ** 2);
+                    break;
+                case 'MANHATTAN':
+                    this.hMem[from] = Math.abs(x2 - x1) + Math.abs(y2 - y1);
+                    break;
+            }
+            this.hMem[from] *= this.hMult;
         }
         return this.hMem[from];
+    }
+    tracePath() {
+        const path = [];
+        let index = this.to;
+        while (this.comeFrom[index] !== undefined) {
+            path.push(index);
+            index = this.comeFrom[index];
+        }
+        path.push(index);
+        return path.reverse();
     }
     step() {
         if (this.isComplete)
             return;
-        if (this.deadEndsAreFilled) {
+        if (this.aStarPhase) {
             // A* to narrow paths
             // TODO: optimize for larger grids, and just in general
             if (this.open.size === 0) {
@@ -136,7 +99,7 @@ export class MazeSolver {
             if (index === this.to) {
                 // Destination reached!
                 this.isComplete = true;
-                this.path = tracePath(this.comeFrom, this.to);
+                this.path = this.tracePath();
                 return;
             }
             this.closed.add(index);
@@ -184,7 +147,7 @@ export class MazeSolver {
             }
             this.deadEnds = newDeadEnds;
             if (this.deadEnds.length === 0)
-                this.deadEndsAreFilled = true;
+                this.aStarPhase = true;
         }
     }
     draw(ctx) {
@@ -197,7 +160,7 @@ export class MazeSolver {
             ctx.fillStyle = arrayToClrStr(endColor);
             ctx.fillRect(toCell.screenX, toCell.screenY, cellSize, cellSize);
         }
-        if (!this.isComplete && this.deadEndsAreFilled) {
+        if (!this.isComplete && this.aStarPhase) {
             for (let i = 0; i < this.grid.cells.length; i++) {
                 if (this.filledNodes.has(this.graph.get(this.grid.cells[i])))
                     continue;

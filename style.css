@@ -106,7 +106,8 @@ ol {
 }
 
 .misc,
-.mazeAlgo {
+.mazeAlgo,
+.mazeSolver {
 	display: flex;
 	flex-direction: column;
 	gap: 0.2rem;
@@ -114,7 +115,7 @@ ol {
 	padding: 0 0.3rem;
 }
 
-:where(.misc, .mazeAlgo) > div {
+:where(.misc, .mazeAlgo, .mazeSolver) > div {
 	display: flex;
 	gap: 0.2rem;
 	flex-direction: column;
