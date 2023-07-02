@@ -1,14 +1,14 @@
 import { Cell, Grid } from './grid.js';
 import { GraphNode, convertGridToGraph } from './utils.js';
 
-function tracePath(nodes: AStarNode[], dest: number) {
+function tracePath(comeFrom: number[], dest: number) {
 	const path: number[] = [];
-	let node = nodes[dest];
-	while (node.parent !== undefined) {
-		path.push(node.index);
-		node = nodes[node.parent];
+	let index = dest;
+	while (comeFrom[index] !== undefined) {
+		path.push(index);
+		index = comeFrom[index];
 	}
-	path.push(node.index);
+	path.push(index);
 	return path.reverse();
 }
 
@@ -25,12 +25,66 @@ function arrayToClrStr([r, g, b]: Color) {
 	return `rgb(${r}, ${g}, ${b})`;
 }
 
-interface AStarNode {
-	index: number;
-	parent?: number;
-	f: number;
-	g: number;
-	h: number;
+// https://stackoverflow.com/a/74649125/15169879
+type Comparator<T> = (valueA: T, valueB: T) => number;
+const swap = (arr: unknown[], i: number, j: number) => {
+	[arr[i], arr[j]] = [arr[j], arr[i]];
+};
+class PriorityQueue<T> {
+	heap;
+	isGreater;
+	constructor(comparator: Comparator<T>, init: T[] = []) {
+		this.heap = init;
+		this.isGreater = (a: number, b: number) =>
+			comparator(init[a] as T, init[b] as T) > 0;
+	}
+	get size(): number {
+		return this.heap.length;
+	}
+	peek(): T | undefined {
+		return this.heap[0];
+	}
+	add(value: T): void {
+		this.heap.push(value);
+		this.#siftUp();
+	}
+	poll(heap = this.heap, value = heap[0], length = heap.length): T | undefined {
+		if (length) swap(heap, 0, length - 1);
+
+		heap.pop();
+		this.#siftDown();
+
+		return value;
+	}
+	#siftUp(node = this.size - 1, parent = ((node + 1) >>> 1) - 1): void {
+		for (
+			;
+			node && this.isGreater(node, parent);
+			node = parent, parent = ((node + 1) >>> 1) - 1
+		) {
+			swap(this.heap, node, parent);
+		}
+	}
+	#siftDown(size = this.size, node = 0, isGreater = this.isGreater): void {
+		while (true) {
+			const leftNode = (node << 1) + 1;
+			const rightNode = leftNode + 1;
+
+			if (
+				(leftNode >= size || isGreater(node, leftNode)) &&
+				(rightNode >= size || isGreater(node, rightNode))
+			) {
+				break;
+			}
+
+			const maxChild =
+				rightNode < size && isGreater(rightNode, leftNode) ? rightNode : leftNode;
+
+			swap(this.heap, node, maxChild);
+
+			node = maxChild;
+		}
+	}
 }
 
 export const pathDrawMethodList = ['GRADIENT', 'LINE'] as const;
@@ -52,9 +106,15 @@ export class MazeSolver {
 	grayOutFilledNodes = false;
 
 	// A*
-	nodes: AStarNode[] = [];
-	open: number[] = [];
-	closed = new Set<number>();
+	open = new PriorityQueue<number>(
+		(a, b) => this.calculateHueristics(b) - this.calculateHueristics(a),
+	);
+	closed = new Set<number>(); // Used only for drawing purposes, could be removed!
+	gScore: number[] = [];
+	fScore: number[] = [];
+	hMem: number[] = [];
+	hMult = 1; // TODO: Setting to 0 should make it act like djikstra (dist * 0 = 0), but instead its acting weird. Might have to do with the queue?
+	comeFrom: number[] = [];
 	constructor(grid: Grid, from: number, to: number) {
 		this.grid = grid;
 		this.from = from;
@@ -70,29 +130,26 @@ export class MazeSolver {
 				this.deadEnds.push(this.graph.get(cell)!);
 			}
 
-			this.nodes[i] = {
-				index: i,
-				f: Infinity,
-				g: Infinity,
-				h: Infinity,
-			};
+			this.gScore[i] = Infinity;
+			this.fScore[i] = Infinity;
 		}
 
-		this.nodes[from] = {
-			index: from,
-			f: 0,
-			g: 0,
-			h: 0,
-		};
-		this.open.push(from);
+		this.open.add(from);
+		this.gScore[from] = 0;
+		this.fScore[from] = this.calculateHueristics(from);
 	}
 	calculateHueristics(from: number) {
-		const x1 = from % this.grid.colCnt;
-		const y1 = Math.floor(from / this.grid.colCnt);
-		const x2 = this.to % this.grid.colCnt;
-		const y2 = Math.floor(this.to / this.grid.colCnt);
-		// Manhattan distance
-		return Math.abs(x2 - x1) + Math.abs(y2 - y1);
+		if (this.hMem[from] === undefined) {
+			const x1 = from % this.grid.colCnt;
+			const y1 = Math.floor(from / this.grid.colCnt);
+			const x2 = this.to % this.grid.colCnt;
+			const y2 = Math.floor(this.to / this.grid.colCnt);
+			// // Manhattan distance
+			// this.hMem[from] = (Math.abs(x2 - x1) + Math.abs(y2 - y1)) * this.hMult;
+			// Euclidean distance
+			this.hMem[from] = Math.sqrt((x2 - x1) ** 2 + (y2 - y1) ** 2) * this.hMult;
+		}
+		return this.hMem[from];
 	}
 	step() {
 		if (this.isComplete) return;
@@ -100,57 +157,46 @@ export class MazeSolver {
 		if (this.deadEndsAreFilled) {
 			// A* to narrow paths
 			// TODO: optimize for larger grids, and just in general
-			// TODO: Fix this, since code doesn't actually match my step-by-step or wikipedia's pseudocode lol
-			if (this.open.length === 0) {
+			if (this.open.size === 0) {
 				this.isComplete = true;
 				throw 'A* cannot reach destination';
 			}
-			const nodeIndex = this.open.reduce((lowest, index) => {
-				if (this.nodes[index].f < this.nodes[lowest].f) return index;
-				return lowest;
-			});
-			const node = this.nodes[nodeIndex];
-			this.open = this.open.filter((i) => i !== nodeIndex);
-			this.closed.add(nodeIndex);
 
-			if (nodeIndex === this.to) {
+			const index = this.open.poll()!;
+			if (index === this.to) {
 				// Destination reached!
 				this.isComplete = true;
-				this.path = tracePath(this.nodes, this.to);
+				this.path = tracePath(this.comeFrom, this.to);
 				return;
 			}
+
+			this.closed.add(index);
+			const g = this.gScore[index];
 
 			const directions = [-this.grid.colCnt, 1, this.grid.colCnt, -1];
 			for (let i = 0; i < directions.length; i++) {
 				const dir = directions[i];
-				const neighborIndex = node.index + dir;
-				const neighbor = this.grid.cells[neighborIndex];
+				const neighborIndex = index + dir;
 
+				const neighbor = this.grid.cells[neighborIndex];
 				if (!neighbor) continue;
 
 				// Prevent Walker from going over left and right edges
 				if (
 					Math.abs(dir) === 1 &&
-					neighbor.screenY !== this.grid.cells[node.index].screenY
+					neighbor.screenY !== this.grid.cells[index].screenY
 				)
 					continue;
-
-				if (this.grid.cells[nodeIndex].walls[i]) continue;
+				if (this.grid.cells[index].walls[i]) continue;
 				if (this.filledNodes.has(this.graph.get(neighbor)!)) continue;
-				if (this.closed.has(neighborIndex)) continue;
 
-				const newG = node.g + 0; // TODO: add input to change g
-				const newH = this.calculateHueristics(neighborIndex);
-				const newF = newG + newH;
-				if (this.nodes[neighborIndex].f > newF) {
-					this.open.push(neighborIndex);
-					this.nodes[neighborIndex] = {
-						index: neighborIndex,
-						parent: nodeIndex,
-						f: newF,
-						g: newG,
-						h: newH,
-					};
+				const newG = g + 1; // changing g score doesn't seem to change anything?
+				if (newG < this.gScore[neighborIndex]) {
+					this.open.add(neighborIndex);
+					this.comeFrom[neighborIndex] = index;
+					this.gScore[neighborIndex] = newG;
+					this.fScore[neighborIndex] =
+						newG + this.calculateHueristics(neighborIndex);
 				}
 			}
 		} else {
@@ -188,25 +234,24 @@ export class MazeSolver {
 			ctx.fillRect(toCell.screenX, toCell.screenY, cellSize, cellSize);
 		}
 		if (!this.isComplete && this.deadEndsAreFilled) {
-			for (const node of this.nodes) {
-				if (this.filledNodes.has(this.graph.get(this.grid.cells[node.index])!))
-					continue;
+			for (let i = 0; i < this.grid.cells.length; i++) {
+				if (this.filledNodes.has(this.graph.get(this.grid.cells[i])!)) continue;
 
 				// F number
-				const { screenX, screenY } = this.grid.cells[node.index];
+				const { screenX, screenY } = this.grid.cells[i];
 				const x = screenX + cellSize / 2;
 				const y = screenY + cellSize / 2;
 				ctx.fillStyle = '#fff';
 				ctx.font = `${cellSize / 3}px monospace`;
 				ctx.textAlign = 'center';
 				ctx.textBaseline = 'middle';
-				if (node.f === Infinity) ctx.fillText('∞', x, y);
-				else ctx.fillText(String(+node.f.toPrecision(2)), x, y);
+				if (this.fScore[i] === Infinity) ctx.fillText('∞', x, y);
+				else ctx.fillText(String(+this.fScore[i].toPrecision(2)), x, y);
 
 				// Cell clr
 				let color;
-				if (this.open.includes(node.index)) color = '#0e0a';
-				else if (this.closed.has(node.index)) color = '#e00a';
+				if (this.open.heap.includes(i)) color = '#0e0a';
+				else if (this.closed.has(i)) color = '#e00a';
 				if (color) {
 					ctx.fillStyle = color;
 					ctx.fillRect(screenX, screenY, cellSize, cellSize);
