@@ -454,7 +454,7 @@ hMultInput.addEventListener('change', () => {
 		return;
 	}
 	solverOptions.hMult = newVal;
-	restartSolver();
+	if (mazeSolver) restartSolver();
 });
 
 let prevTime = Date.now();

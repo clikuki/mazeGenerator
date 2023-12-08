@@ -14,7 +14,7 @@ function arrayToClrStr([r, g, b]: Color) {
 	return `rgb(${r}, ${g}, ${b})`;
 }
 
-type DistanceMethods = 'EUCLIDEAN' | 'MANHATTAN';
+type DistanceMethods = 'EUCLIDEAN' | 'MANHATTAN' | 'DIAGONAL';
 export interface SolveOptions {
 	useDeadEndFilling: boolean;
 	distanceMethod: DistanceMethods;
@@ -90,6 +90,13 @@ export class MazeSolver {
 				case 'MANHATTAN':
 					this.hMem[from] = Math.abs(x2 - x1) + Math.abs(y2 - y1);
 					break;
+				case 'DIAGONAL':
+					{
+						const dx = Math.abs(x2 - x1);
+						const dy = Math.abs(y2 - y1);
+						return dx + dy - Math.min(dx, dy);
+					}
+					break;
 			}
 			this.hMem[from] *= this.hMult;
 		}
@@ -144,9 +151,9 @@ export class MazeSolver {
 				if (this.grid.cells[index].walls[i]) continue;
 				if (this.filledNodes.has(this.graph.get(neighbor)!)) continue;
 
-				const newG = g + 1; // changing g score doesn't seem to change anything?
+				const newG = g + 1; // TODO: changing g score doesn't seem to change anything?
 				if (newG < this.gScore[neighborIndex]) {
-					this.open.add(neighborIndex);
+					if (!this.open.heap.includes(i)) this.open.add(neighborIndex);
 					this.comeFrom[neighborIndex] = index;
 					this.gScore[neighborIndex] = newG;
 					this.fScore[neighborIndex] =

@@ -126,7 +126,7 @@ export class MazeSolver {
                     continue;
                 if (this.filledNodes.has(this.graph.get(neighbor)))
                     continue;
-                const newG = g + 1; // changing g score doesn't seem to change anything?
+                const newG = g + 1; // TODO: changing g score doesn't seem to change anything?
                 if (newG < this.gScore[neighborIndex]) {
                     if (!this.open.heap.includes(i))
                         this.open.add(neighborIndex);

@@ -1262,7 +1262,6 @@ class BlobbyRecursiveDivision {
 	}
 }
 
-/*
 // DEBUG ONLY
 class EmptyGrid {
 	static readonly key = 'Empty Grid';
@@ -1280,10 +1279,9 @@ class EmptyGrid {
 	step() {}
 	draw() {}
 }
-*/
 
 export const Algorithms = [
-	// EmptyGrid, // DEBUG ONLY
+	EmptyGrid, // DEBUG ONLY
 	RecursiveBacktracking,
 	RecursiveDivision,
 	BlobbyRecursiveDivision,
