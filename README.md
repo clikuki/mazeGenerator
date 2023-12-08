@@ -1,5 +1,5 @@
 # MazeGen
-## A demonstration of various maze algorithms, including:
+## Algorithms featured
 - Recursive Backtracking
 - Recursive Division
 - Blobby Recursive Division
@@ -14,7 +14,9 @@
 - Hunt and Kill
 - Growing Tree
 
-## Viewer includes:
+*Explanations for each algorithm can be found on the web app*
+
+## Viewer includes
 - Grid sizes settings
 - Viewer controls *currently only features pausing and Steps Per Second cap*
 - Algorithm specific settings *ie. Eller's cell merge chance, Growing Tree pick method*
