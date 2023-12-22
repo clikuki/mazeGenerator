@@ -6,8 +6,11 @@ const canvas = document.querySelector('canvas');
 const ctx = canvas.getContext('2d');
 canvas.width = Math.min(innerHeight, innerWidth);
 canvas.height = Math.min(innerHeight, innerWidth);
-let grid = new Grid(10, 10, canvas);
-// let grid = new Grid(3, 3, canvas);
+let grid = new Grid(20, 20, canvas);
+// @ts-ignore
+window.grid = grid;
+// @ts-ignore
+window.ctx = ctx;
 let mazeSolver;
 let solveStartIndex = null;
 const mazeGen = {
@@ -19,7 +22,8 @@ const mazeGen = {
         },
         'Blobby Recursive Division': {
             useBfs: false,
-            roomSize: 3,
+            // roomSize: 3,
+            roomSize: 10,
         },
         'Binary Tree': {
             horizontal: 'EAST',
@@ -35,6 +39,7 @@ const mazeGen = {
         },
     },
 };
+mazeGen.class = mazeGenerators[3];
 if (mazeGen.class) {
     mazeGen.instance = new mazeGen.class(grid, mazeGen.options);
 }
@@ -375,6 +380,8 @@ hMultInput.addEventListener('change', () => {
 let prevTime = Date.now();
 (function loop() {
     requestAnimationFrame(loop);
+    const nothingIsRunning = (!mazeGen.instance || mazeGen.instance.isComplete) &&
+        (!mazeSolver || mazeSolver.isComplete);
     grid.drawWalls(ctx);
     let stepRunners = true;
     if (simulationSpeed.capped) {
@@ -387,8 +394,6 @@ let prevTime = Date.now();
             prevTime = time;
         }
     }
-    const nothingIsRunning = (!mazeGen.instance || mazeGen.instance.isComplete) &&
-        (!mazeSolver || mazeSolver.isComplete);
     fastForwardBtn.disabled = nothingIsRunning;
     if (nothingIsRunning) {
         pause = false;
@@ -424,31 +429,33 @@ let prevTime = Date.now();
         }
     }
     // Draw grid background
-    ctx.fillStyle = '#000';
-    ctx.fillRect(Math.floor(grid.centerOffsetX), Math.floor(grid.centerOffsetY), Math.ceil(grid.cellSize * grid.colCnt), Math.ceil(grid.cellSize * grid.rowCnt));
-    // Center draws
-    ctx.save();
-    ctx.translate(grid.centerOffsetX, grid.centerOffsetY);
-    grid.drawGrayedCells(ctx);
-    if (mazeGen.instance && !mazeGen.instance.isComplete) {
-        if (!pause && stepRunners)
-            mazeGen.instance.step();
-        // @ts-ignore
-        if (mazeGen.instance.draw)
-            mazeGen.instance.draw(ctx);
+    if (!nothingIsRunning) {
+        ctx.fillStyle = '#000';
+        ctx.fillRect(Math.floor(grid.centerOffsetX), Math.floor(grid.centerOffsetY), Math.ceil(grid.cellSize * grid.colCnt), Math.ceil(grid.cellSize * grid.rowCnt));
+        // Center draws
+        ctx.save();
+        ctx.translate(grid.centerOffsetX, grid.centerOffsetY);
+        grid.drawGrayedCells(ctx);
+        if (mazeGen.instance && !mazeGen.instance.isComplete) {
+            if (!pause && stepRunners)
+                mazeGen.instance.step();
+            // @ts-ignore
+            if (mazeGen.instance.draw)
+                mazeGen.instance.draw(ctx);
+        }
+        else if (mazeSolver) {
+            if (!mazeSolver.isComplete && !pause && stepRunners)
+                mazeSolver.step();
+            mazeSolver.draw(ctx);
+        }
+        grid.drawWalls(ctx);
+        if (solveStartIndex !== null) {
+            const cell = grid.cells[solveStartIndex];
+            ctx.fillStyle = '#00f';
+            ctx.fillRect(cell.screenX, cell.screenY, grid.cellSize, grid.cellSize);
+        }
+        ctx.restore();
     }
-    else if (mazeSolver) {
-        if (!mazeSolver.isComplete && !pause && stepRunners)
-            mazeSolver.step();
-        mazeSolver.draw(ctx);
-    }
-    grid.drawWalls(ctx);
-    if (solveStartIndex !== null) {
-        const cell = grid.cells[solveStartIndex];
-        ctx.fillStyle = '#00f';
-        ctx.fillRect(cell.screenX, cell.screenY, grid.cellSize, grid.cellSize);
-    }
-    ctx.restore();
 })();
 // Activate Mouse solver on clicks
 canvas.addEventListener('click', (e) => {

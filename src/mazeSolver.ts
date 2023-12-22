@@ -14,6 +14,99 @@ function arrayToClrStr([r, g, b]: Color) {
 	return `rgb(${r}, ${g}, ${b})`;
 }
 
+interface Room {
+	neighbors: Room[];
+	area: Cell[];
+}
+function locategraph(
+	grid: Grid,
+	start: Cell,
+	// Testing only
+	ctx?: CanvasRenderingContext2D,
+) {
+	const closed = new Map<Cell, Room>();
+	const offsets = [-grid.colCnt, 1, grid.colCnt, -1];
+	const graph: Room[] = [{ neighbors: [], area: [start] }];
+	const stack: [Cell, Room][] = [[start, graph[0]]];
+
+	let startT = performance.now();
+	while (stack.length) {
+		if (performance.now() - startT > 2000) throw 'Room search took too long';
+		const [head, room] = stack.pop()!;
+
+		for (let i = 0; i < offsets.length; i++) {
+			if (head.walls[i]) continue;
+			const dir = offsets[i];
+			const neighbor = grid.cells[head.index + dir];
+			if (!neighbor || closed.has(neighbor)) continue;
+
+			// Check if there are walls at either side to the neighbor
+			const [left, right] = i % 2 == 0 ? [3, 1] : [0, 2];
+			if (
+				(head.walls[left] || grid.cells[head.index + offsets[left]].walls[i]) &&
+				(head.walls[right] || grid.cells[head.index + offsets[right]].walls[i])
+			) {
+				// Create new room through opening
+				if (closed.has(neighbor)) continue;
+				const newRoom = { neighbors: [room], area: [neighbor] };
+				room.neighbors.push(newRoom);
+				graph.push(newRoom);
+
+				stack.push([neighbor, newRoom]);
+				closed.set(neighbor, newRoom);
+			} else {
+				// Expand current room
+				room.area.push(neighbor);
+				stack.push([neighbor, room]);
+				closed.set(neighbor, room);
+			}
+		}
+	}
+
+	// // Connect single graph
+	// startT = performance.now();
+	// main: while (true) {
+	// 	if (performance.now() - startT > 2000) throw 'Simplification took too long';
+	// 	for (const room of graph) {
+	// 		if (room.neighbors.length === 1) {
+	// 			room.neighbors[0].area.push(...room.area);
+	// 			graph.splice(
+	// 				graph.findIndex((r) => r === room),
+	// 				1,
+	// 			);
+	// 			continue main;
+	// 		}
+	// 	}
+
+	// 	break;
+	// }
+
+	if (ctx) {
+		const drawn = new Set();
+		for (const { area } of graph) {
+			const r = Math.floor(Math.random() * 255);
+			const g = Math.floor(Math.random() * 255);
+			const b = Math.floor(Math.random() * 255);
+			console.groupCollapsed(`room #${area[0].x} #${area[0].y}`);
+
+			const tmp = ctx.fillStyle;
+			ctx.fillStyle = arrayToClrStr([r, g, b]);
+			for (const cell of area) {
+				console.log(cell.x, cell.y);
+				drawn.add(cell);
+				ctx.fillRect(cell.screenX, cell.screenY, grid.cellSize, grid.cellSize);
+			}
+			ctx.fillStyle = tmp;
+			console.groupEnd();
+		}
+		if (drawn.size !== grid.cells.length) console.log('Some cells not in room!');
+	}
+
+	return [graph, graph.find(({ area }) => area.includes(start))!] as const;
+}
+// @ts-ignore
+window.locategraph = locategraph;
+
 type DistanceMethods = 'EUCLIDEAN' | 'MANHATTAN' | 'DIAGONAL';
 export interface SolveOptions {
 	useDeadEndFilling: boolean;
@@ -23,6 +116,7 @@ export interface SolveOptions {
 
 export const pathDrawMethodList = ['GRADIENT', 'LINE'] as const;
 export type pathDrawMethods = (typeof pathDrawMethodList)[number];
+// TODO: Fix A* failing to solve in some cases; see .json file in root dir for example
 export class MazeSolver {
 	grid: Grid;
 	from: number;

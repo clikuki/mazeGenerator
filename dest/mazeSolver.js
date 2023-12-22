@@ -11,6 +11,7 @@ function arrayToClrStr([r, g, b]) {
     return `rgb(${r}, ${g}, ${b})`;
 }
 export const pathDrawMethodList = ['GRADIENT', 'LINE'];
+// TODO: Fix A* failing to solve in some cases; see .json file in root dir for example
 export class MazeSolver {
     grid;
     from;
@@ -252,4 +253,81 @@ export class MazeSolver {
         }
     }
 }
+function locateRooms(grid, ctx) {
+    const { cells } = grid;
+    const closed = new Map();
+    const offsets = [-grid.colCnt, 1, grid.colCnt, -1];
+    const rooms = [{ neighbors: [], area: [cells[0]] }];
+    const stack = [[cells[0], rooms[0]]];
+    let startT = performance.now();
+    while (stack.length) {
+        if (performance.now() - startT > 2000)
+            throw 'Room search took too long';
+        const [head, room] = stack.pop();
+        for (let i = 0; i < offsets.length; i++) {
+            if (head.walls[i])
+                continue;
+            const dir = offsets[i];
+            const neighbor = cells[head.index + dir];
+            if (!neighbor || closed.has(neighbor))
+                continue;
+            // Check if there are walls at either side to the neighbor
+            const [left, right] = i % 2 == 0 ? [3, 1] : [0, 2];
+            if ((head.walls[left] || cells[head.index + offsets[left]].walls[i]) &&
+                (head.walls[right] || cells[head.index + offsets[right]].walls[i])) {
+                // Create new room through opening
+                if (closed.has(neighbor))
+                    continue;
+                const newRoom = { neighbors: [room], area: [neighbor] };
+                room.neighbors.push(newRoom);
+                rooms.push(newRoom);
+                stack.push([neighbor, newRoom]);
+                closed.set(neighbor, newRoom);
+            }
+            else {
+                // Expand current room
+                room.area.push(neighbor);
+                stack.push([neighbor, room]);
+                closed.set(neighbor, room);
+            }
+        }
+    }
+    // // Connect single rooms
+    // startT = performance.now();
+    // main: while (true) {
+    // 	if (performance.now() - startT > 2000) throw 'Simplification took too long';
+    // 	for (const room of rooms) {
+    // 		if (room.neighbors.length === 1) {
+    // 			room.neighbors[0].area.push(...room.area);
+    // 			rooms.splice(
+    // 				rooms.findIndex((r) => r === room),
+    // 				1,
+    // 			);
+    // 			continue main;
+    // 		}
+    // 	}
+    // 	break;
+    // }
+    // Draw stuff
+    const drawn = new Set();
+    for (const { area } of rooms) {
+        const r = Math.floor(Math.random() * 255);
+        const g = Math.floor(Math.random() * 255);
+        const b = Math.floor(Math.random() * 255);
+        console.groupCollapsed(`room #${area[0].x} #${area[0].y}`);
+        const tmp = ctx.fillStyle;
+        ctx.fillStyle = `rgb(${r}, ${g}, ${b})`;
+        for (const cell of area) {
+            console.log(cell.x, cell.y);
+            drawn.add(cell);
+            ctx.fillRect(cell.screenX, cell.screenY, grid.cellSize, grid.cellSize);
+        }
+        ctx.fillStyle = tmp;
+        console.groupEnd();
+    }
+    if (drawn.size !== cells.length)
+        console.log('Some cells not in room!');
+}
+// @ts-ignore
+window.locateRooms = locateRooms;
 //# sourceMappingURL=mazeSolver.js.map
