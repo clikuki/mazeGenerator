@@ -1,11 +1,6 @@
 import { Grid } from './grid.js';
 import { Algorithms as mazeGenerators, MazeOptions } from './mazeGenerator.js';
-import {
-	MazeSolver,
-	pathDrawMethods,
-	pathDrawMethodList,
-	SolveOptions,
-} from './mazeSolver.js';
+import { MazeSolver } from './mazeSolver.js';
 import { GraphNode, convertGridToGraph } from './utils.js';
 
 /*
@@ -21,11 +16,7 @@ const canvas = document.querySelector('canvas')!;
 const ctx = canvas.getContext('2d')!;
 canvas.width = Math.min(innerHeight, innerWidth);
 canvas.height = Math.min(innerHeight, innerWidth);
-let grid = new Grid(20, 20, canvas);
-// @ts-ignore
-window.grid = grid;
-// @ts-ignore
-window.ctx = ctx;
+let grid = new Grid(10, 10, canvas);
 let mazeSolver: MazeSolver | undefined;
 let solveStartIndex: number | null = null;
 const mazeGen: {
@@ -62,12 +53,6 @@ mazeGen.class = mazeGenerators[3];
 if (mazeGen.class) {
 	mazeGen.instance = new mazeGen.class(grid, mazeGen.options);
 }
-const solverOptions: SolveOptions = {
-	useDeadEndFilling: true,
-	distanceMethod: 'EUCLIDEAN',
-	hMult: 1,
-};
-let pathDrawMethod: pathDrawMethods = pathDrawMethodList[0];
 let pause = false;
 const simulationSpeed = {
 	capped: false,
@@ -270,21 +255,6 @@ exportAsGraphBtn.addEventListener('click', () => {
 	download(URL.createObjectURL(blob), 'json');
 });
 
-const pathDrawMethodSelection = document.querySelector(
-	'.pathDrawMethod select',
-) as HTMLSelectElement;
-for (const pathDrawMethod of pathDrawMethodList) {
-	const optionElem = document.createElement('option');
-	optionElem.value = pathDrawMethod;
-	optionElem.textContent = pathDrawMethod;
-	pathDrawMethodSelection.appendChild(optionElem);
-}
-pathDrawMethodSelection.value = pathDrawMethod;
-pathDrawMethodSelection.addEventListener('change', () => {
-	pathDrawMethod = pathDrawMethodSelection.value as pathDrawMethods;
-	if (mazeSolver) mazeSolver.pathDrawMethod = pathDrawMethod;
-});
-
 const algoTypeSelection = document.querySelector(
 	'.algoType select',
 ) as HTMLSelectElement;
@@ -417,50 +387,13 @@ growingTreePickingStyleSelection.addEventListener('change', () => {
 	if (mazeGen.class?.key === 'Growing Tree') restart({});
 });
 
-function restartSolver() {
-	mazeSolver = new MazeSolver(
-		grid,
-		mazeSolver!.from,
-		mazeSolver!.to,
-		solverOptions,
-	);
-}
-
-const distanceMethodSelection = document.querySelector(
-	'.distanceMethod select',
-) as HTMLSelectElement;
-distanceMethodSelection.value = solverOptions.distanceMethod;
-distanceMethodSelection.addEventListener('change', () => {
-	// @ts-ignore
-	solverOptions.distanceMethod = distanceMethodSelection.value;
-	if (mazeSolver) restartSolver();
-});
-
-const useDeadEndFillingBtn = document.querySelector(
-	'.useDeadEndFilling button',
-) as HTMLButtonElement;
-useDeadEndFillingBtn.textContent = solverOptions.useDeadEndFilling
-	? 'Enabled'
-	: 'Disabled';
-useDeadEndFillingBtn.addEventListener('click', () => {
-	solverOptions.useDeadEndFilling = !solverOptions.useDeadEndFilling;
-	useDeadEndFillingBtn.textContent = solverOptions.useDeadEndFilling
-		? 'Enabled'
-		: 'Disabled';
-	if (mazeSolver) restartSolver();
-});
-
-const hMultInput = document.querySelector('.hMult input') as HTMLInputElement;
-hMultInput.valueAsNumber = solverOptions.hMult;
-hMultInput.addEventListener('change', () => {
-	const newVal = hMultInput.valueAsNumber;
-	if (isNaN(newVal)) {
-		hMultInput.valueAsNumber = solverOptions.hMult;
-		return;
-	}
-	solverOptions.hMult = newVal;
-	if (mazeSolver) restartSolver();
-});
+// function restartSolver() {
+// 	mazeSolver = new MazeSolver(
+// 		grid,
+// 		mazeSolver!.start,
+// 		mazeSolver!.dest,
+// 	);
+// }
 
 let prevTime = Date.now();
 (function loop() {
@@ -518,8 +451,8 @@ let prevTime = Date.now();
 		}
 	}
 
-	// Draw grid background
 	if (!nothingIsRunning) {
+		// Draw maze background
 		ctx.fillStyle = '#000';
 		ctx.fillRect(
 			Math.floor(grid.centerOffsetX),
@@ -527,11 +460,20 @@ let prevTime = Date.now();
 			Math.ceil(grid.cellSize * grid.colCnt),
 			Math.ceil(grid.cellSize * grid.rowCnt),
 		);
+	}
 
-		// Center draws
-		ctx.save();
-		ctx.translate(grid.centerOffsetX, grid.centerOffsetY);
+	// Center draws
+	ctx.save();
+	ctx.translate(grid.centerOffsetX, grid.centerOffsetY);
 
+	// Draw solve starter cell
+	if (solveStartIndex !== null) {
+		const cell = grid.cells[solveStartIndex];
+		ctx.fillStyle = '#00f';
+		ctx.fillRect(cell.screenX, cell.screenY, grid.cellSize, grid.cellSize);
+	}
+
+	if (!nothingIsRunning) {
 		grid.drawGrayedCells(ctx);
 
 		if (mazeGen.instance && !mazeGen.instance.isComplete) {
@@ -544,15 +486,8 @@ let prevTime = Date.now();
 		}
 
 		grid.drawWalls(ctx);
-
-		if (solveStartIndex !== null) {
-			const cell = grid.cells[solveStartIndex];
-			ctx.fillStyle = '#00f';
-			ctx.fillRect(cell.screenX, cell.screenY, grid.cellSize, grid.cellSize);
-		}
-
-		ctx.restore();
 	}
+	ctx.restore();
 })();
 
 // Activate Mouse solver on clicks
@@ -570,8 +505,7 @@ canvas.addEventListener('click', (e) => {
 		const cellIndex = cellY * grid.colCnt + cellX;
 
 		if (solveStartIndex !== null && solveStartIndex !== cellIndex) {
-			mazeSolver = new MazeSolver(grid, solveStartIndex, cellIndex, solverOptions);
-			mazeSolver.pathDrawMethod = pathDrawMethod;
+			mazeSolver = new MazeSolver(grid, solveStartIndex, cellIndex);
 			solveStartIndex = null;
 			pauseBtn.disabled = false;
 			stepBtn.disabled = false;

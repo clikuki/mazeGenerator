@@ -70,6 +70,7 @@ export class Grid {
 		}
 		ctx.strokeStyle = 'white';
 		ctx.lineWidth = 1;
+		ctx.lineCap = 'square';
 		ctx.stroke();
 	}
 	drawGrayedCells(ctx: CanvasRenderingContext2D) {

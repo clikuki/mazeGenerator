@@ -1,333 +1,343 @@
-import { convertGridToGraph, PriorityQueue } from './utils.js';
-const startColor = [0, 0, 255];
-const endColor = [255, 0, 0];
-function lerp(a, b, p) {
-    return (b - a) * p + a;
-}
-function lerpClr([a1, a2, a3], [b1, b2, b3], p) {
-    return [lerp(a1, b1, p), lerp(a2, b2, p), lerp(a3, b3, p)];
-}
 function arrayToClrStr([r, g, b]) {
     return `rgb(${r}, ${g}, ${b})`;
 }
-export const pathDrawMethodList = ['GRADIENT', 'LINE'];
-// TODO: Fix A* failing to solve in some cases; see .json file in root dir for example
 export class MazeSolver {
-    grid;
-    from;
-    to;
     isComplete = false;
-    aStarPhase = false;
-    pathDrawMethod = pathDrawMethodList[0];
+    grid;
+    start;
+    dest;
     path;
+    phase = 'ROOM';
+    offsets;
+    // Room identification
+    rooms;
+    roomStack;
+    indexToRoomDict = [];
+    roomClrDict = new Map();
     // Dead-end filling
-    graph;
-    current;
-    deadEnds = [];
-    filledNodes = new Set();
-    grayOutFilledNodes = false;
-    // A*
-    open = new PriorityQueue((a, b) => this.calculateHueristics(b) - this.calculateHueristics(a));
-    closed = new Set(); // Used only for drawing purposes, could be removed!
-    gScore = [];
-    fScore = [];
-    hMem = [];
-    comeFrom = [];
-    hMult = 1; // TODO: Setting to 0 should make it act like djikstra (dist * 0 = 0), but instead its acting weird. Might have to do with the queue?
-    distanceMethod;
-    constructor(grid, from, to, options) {
+    roomsToCheck = [];
+    filled = new Set();
+    ignoreRooms;
+    filledClr = [74, 4, 4];
+    // Path tracing
+    rootNode;
+    trackedPaths;
+    searched = new Set();
+    indexParentGrid = [];
+    indexToNodeDict = [];
+    trackedClr = [100, 200, 100];
+    constructor(grid, start, dest) {
         this.grid = grid;
-        this.from = from;
-        this.to = to;
-        this.aStarPhase = !options.useDeadEndFilling;
-        this.distanceMethod = options.distanceMethod;
-        this.hMult = options.hMult;
-        // Precompute some data
-        this.graph = convertGridToGraph(grid, grid.cells[from]);
-        this.current = this.graph.get(grid.cells[from]);
-        for (let i = 0; i < grid.cells.length; i++) {
-            const cell = grid.cells[i];
-            const cellWallCount = cell.walls.filter((w) => w).length;
-            if (cell.open && ![from, to].includes(cell.index) && cellWallCount >= 3) {
-                this.deadEnds.push(this.graph.get(cell));
-            }
-            this.gScore[i] = Infinity;
-            this.fScore[i] = Infinity;
-        }
-        this.open.add(from);
-        this.gScore[from] = 0;
-        this.fScore[from] = this.calculateHueristics(from);
-    }
-    calculateHueristics(from) {
-        if (this.hMem[from] === undefined) {
-            const x1 = from % this.grid.colCnt;
-            const y1 = Math.floor(from / this.grid.colCnt);
-            const x2 = this.to % this.grid.colCnt;
-            const y2 = Math.floor(this.to / this.grid.colCnt);
-            switch (this.distanceMethod) {
-                case 'EUCLIDEAN':
-                    this.hMem[from] = Math.sqrt((x2 - x1) ** 2 + (y2 - y1) ** 2);
-                    break;
-                case 'MANHATTAN':
-                    this.hMem[from] = Math.abs(x2 - x1) + Math.abs(y2 - y1);
-                    break;
-                case 'DIAGONAL':
-                    {
-                        const dx = Math.abs(x2 - x1);
-                        const dy = Math.abs(y2 - y1);
-                        return dx + dy - Math.min(dx, dy);
-                    }
-                    break;
-            }
-            this.hMem[from] *= this.hMult;
-        }
-        return this.hMem[from];
-    }
-    tracePath() {
-        const path = [];
-        let index = this.to;
-        while (this.comeFrom[index] !== undefined) {
-            path.push(index);
-            index = this.comeFrom[index];
-        }
-        path.push(index);
-        return path.reverse();
+        this.start = start;
+        this.dest = dest;
+        this.offsets = [-this.grid.colCnt, 1, this.grid.colCnt, -1];
+        this.rooms = [{ neighbors: [], area: [start] }];
+        this.roomStack = [[start, this.rooms[0]]];
+        this.rootNode = { index: this.start, next: [] };
+        this.indexToNodeDict[this.start] = this.rootNode;
+        // @ts-ignore
+        window.rootNode = this.rootNode;
     }
     step() {
         if (this.isComplete)
             return;
-        if (this.aStarPhase) {
-            // A* to narrow paths
-            // TODO: optimize for larger grids, and just in general
-            if (this.open.size === 0) {
-                this.isComplete = true;
-                throw 'A* cannot reach destination';
-            }
-            const index = this.open.poll();
-            if (index === this.to) {
-                // Destination reached!
-                this.isComplete = true;
-                this.path = this.tracePath();
+        if (this.phase === 'ROOM') {
+            // Room identification
+            if (this.roomStack.length === 0) {
+                this.phase = 'FILL';
+                this.ignoreRooms = [
+                    this.indexToRoomDict[this.start],
+                    this.indexToRoomDict[this.dest],
+                ];
+                console.log(`MOVING TO PHASE "${this.phase}"`);
                 return;
             }
-            this.closed.add(index);
-            const g = this.gScore[index];
-            const directions = [-this.grid.colCnt, 1, this.grid.colCnt, -1];
-            for (let i = 0; i < directions.length; i++) {
-                const dir = directions[i];
-                const neighborIndex = index + dir;
-                const neighbor = this.grid.cells[neighborIndex];
-                if (!neighbor)
+            const [index, room] = this.roomStack.pop();
+            const head = this.grid.cells[index];
+            for (let i = 0; i < this.offsets.length; i++) {
+                if (head.walls[i])
                     continue;
-                // Prevent Walker from going over left and right edges
-                if (Math.abs(dir) === 1 &&
-                    neighbor.screenY !== this.grid.cells[index].screenY)
+                const dir = this.offsets[i];
+                const neighbor = head.index + dir;
+                if (!this.grid.cells[neighbor] || this.indexToRoomDict[neighbor])
                     continue;
-                if (this.grid.cells[index].walls[i])
-                    continue;
-                if (this.filledNodes.has(this.graph.get(neighbor)))
-                    continue;
-                const newG = g + 1; // TODO: changing g score doesn't seem to change anything?
-                if (newG < this.gScore[neighborIndex]) {
-                    if (!this.open.heap.includes(i))
-                        this.open.add(neighborIndex);
-                    this.comeFrom[neighborIndex] = index;
-                    this.gScore[neighborIndex] = newG;
-                    this.fScore[neighborIndex] =
-                        newG + this.calculateHueristics(neighborIndex);
+                // Check if there are walls at either side to the neighbor
+                const [left, right] = i % 2 == 0 ? [3, 1] : [0, 2];
+                if ((head.walls[left] ||
+                    this.grid.cells[head.index + this.offsets[left]].walls[i]) &&
+                    (head.walls[right] ||
+                        this.grid.cells[head.index + this.offsets[right]].walls[i])) {
+                    // Create new room through opening
+                    if (this.indexToRoomDict[neighbor])
+                        continue;
+                    const newRoom = {
+                        neighbors: [[neighbor, index, room]],
+                        area: [neighbor],
+                    };
+                    room.neighbors.push([index, neighbor, newRoom]);
+                    this.rooms.push(newRoom);
+                    this.roomStack.push([neighbor, newRoom]);
+                    this.indexToRoomDict[neighbor] = newRoom;
+                }
+                else {
+                    // Expand current room
+                    room.area.push(neighbor);
+                    this.roomStack.push([neighbor, room]);
+                    this.indexToRoomDict[neighbor] = room;
                 }
             }
         }
-        else {
+        else if (this.phase === 'FILL') {
             // Dead-end filling
-            const newDeadEnds = [];
-            for (let i = 0; i < this.deadEnds.length; i++) {
-                const node = this.deadEnds[i];
-                this.filledNodes.add(node);
-                for (const neighbor of node.neighbors) {
-                    if (neighbor.walls++ < 2 ||
-                        this.filledNodes.has(neighbor) ||
-                        [this.from, this.to].includes(neighbor.cell.index)) {
-                        continue;
+            if (this.roomsToCheck.length === 0) {
+                this.roomsToCheck = this.rooms.filter((r) => {
+                    return r.neighbors.length === 1 && !this.ignoreRooms.includes(r);
+                });
+            }
+            else {
+                const newChecks = [];
+                while (this.roomsToCheck.length) {
+                    const room = this.roomsToCheck.pop();
+                    const filledNeighbors = room.neighbors.filter(([, , r]) => this.filled.has(r));
+                    if (room.neighbors.length - filledNeighbors.length === 1) {
+                        this.filled.add(room);
+                        if (!this.ignoreRooms.includes(room.neighbors[0][2])) {
+                            newChecks.push(room.neighbors[0][2]);
+                        }
                     }
-                    newDeadEnds.push(neighbor);
-                    break;
+                }
+                if (newChecks.length)
+                    this.roomsToCheck = newChecks;
+                else {
+                    this.phase = 'TRACE';
+                    console.log(`MOVING TO PHASE "${this.phase}"`);
+                    this.trackedPaths = [
+                        {
+                            room: this.indexToRoomDict[this.start],
+                            start: this.rootNode,
+                            stack: [this.start],
+                            goalsReached: 0,
+                        },
+                    ];
                 }
             }
-            this.deadEnds = newDeadEnds;
-            if (this.deadEnds.length === 0)
-                this.aStarPhase = true;
+        }
+        else if (this.phase === 'TRACE') {
+            // Trace a path out of unfilled rooms
+            const toDelete = [];
+            const toAdd = [];
+            main: for (const track of this.trackedPaths) {
+                const { room, start, stack } = track;
+                if (stack.length === 0) {
+                    toDelete.push(track);
+                    continue main;
+                }
+                // Goals array not set yet
+                if (!track.goals) {
+                    track.goals = room.neighbors.filter(([, t, r]) => !this.indexToNodeDict[t] && !this.filled.has(r));
+                    for (const [goal, afterGoal] of track.goals) {
+                        this.indexToNodeDict[afterGoal] = { index: afterGoal, next: [] };
+                        this.indexParentGrid[afterGoal] = goal;
+                    }
+                    console.table(track.goals.map(([f, t]) => ({ f, t })));
+                }
+                const goals = track.goals;
+                const head = stack.shift();
+                if (head === this.dest) {
+                    console.log('DEST REACHED');
+                    this.isComplete = true;
+                    // Add remaining nodes to dest
+                    let index = this.dest;
+                    let prevNode = null;
+                    while (true) {
+                        const node = index === start.index ? start : { index, next: [] };
+                        if (prevNode)
+                            node.next.push(prevNode);
+                        if (node === start)
+                            break;
+                        prevNode = node;
+                        index = this.indexParentGrid[index];
+                    }
+                    // Trace from rootNode to dest
+                    const traceStack = [[this.rootNode, []]];
+                    while (traceStack.length) {
+                        const [head, path] = traceStack.pop();
+                        path.push(head.index);
+                        if (head.index === this.dest) {
+                            this.path = path;
+                            return;
+                        }
+                        for (const node of head.next) {
+                            traceStack.push([node, path]);
+                        }
+                    }
+                    return;
+                }
+                else if (goals.find(([f]) => f === head) &&
+                    ++track.goalsReached === goals.length) {
+                    // All paths to next rooms reached, end track!
+                    toDelete.push(track);
+                    console.log('ALL GOALS REACHED', this.rootNode);
+                    for (const [goal, afterGoal] of goals) {
+                        toAdd.push({
+                            room: this.indexToRoomDict[afterGoal],
+                            start: this.indexToNodeDict[afterGoal],
+                            stack: [afterGoal],
+                            goalsReached: 0,
+                        });
+                        let index = goal;
+                        let prevNode = this.indexToNodeDict[afterGoal];
+                        while (true) {
+                            let node = this.indexToNodeDict[index];
+                            if (!node)
+                                node = { index, next: [] };
+                            node.next.push(prevNode);
+                            if (this.indexToNodeDict[index])
+                                break;
+                            prevNode = node;
+                            this.indexToNodeDict[index] = node;
+                            index = this.indexParentGrid[index];
+                        }
+                    }
+                    {
+                        let stack = [this.rootNode];
+                        check: while (stack.length) {
+                            const head = stack.pop();
+                            for (const node of head.next) {
+                                if (node)
+                                    stack.push(node);
+                                else {
+                                    console.log(`Undefined node found near ${head.index}!`);
+                                    break check;
+                                }
+                            }
+                        }
+                    }
+                    continue main;
+                }
+                // BFS search
+                for (let i = 0; i < this.offsets.length; i++) {
+                    const offset = this.offsets[i];
+                    const neighbor = head + offset;
+                    if (this.indexParentGrid[neighbor] !== undefined ||
+                        this.grid.cells[head].walls[i] ||
+                        this.searched.has(neighbor) ||
+                        !room.area.includes(neighbor)) {
+                        continue;
+                    }
+                    stack.push(neighbor);
+                    this.indexParentGrid[neighbor] = head;
+                    this.searched.add(neighbor);
+                }
+            }
+            for (const track of toDelete) {
+                this.trackedPaths.splice(this.trackedPaths.findIndex((t) => t === track), 1);
+            }
+            if (toAdd.length)
+                this.trackedPaths.push(...toAdd);
         }
     }
     draw(ctx) {
-        const cellSize = this.grid.cellSize;
-        const fromCell = this.grid.cells[this.from];
-        const toCell = this.grid.cells[this.to];
-        if (!this.isComplete || this.pathDrawMethod === 'LINE') {
-            ctx.fillStyle = arrayToClrStr(startColor);
-            ctx.fillRect(fromCell.screenX, fromCell.screenY, cellSize, cellSize);
-            ctx.fillStyle = arrayToClrStr(endColor);
-            ctx.fillRect(toCell.screenX, toCell.screenY, cellSize, cellSize);
-        }
-        if (!this.isComplete && this.aStarPhase) {
-            for (let i = 0; i < this.grid.cells.length; i++) {
-                if (this.filledNodes.has(this.graph.get(this.grid.cells[i])))
-                    continue;
-                // F number
-                const { screenX, screenY } = this.grid.cells[i];
-                const x = screenX + cellSize / 2;
-                const y = screenY + cellSize / 2;
-                ctx.fillStyle = '#fff';
-                ctx.font = `${cellSize / 3}px monospace`;
-                ctx.textAlign = 'center';
-                ctx.textBaseline = 'middle';
-                if (this.fScore[i] === Infinity)
-                    ctx.fillText('∞', x, y);
-                else
-                    ctx.fillText(String(+this.fScore[i].toPrecision(2)), x, y);
-                // Cell clr
-                let color;
-                if (this.open.heap.includes(i))
-                    color = '#0e0a';
-                else if (this.closed.has(i))
-                    color = '#e00a';
-                if (color) {
-                    ctx.fillStyle = color;
-                    ctx.fillRect(screenX, screenY, cellSize, cellSize);
+        // Draw color of rooms
+        for (const room of this.rooms) {
+            let clr;
+            if (this.filled.has(room)) {
+                clr = this.filledClr;
+            }
+            else if (this.trackedPaths?.find((t) => t.room === room) &&
+                !this.isComplete) {
+                clr = this.trackedClr;
+            }
+            else if (this.phase !== 'TRACE') {
+                clr = this.roomClrDict.get(room);
+                if (!clr) {
+                    clr = [
+                        Math.floor(Math.random() * 255),
+                        Math.floor(Math.random() * 255),
+                        Math.floor(Math.random() * 255),
+                    ];
+                    this.roomClrDict.set(room, clr);
                 }
             }
+            else
+                continue;
+            const tmp = ctx.fillStyle;
+            ctx.fillStyle = arrayToClrStr(clr);
+            for (const index of room.area) {
+                const cell = this.grid.cells[index];
+                ctx.fillRect(cell.screenX, cell.screenY, this.grid.cellSize, this.grid.cellSize);
+            }
+            ctx.fillStyle = tmp;
         }
-        if (this.isComplete && this.path) {
-            switch (this.pathDrawMethod) {
-                case 'GRADIENT':
-                    for (let i = 0; i < this.path.length; i++) {
-                        const { screenX, screenY } = this.grid.cells[this.path[i]];
-                        const progress = i / (this.path.length - 1);
-                        const color = lerpClr(startColor, endColor, progress);
-                        ctx.fillStyle = arrayToClrStr(color);
-                        ctx.fillRect(Math.floor(screenX), Math.floor(screenY), Math.ceil(cellSize), Math.ceil(cellSize));
+        if (this.phase === 'TRACE') {
+            // BFS paths
+            // Go over each cell in a room and draw a path from it to the start
+            // Ignore cells that have already been pathed over
+            if (!this.isComplete) {
+                for (const track of this.trackedPaths ?? []) {
+                    if (!track)
+                        continue;
+                    if (!track.start) {
+                        console.log(this.grid.cells[track.room.area[0]].x, this.grid.cells[track.room.area[0]].y, 'Undefined start node!');
+                        continue;
                     }
-                    break;
-                case 'LINE':
-                    {
-                        const linePath = new Path2D();
-                        let isStartCell = true;
-                        for (const index of this.path) {
-                            const { screenX, screenY } = this.grid.cells[index];
-                            if (isStartCell)
-                                linePath.moveTo(screenX, screenY);
+                    const { room: { area }, start: { index: start }, } = track;
+                    const path = new Path2D();
+                    const pathed = new Set();
+                    for (const index of area) {
+                        if (pathed.has(index))
+                            continue;
+                        let head = index;
+                        while (this.indexParentGrid[head] !== undefined || head === start) {
+                            const cell = this.grid.cells[head];
+                            if (head === index)
+                                path.moveTo(cell.screenX, cell.screenY);
                             else
-                                linePath.lineTo(screenX, screenY);
-                            isStartCell = false;
+                                path.lineTo(cell.screenX, cell.screenY);
+                            if (pathed.has(head) || head === start)
+                                break;
+                            pathed.add(head);
+                            head = this.indexParentGrid[head];
                         }
-                        const circlePath = new Path2D();
-                        const circleRX = cellSize * 0.05;
-                        const circleRY = cellSize * 0.05;
-                        for (const { screenX, screenY } of [fromCell, toCell]) {
-                            circlePath.ellipse(screenX, screenY, circleRX, circleRY, 0, 0, Math.PI * 2);
-                        }
+                    }
+                    if (pathed.size) {
+                        ctx.strokeStyle = arrayToClrStr([50, 50, 200]);
+                        ctx.lineWidth = 5;
+                        ctx.lineCap = 'round';
                         ctx.save();
-                        ctx.translate(this.grid.cellSize / 2, cellSize / 2);
-                        ctx.strokeStyle = '#0f0';
-                        ctx.stroke(linePath);
-                        ctx.fillStyle = ctx.strokeStyle;
-                        ctx.fill(circlePath);
+                        ctx.translate(this.grid.cellSize / 2, this.grid.cellSize / 2);
+                        ctx.stroke(path);
                         ctx.restore();
                     }
+                }
+            }
+            // Node paths
+            // Traverse node tree and draw path from one cell to the next
+            const stack = [this.rootNode];
+            const path = new Path2D();
+            let prev = this.grid.cells[this.start];
+            while (stack.length) {
+                const head = stack.pop();
+                if (!head) {
+                    console.log(`cell after ${prev.x}, ${prev.y} is undefined!`);
                     break;
-                default:
-                    throw 'Invalid path draw method';
+                }
+                prev = this.grid.cells[head.index];
+                const cell = this.grid.cells[head.index];
+                if (head === this.rootNode)
+                    path.moveTo(cell.screenX, cell.screenY);
+                else
+                    path.lineTo(cell.screenX, cell.screenY);
+                stack.push(...head.next);
             }
-        }
-        else {
-            const grayPath = new Path2D();
-            for (const { cell: { screenX, screenY }, } of this.filledNodes) {
-                grayPath.moveTo(screenX, screenY);
-                grayPath.lineTo(screenX + cellSize, screenY);
-                grayPath.lineTo(screenX + cellSize, screenY + cellSize);
-                grayPath.lineTo(screenX, screenY + cellSize);
-                grayPath.lineTo(screenX, screenY);
-            }
-            ctx.fillStyle = '#fff2';
-            ctx.fill(grayPath);
+            ctx.strokeStyle = arrayToClrStr([50, 200, 50]);
+            ctx.lineWidth = 5;
+            ctx.lineCap = 'round';
+            ctx.save();
+            ctx.translate(this.grid.cellSize / 2, this.grid.cellSize / 2);
+            ctx.stroke(path);
+            ctx.restore();
         }
     }
 }
-function locateRooms(grid, ctx) {
-    const { cells } = grid;
-    const closed = new Map();
-    const offsets = [-grid.colCnt, 1, grid.colCnt, -1];
-    const rooms = [{ neighbors: [], area: [cells[0]] }];
-    const stack = [[cells[0], rooms[0]]];
-    let startT = performance.now();
-    while (stack.length) {
-        if (performance.now() - startT > 2000)
-            throw 'Room search took too long';
-        const [head, room] = stack.pop();
-        for (let i = 0; i < offsets.length; i++) {
-            if (head.walls[i])
-                continue;
-            const dir = offsets[i];
-            const neighbor = cells[head.index + dir];
-            if (!neighbor || closed.has(neighbor))
-                continue;
-            // Check if there are walls at either side to the neighbor
-            const [left, right] = i % 2 == 0 ? [3, 1] : [0, 2];
-            if ((head.walls[left] || cells[head.index + offsets[left]].walls[i]) &&
-                (head.walls[right] || cells[head.index + offsets[right]].walls[i])) {
-                // Create new room through opening
-                if (closed.has(neighbor))
-                    continue;
-                const newRoom = { neighbors: [room], area: [neighbor] };
-                room.neighbors.push(newRoom);
-                rooms.push(newRoom);
-                stack.push([neighbor, newRoom]);
-                closed.set(neighbor, newRoom);
-            }
-            else {
-                // Expand current room
-                room.area.push(neighbor);
-                stack.push([neighbor, room]);
-                closed.set(neighbor, room);
-            }
-        }
-    }
-    // // Connect single rooms
-    // startT = performance.now();
-    // main: while (true) {
-    // 	if (performance.now() - startT > 2000) throw 'Simplification took too long';
-    // 	for (const room of rooms) {
-    // 		if (room.neighbors.length === 1) {
-    // 			room.neighbors[0].area.push(...room.area);
-    // 			rooms.splice(
-    // 				rooms.findIndex((r) => r === room),
-    // 				1,
-    // 			);
-    // 			continue main;
-    // 		}
-    // 	}
-    // 	break;
-    // }
-    // Draw stuff
-    const drawn = new Set();
-    for (const { area } of rooms) {
-        const r = Math.floor(Math.random() * 255);
-        const g = Math.floor(Math.random() * 255);
-        const b = Math.floor(Math.random() * 255);
-        console.groupCollapsed(`room #${area[0].x} #${area[0].y}`);
-        const tmp = ctx.fillStyle;
-        ctx.fillStyle = `rgb(${r}, ${g}, ${b})`;
-        for (const cell of area) {
-            console.log(cell.x, cell.y);
-            drawn.add(cell);
-            ctx.fillRect(cell.screenX, cell.screenY, grid.cellSize, grid.cellSize);
-        }
-        ctx.fillStyle = tmp;
-        console.groupEnd();
-    }
-    if (drawn.size !== cells.length)
-        console.log('Some cells not in room!');
-}
-// @ts-ignore
-window.locateRooms = locateRooms;
 //# sourceMappingURL=mazeSolver.js.map
