@@ -9,13 +9,14 @@ export class MazeSolver {
     path;
     phase = 'ROOM';
     offsets;
+    lineWidth;
     // Room identification
     rooms;
     roomStack;
     indexToRoomDict = [];
     roomClrDict = new Map();
     // Dead-end filling
-    roomsToCheck = [];
+    roomsToCheck;
     filled = new Set();
     ignoreRooms;
     filledClr = [74, 4, 4];
@@ -35,8 +36,8 @@ export class MazeSolver {
         this.roomStack = [[start, this.rooms[0]]];
         this.rootNode = { index: this.start, next: [] };
         this.indexToNodeDict[this.start] = this.rootNode;
-        // @ts-ignore
-        window.rootNode = this.rootNode;
+        this.indexToRoomDict[this.start] = this.rooms[0];
+        this.lineWidth = Math.max(Math.ceil(50 / Math.min(grid.rowCnt, grid.colCnt)), 1);
     }
     step() {
         if (this.isComplete)
@@ -89,7 +90,7 @@ export class MazeSolver {
         }
         else if (this.phase === 'FILL') {
             // Dead-end filling
-            if (this.roomsToCheck.length === 0) {
+            if (!this.roomsToCheck) {
                 this.roomsToCheck = this.rooms.filter((r) => {
                     return r.neighbors.length === 1 && !this.ignoreRooms.includes(r);
                 });
@@ -139,7 +140,6 @@ export class MazeSolver {
                         this.indexToNodeDict[afterGoal] = { index: afterGoal, next: [] };
                         this.indexParentGrid[afterGoal] = goal;
                     }
-                    console.table(track.goals.map(([f, t]) => ({ f, t })));
                 }
                 const goals = track.goals;
                 const head = stack.shift();
@@ -177,7 +177,7 @@ export class MazeSolver {
                     ++track.goalsReached === goals.length) {
                     // All paths to next rooms reached, end track!
                     toDelete.push(track);
-                    console.log('ALL GOALS REACHED', this.rootNode);
+                    console.log('ALL GOALS REACHED');
                     for (const [goal, afterGoal] of goals) {
                         toAdd.push({
                             room: this.indexToRoomDict[afterGoal],
@@ -197,20 +197,6 @@ export class MazeSolver {
                             prevNode = node;
                             this.indexToNodeDict[index] = node;
                             index = this.indexParentGrid[index];
-                        }
-                    }
-                    {
-                        let stack = [this.rootNode];
-                        check: while (stack.length) {
-                            const head = stack.pop();
-                            for (const node of head.next) {
-                                if (node)
-                                    stack.push(node);
-                                else {
-                                    console.log(`Undefined node found near ${head.index}!`);
-                                    break check;
-                                }
-                            }
                         }
                     }
                     continue main;
@@ -270,19 +256,14 @@ export class MazeSolver {
             ctx.fillStyle = tmp;
         }
         if (this.phase === 'TRACE') {
+            ctx.lineWidth = this.lineWidth;
+            ctx.lineCap = 'round';
             // BFS paths
             // Go over each cell in a room and draw a path from it to the start
             // Ignore cells that have already been pathed over
             if (!this.isComplete) {
-                for (const track of this.trackedPaths ?? []) {
-                    if (!track)
-                        continue;
-                    if (!track.start) {
-                        console.log(this.grid.cells[track.room.area[0]].x, this.grid.cells[track.room.area[0]].y, 'Undefined start node!');
-                        continue;
-                    }
-                    const { room: { area }, start: { index: start }, } = track;
-                    const path = new Path2D();
+                for (const { room: { area }, start: { index: start }, } of this.trackedPaths ?? []) {
+                    const BfsPath = new Path2D();
                     const pathed = new Set();
                     for (const index of area) {
                         if (pathed.has(index))
@@ -291,9 +272,9 @@ export class MazeSolver {
                         while (this.indexParentGrid[head] !== undefined || head === start) {
                             const cell = this.grid.cells[head];
                             if (head === index)
-                                path.moveTo(cell.screenX, cell.screenY);
+                                BfsPath.moveTo(cell.screenX, cell.screenY);
                             else
-                                path.lineTo(cell.screenX, cell.screenY);
+                                BfsPath.lineTo(cell.screenX, cell.screenY);
                             if (pathed.has(head) || head === start)
                                 break;
                             pathed.add(head);
@@ -302,11 +283,9 @@ export class MazeSolver {
                     }
                     if (pathed.size) {
                         ctx.strokeStyle = arrayToClrStr([50, 50, 200]);
-                        ctx.lineWidth = 5;
-                        ctx.lineCap = 'round';
                         ctx.save();
                         ctx.translate(this.grid.cellSize / 2, this.grid.cellSize / 2);
-                        ctx.stroke(path);
+                        ctx.stroke(BfsPath);
                         ctx.restore();
                     }
                 }
@@ -314,28 +293,20 @@ export class MazeSolver {
             // Node paths
             // Traverse node tree and draw path from one cell to the next
             const stack = [this.rootNode];
-            const path = new Path2D();
-            let prev = this.grid.cells[this.start];
+            const nodePath = new Path2D();
             while (stack.length) {
                 const head = stack.pop();
-                if (!head) {
-                    console.log(`cell after ${prev.x}, ${prev.y} is undefined!`);
-                    break;
-                }
-                prev = this.grid.cells[head.index];
                 const cell = this.grid.cells[head.index];
                 if (head === this.rootNode)
-                    path.moveTo(cell.screenX, cell.screenY);
+                    nodePath.moveTo(cell.screenX, cell.screenY);
                 else
-                    path.lineTo(cell.screenX, cell.screenY);
+                    nodePath.lineTo(cell.screenX, cell.screenY);
                 stack.push(...head.next);
             }
             ctx.strokeStyle = arrayToClrStr([50, 200, 50]);
-            ctx.lineWidth = 5;
-            ctx.lineCap = 'round';
             ctx.save();
             ctx.translate(this.grid.cellSize / 2, this.grid.cellSize / 2);
-            ctx.stroke(path);
+            ctx.stroke(nodePath);
             ctx.restore();
         }
     }

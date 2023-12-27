@@ -32,8 +32,8 @@ const mazeGen: {
 		},
 		'Blobby Recursive Division': {
 			useBfs: false,
-			// roomSize: 3,
-			roomSize: 10,
+			roomSize: 3,
+			// roomSize: 10,
 		},
 		'Binary Tree': {
 			horizontal: 'EAST',
@@ -403,7 +403,7 @@ let prevTime = Date.now();
 		(!mazeGen.instance || mazeGen.instance.isComplete) &&
 		(!mazeSolver || mazeSolver.isComplete);
 
-	grid.drawWalls(ctx);
+	// grid.drawWalls(ctx);
 
 	let stepRunners = true;
 	if (simulationSpeed.capped) {
@@ -451,16 +451,14 @@ let prevTime = Date.now();
 		}
 	}
 
-	if (!nothingIsRunning) {
-		// Draw maze background
-		ctx.fillStyle = '#000';
-		ctx.fillRect(
-			Math.floor(grid.centerOffsetX),
-			Math.floor(grid.centerOffsetY),
-			Math.ceil(grid.cellSize * grid.colCnt),
-			Math.ceil(grid.cellSize * grid.rowCnt),
-		);
-	}
+	// Draw maze background
+	ctx.fillStyle = '#000';
+	ctx.fillRect(
+		Math.floor(grid.centerOffsetX),
+		Math.floor(grid.centerOffsetY),
+		Math.ceil(grid.cellSize * grid.colCnt),
+		Math.ceil(grid.cellSize * grid.rowCnt),
+	);
 
 	// Center draws
 	ctx.save();
@@ -473,20 +471,18 @@ let prevTime = Date.now();
 		ctx.fillRect(cell.screenX, cell.screenY, grid.cellSize, grid.cellSize);
 	}
 
-	if (!nothingIsRunning) {
-		grid.drawGrayedCells(ctx);
+	grid.drawGrayedCells(ctx);
 
-		if (mazeGen.instance && !mazeGen.instance.isComplete) {
-			if (!pause && stepRunners) mazeGen.instance.step();
-			// @ts-ignore
-			if (mazeGen.instance.draw) mazeGen.instance.draw(ctx);
-		} else if (mazeSolver) {
-			if (!mazeSolver.isComplete && !pause && stepRunners) mazeSolver.step();
-			mazeSolver.draw(ctx);
-		}
-
-		grid.drawWalls(ctx);
+	if (mazeGen.instance && !mazeGen.instance.isComplete) {
+		if (!pause && stepRunners) mazeGen.instance.step();
+		// @ts-ignore
+		if (mazeGen.instance.draw) mazeGen.instance.draw(ctx);
+	} else if (mazeSolver) {
+		if (!mazeSolver.isComplete && !pause && stepRunners) mazeSolver.step();
+		mazeSolver.draw(ctx);
 	}
+
+	grid.drawWalls(ctx);
 	ctx.restore();
 })();
 
