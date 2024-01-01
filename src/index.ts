@@ -82,8 +82,7 @@ const stepBtn = document.querySelector('.step') as HTMLButtonElement;
 stepBtn.addEventListener('click', () => {
 	if (mazeGen.instance && !mazeGen.instance.isComplete) {
 		mazeGen.instance.step();
-		// @ts-ignore
-		if (mazeGen.instance.draw) mazeGen.instance.draw(ctx);
+		mazeGen.instance.draw(ctx);
 	} else if (mazeSolver && !mazeSolver.isComplete) {
 		mazeSolver.step();
 		mazeSolver.draw(ctx);

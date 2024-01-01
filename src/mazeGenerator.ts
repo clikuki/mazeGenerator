@@ -952,6 +952,17 @@ class Sidewinder {
 			this.runStart = index + 1;
 		}
 	}
+	draw(ctx: CanvasRenderingContext2D) {
+		if (this.isComplete) return;
+		const cell = this.grid.cells[this.index];
+		ctx.fillStyle = '#55ff55';
+		ctx.fillRect(
+			cell.screenX,
+			cell.screenY,
+			this.grid.cellSize,
+			this.grid.cellSize,
+		);
+	}
 }
 
 class HuntAndKill {
