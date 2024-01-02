@@ -1,22 +1,4 @@
 import { randomItemInArray, shuffle } from './utils.js';
-function findTreeRoot(node) {
-    while (node.parent) {
-        node = node.parent;
-    }
-    return node;
-}
-function findBranchSize(node) {
-    let nodes = [node];
-    for (let i = 0; i < nodes.length; i++) {
-        const node = nodes[i];
-        nodes.push(...node.children);
-    }
-    return nodes.length;
-}
-function randomRGB(max) {
-    const r = (max) => Math.floor(Math.random() * max);
-    return [r(max), r(max), r(max)];
-}
 // Does not check whether the two cells are actually neighbors
 // Don't know if I need to fix that :|
 function carveWall(prevCell, curCell, offset) {
@@ -63,7 +45,7 @@ function findValidDirections(grid, index) {
 function randIntBetween(min, max) {
     return Math.floor(Math.random() * (max - min + 1)) + min;
 }
-class AldousBroder {
+export class AldousBroder {
     static key = 'Aldous-Broder';
     index;
     isComplete = false;
@@ -104,8 +86,8 @@ class AldousBroder {
         ctx.restore();
     }
 }
-class Wilsons {
-    static key = "Wilson's";
+export class Wilsons {
+    static key = 'Wilsons';
     index;
     isComplete = false;
     grid;
@@ -228,7 +210,7 @@ class Wilsons {
         ctx.restore();
     }
 }
-class RecursiveBacktracking {
+export class RecursiveBacktracking {
     static key = 'Recursive Backtracking';
     grid;
     isComplete = false;
@@ -288,13 +270,13 @@ class RecursiveBacktracking {
         ctx.restore();
     }
 }
-class RecursiveDivision {
+export class RecursiveDivision {
     static key = 'Recursive Division';
     isComplete = false;
     chambers;
     grid;
     useBfs;
-    constructor(grid, { 'Recursive Division': { useBfs } }) {
+    constructor(grid, { useBfs }) {
         this.useBfs = useBfs;
         for (const cell of grid.cells) {
             cell.open = true;
@@ -394,8 +376,8 @@ class RecursiveDivision {
         ctx.fillRect(chamber[0] * cellSize, chamber[1] * cellSize, chamber[2] * cellSize, chamber[3] * cellSize);
     }
 }
-class AldousBroderWilsonHybrid {
-    static key = "Aldous-Broder + Wilson's";
+export class AldousBroderWilsonHybrid {
+    static key = 'Aldous-Broder + Wilsons';
     phase = 0;
     isComplete = false;
     grid;
@@ -426,7 +408,7 @@ class AldousBroderWilsonHybrid {
         this.walker.draw(ctx);
     }
 }
-class BinaryTree {
+export class BinaryTree {
     static key = 'Binary Tree';
     grid;
     isComplete = false;
@@ -436,15 +418,14 @@ class BinaryTree {
     get index() {
         return this.y * this.grid.colCnt + this.x;
     }
-    constructor(grid, options) {
-        const { horizontal, vertical } = options[BinaryTree.key];
+    constructor(grid, { horz, vert }) {
         this.grid = grid;
         this.directions = [
-            horizontal === 'EAST' ? 1 : -1,
-            (vertical === 'SOUTH' ? 1 : -1) * grid.colCnt,
+            horz === 'EAST' ? 1 : -1,
+            (vert === 'SOUTH' ? 1 : -1) * grid.colCnt,
         ];
-        this.x = horizontal === 'EAST' ? 0 : grid.colCnt - 1;
-        this.y = vertical === 'SOUTH' ? 0 : grid.rowCnt - 1;
+        this.x = horz === 'EAST' ? 0 : grid.colCnt - 1;
+        this.y = vert === 'SOUTH' ? 0 : grid.rowCnt - 1;
     }
     step() {
         if (this.isComplete)
@@ -487,8 +468,22 @@ class BinaryTree {
         ctx.fillRect(cell.screenX, cell.screenY, cellSize, cellSize);
     }
 }
-class Kruskals {
-    static key = "Kruskal's";
+function findTreeRoot(node) {
+    while (node.parent) {
+        node = node.parent;
+    }
+    return node;
+}
+function findBranchSize(node) {
+    let nodes = [node];
+    for (let i = 0; i < nodes.length; i++) {
+        const node = nodes[i];
+        nodes.push(...node.children);
+    }
+    return nodes.length;
+}
+export class Kruskals {
+    static key = 'Kruskals';
     grid;
     isComplete = false;
     cellNodes = [];
@@ -504,7 +499,11 @@ class Kruskals {
                 parent: null,
                 children: [],
             };
-            this.cellClrs[cell.index] = randomRGB(150);
+            this.cellClrs[cell.index] = [
+                Math.floor(Math.random() * 256),
+                Math.floor(Math.random() * 256),
+                Math.floor(Math.random() * 256),
+            ];
         }
         for (let x = 0; x < grid.colCnt; x++) {
             for (let y = 0; y < grid.rowCnt; y++) {
@@ -609,8 +608,8 @@ class Kruskals {
         }
     }
 }
-class Prims {
-    static key = "Prim's";
+export class Prims {
+    static key = 'Prims';
     isComplete = false;
     grid;
     frontier = [];
@@ -651,8 +650,8 @@ class Prims {
         }
     }
 }
-class Ellers {
-    static key = "Eller's";
+export class Ellers {
+    static key = 'Ellers';
     isComplete = false;
     grid;
     index = 0;
@@ -663,7 +662,7 @@ class Ellers {
     mergeChance;
     phase = 0;
     idCounter = 1;
-    constructor(grid, { "Eller's": { mergeChance } }) {
+    constructor(grid, { mergeChance }) {
         this.grid = grid;
         this.mergeChance = mergeChance;
     }
@@ -808,7 +807,7 @@ class Ellers {
         // }
     }
 }
-class Sidewinder {
+export class Sidewinder {
     static key = 'Sidewinder';
     isComplete = false;
     grid;
@@ -856,7 +855,7 @@ class Sidewinder {
         ctx.fillRect(cell.screenX, cell.screenY, this.grid.cellSize, this.grid.cellSize);
     }
 }
-class HuntAndKill {
+export class HuntAndKill {
     static key = 'Hunt and Kill';
     isComplete = false;
     grid;
@@ -936,13 +935,13 @@ class HuntAndKill {
         }
     }
 }
-class GrowingTree {
+export class GrowingTree {
     static key = 'Growing Tree';
     isComplete = false;
     grid;
     bag;
     pickingStyle = [];
-    constructor(grid, { 'Growing Tree': { pickingStyle } }) {
+    constructor(grid, { pickingStyle }) {
         this.grid = grid;
         this.bag = [getRandomUnvisitedCellIndex(grid)];
         grid.cells[this.bag[0]].open = true;
@@ -954,7 +953,7 @@ class GrowingTree {
     step() {
         if (this.isComplete)
             return;
-        const index = this.#chooseCell();
+        const index = this.chooseCell();
         const directions = shuffle(findValidDirections(this.grid, index));
         for (const dir of directions) {
             const nextCell = this.grid.cells[index + dir];
@@ -971,7 +970,7 @@ class GrowingTree {
             this.isComplete = true;
         }
     }
-    #chooseCell() {
+    chooseCell() {
         switch (randomItemInArray(this.pickingStyle)) {
             case 'NEWEST':
                 return this.bag[this.bag.length - 1];
@@ -1006,8 +1005,8 @@ class GrowingTree {
         }
     }
 }
-class BlobbyRecursiveDivision {
-    static key = 'Blobby Recursive Division';
+export class RecursiveClusterDivision {
+    static key = 'Recursive Cluster Division';
     isComplete = false;
     grid;
     regions = [[]];
@@ -1018,8 +1017,8 @@ class BlobbyRecursiveDivision {
     edges = [];
     wallMap;
     useBfs;
-    roomSize;
-    constructor(grid, { 'Blobby Recursive Division': { roomSize, useBfs } }) {
+    roomMaxSize;
+    constructor(grid, { roomMaxSize, useBfs }) {
         this.grid = grid;
         this.wallMap = {
             [-this.grid.colCnt]: 0,
@@ -1028,7 +1027,7 @@ class BlobbyRecursiveDivision {
             [-1]: 3,
         };
         this.useBfs = useBfs;
-        this.roomSize = roomSize;
+        this.roomMaxSize = roomMaxSize;
         grid.cells.forEach((c, i) => {
             this.regions[0][i] = i;
             c.open = true;
@@ -1074,7 +1073,7 @@ class BlobbyRecursiveDivision {
             this.regions.length--;
             for (const subregion of [this.subregionA, this.subregionB]) {
                 // Only add if subregion is bigger than a given threshold
-                if (subregion.size > this.roomSize) {
+                if (subregion.size > this.roomMaxSize) {
                     this.regions.push(Array.from(subregion));
                 }
                 subregion.clear();
@@ -1147,31 +1146,27 @@ class BlobbyRecursiveDivision {
     }
 }
 // DEBUG ONLY
-class EmptyGrid {
-    static key = 'Empty Grid';
-    isComplete = true;
-    constructor(grid) {
-        grid.cells.forEach((c) => {
-            c.open = true;
-            c.walls = [false, false, false, false];
-            if (c.x === 0)
-                c.walls[3] = true;
-            if (c.y === 0)
-                c.walls[0] = true;
-            if (c.x === grid.colCnt - 1)
-                c.walls[1] = true;
-            if (c.y === grid.rowCnt - 1)
-                c.walls[2] = true;
-        });
-    }
-    step() { }
-    draw() { }
-}
-export const Algorithms = [
-    EmptyGrid,
+// class EmptyGrid {
+// 	static readonly key = 'Empty Grid';
+// 	isComplete = true;
+// 	constructor(grid: Grid) {
+// 		grid.cells.forEach((c) => {
+// 			c.open = true;
+// 			c.walls = [false, false, false, false];
+// 			if (c.x === 0) c.walls[3] = true;
+// 			if (c.y === 0) c.walls[0] = true;
+// 			if (c.x === grid.colCnt - 1) c.walls[1] = true;
+// 			if (c.y === grid.rowCnt - 1) c.walls[2] = true;
+// 		});
+// 	}
+// 	step() {}
+// 	draw() {}
+// }
+export const MazeGenerators = [
+    // EmptyGrid,
     RecursiveBacktracking,
     RecursiveDivision,
-    BlobbyRecursiveDivision,
+    RecursiveClusterDivision,
     Wilsons,
     AldousBroder,
     AldousBroderWilsonHybrid,
@@ -1183,19 +1178,52 @@ export const Algorithms = [
     HuntAndKill,
     GrowingTree,
 ];
-// Some boilerplate
-// class ALGO_NAME {
-// 	static readonly key = "ALGO_NAME";
-// 	isComplete = false;
-// 	grid: Grid;
-// 	constructor(grid: Grid) {
-// 		this.grid = grid;
-// 	}
-// 	step() {
-// 		if(this.isComplete) return;
-// 	}
-// 	draw(ctx: CanvasRenderingContext2D) {
-// 		if(this.isComplete) return;
-// 	}
-// }
+export class MazeGenManager {
+    instance;
+    options = {
+        useBfs: false,
+        roomMaxSize: 3,
+        horz: 'EAST',
+        vert: 'SOUTH',
+        mergeChance: 2 / 3,
+        pickingStyle: { NEWEST: 1 },
+    };
+    _current;
+    get current() {
+        return this._current;
+    }
+    get isComplete() {
+        return this.instance?.isComplete ?? false;
+    }
+    constructor(init) {
+        if (init) {
+            this._current = init[0];
+            this.restart(init[1]);
+        }
+    }
+    step() {
+        if (!this.instance)
+            return;
+        this.instance.step();
+    }
+    draw(ctx) {
+        if (!this.instance)
+            return;
+        this.instance.draw(ctx);
+    }
+    restart(grid) {
+        if (!this.instance)
+            return;
+        this.instance = new (MazeGenerators.find(({ key }) => key === this.current))(grid ?? this.instance.grid, this.options);
+    }
+    use(key) {
+        this._current = key;
+    }
+    setOption(prop, val) {
+        this.options[prop] = val;
+    }
+    getOption(prop) {
+        return structuredClone(this.options[prop]);
+    }
+}
 //# sourceMappingURL=mazeGenerator.js.map

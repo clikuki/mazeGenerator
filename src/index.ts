@@ -1,5 +1,5 @@
 import { Grid } from './grid.js';
-import { Algorithms as mazeGenerators, MazeOptions } from './mazeGenerator.js';
+import { MazeGenerators, MazeGenManager } from './mazeGenerator.js';
 import { MazeSolver } from './mazeSolver.js';
 import { GraphNode, convertGridToGraph } from './utils.js';
 
@@ -10,64 +10,31 @@ import { GraphNode, convertGridToGraph } from './utils.js';
 	Different cell shapes? (triangle, hexagon)
 */
 
-type MazeGeneratorClass = (typeof mazeGenerators)[number];
-
 const canvas = document.querySelector('canvas')!;
-const ctx = canvas.getContext('2d')!;
 canvas.width = Math.min(innerHeight, innerWidth);
 canvas.height = Math.min(innerHeight, innerWidth);
+const ctx = canvas.getContext('2d')!;
 let grid = new Grid(10, 10, canvas);
 let mazeSolver: MazeSolver | undefined;
 let solveStartIndex: number | null = null;
-const mazeGen: {
-	class?: MazeGeneratorClass;
-	instance?: InstanceType<MazeGeneratorClass>;
-	options: MazeOptions;
-} = {
-	class: undefined,
-	instance: undefined,
-	options: {
-		'Recursive Division': {
-			useBfs: false,
-		},
-		'Blobby Recursive Division': {
-			useBfs: false,
-			roomSize: 3,
-			// roomSize: 10,
-		},
-		'Binary Tree': {
-			horizontal: 'EAST',
-			vertical: 'SOUTH',
-		},
-		"Eller's": {
-			mergeChance: 0.66,
-		},
-		'Growing Tree': {
-			pickingStyle: {
-				NEWEST: 1,
-			},
-		},
-	},
-};
-mazeGen.class = mazeGenerators[3];
-if (mazeGen.class) {
-	mazeGen.instance = new mazeGen.class(grid, mazeGen.options);
-}
-let pause = false;
-const simulationSpeed = {
+const mazeGenManager = new MazeGenManager();
+const simulation = {
+	paused: false,
 	capped: false,
 	sps: 60,
-	// capped: true,
-	// sps: 1,
 };
 
 // Controls and displays
 function restart({ colCnt = grid.colCnt, rowCnt = grid.rowCnt }) {
-	grid = new Grid(colCnt, rowCnt, canvas);
-	if (!mazeGen.class) return;
-	mazeGen.instance = new mazeGen.class(grid, mazeGen.options);
+	if (!mazeGenManager.current) return;
+	if (mazeSolver) {
+		mazeSolver = new MazeSolver(grid, mazeSolver!.start, mazeSolver!.dest);
+	} else {
+		grid = new Grid(colCnt, rowCnt, canvas);
+		mazeGenManager.restart();
+	}
 	mazeSolver = undefined;
-	pause = false;
+	simulation.paused = false;
 	pauseBtn.disabled = false;
 	stepBtn.disabled = false;
 	restartBtn.disabled = false;
@@ -75,14 +42,14 @@ function restart({ colCnt = grid.colCnt, rowCnt = grid.rowCnt }) {
 }
 
 const restartBtn = document.querySelector('.restart') as HTMLButtonElement;
-restartBtn.disabled = !mazeGen.class;
+restartBtn.disabled = !mazeGenManager.current;
 restartBtn.addEventListener('click', () => restart({}));
 
 const stepBtn = document.querySelector('.step') as HTMLButtonElement;
 stepBtn.addEventListener('click', () => {
-	if (mazeGen.instance && !mazeGen.instance.isComplete) {
-		mazeGen.instance.step();
-		mazeGen.instance.draw(ctx);
+	if (!mazeGenManager.isComplete) {
+		mazeGenManager.step();
+		mazeGenManager.draw(ctx);
 	} else if (mazeSolver && !mazeSolver.isComplete) {
 		mazeSolver.step();
 		mazeSolver.draw(ctx);
@@ -91,16 +58,16 @@ stepBtn.addEventListener('click', () => {
 
 const pauseBtn = document.querySelector('.pause') as HTMLButtonElement;
 pauseBtn.addEventListener('click', () => {
-	pause = !pause;
+	simulation.paused = !simulation.paused;
 });
 
 const fastForwardBtn = document.querySelector(
 	'.fastForward',
 ) as HTMLButtonElement;
 fastForwardBtn.addEventListener('click', () => {
-	if (mazeGen.instance && !mazeGen.instance.isComplete) {
-		while (!mazeGen.instance.isComplete) {
-			mazeGen.instance.step();
+	if (mazeGenManager.isComplete) {
+		while (!mazeGenManager.isComplete) {
+			mazeGenManager.step();
 		}
 	} else if (mazeSolver && !mazeSolver.isComplete) {
 		while (!mazeSolver.isComplete) {
@@ -137,28 +104,26 @@ rowInput.addEventListener('change', () => {
 	restart({ rowCnt: newVal });
 });
 
-const simulationSpeedCapBtn = document.querySelector(
+const simulationCapBtn = document.querySelector(
 	'.stepsPerSecond button',
 ) as HTMLButtonElement;
-const simulationSpeedInput = document.querySelector(
+const simulationInput = document.querySelector(
 	'.stepsPerSecond input',
 ) as HTMLInputElement;
-simulationSpeedInput.valueAsNumber = simulationSpeed.sps;
-simulationSpeedInput.disabled = !simulationSpeed.capped;
-simulationSpeedCapBtn.addEventListener('click', () => {
-	simulationSpeed.capped = !simulationSpeed.capped;
-	simulationSpeedCapBtn.textContent = simulationSpeed.capped
-		? 'Capped'
-		: 'Uncapped';
-	simulationSpeedInput.disabled = !simulationSpeed.capped;
+simulationInput.valueAsNumber = simulation.sps;
+simulationInput.disabled = !simulation.capped;
+simulationCapBtn.addEventListener('click', () => {
+	simulation.capped = !simulation.capped;
+	simulationCapBtn.textContent = simulation.capped ? 'Capped' : 'Uncapped';
+	simulationInput.disabled = !simulation.capped;
 });
-simulationSpeedInput.addEventListener('change', () => {
-	const newVal = simulationSpeedInput.valueAsNumber;
+simulationInput.addEventListener('change', () => {
+	const newVal = simulationInput.valueAsNumber;
 	if (isNaN(newVal) || newVal < 1) {
-		simulationSpeedInput.valueAsNumber = simulationSpeed.sps;
+		simulationInput.valueAsNumber = simulation.sps;
 		return;
 	}
-	simulationSpeed.sps = newVal;
+	simulation.sps = newVal;
 });
 
 function download(url: string, fileExtension: string) {
@@ -188,7 +153,7 @@ const exportAsImageBtn = document.querySelector(
 	'.exportAsImage',
 ) as HTMLButtonElement;
 exportAsImageBtn.addEventListener('click', () => {
-	if (!mazeGen.instance || !mazeGen.instance.isComplete) return;
+	if (!mazeGenManager.isComplete) return;
 
 	const dimensions = [canvas.width, canvas.height];
 	canvas.width = grid.cellSize * grid.colCnt;
@@ -209,7 +174,7 @@ const exportAsGridBtn = document.querySelector(
 	'.exportAsGrid',
 ) as HTMLButtonElement;
 exportAsGridBtn.addEventListener('click', () => {
-	if (!mazeGen.instance || !mazeGen.instance.isComplete) return;
+	if (!mazeGenManager.isComplete) return;
 
 	const simplifiedGrid = grid.cells.map((cell) => ({
 		x: cell.x,
@@ -228,7 +193,7 @@ const exportAsGraphBtn = document.querySelector(
 	'.exportAsGraph',
 ) as HTMLButtonElement;
 exportAsGraphBtn.addEventListener('click', () => {
-	if (!mazeGen.instance || !mazeGen.instance.isComplete) return;
+	if (!mazeGenManager.isComplete) return;
 
 	const graph = convertGridToGraph(grid);
 	const simplifiedGraph: { [key: string]: string[] } = {};
@@ -257,23 +222,26 @@ exportAsGraphBtn.addEventListener('click', () => {
 const algoTypeSelection = document.querySelector(
 	'.algoType select',
 ) as HTMLSelectElement;
-const emptyOption = document.createElement('option');
+let emptyOption: HTMLElement | undefined = document.createElement('option');
 emptyOption.textContent = '-- Choose Algorithm --';
-if (!mazeGen.class) algoTypeSelection.appendChild(emptyOption);
-for (const mazeGenClass of mazeGenerators) {
+for (const mazeGenClass of MazeGenerators) {
 	const optionElem = document.createElement('option');
 	optionElem.textContent = mazeGenClass.key;
 	optionElem.value = mazeGenClass.key;
 	algoTypeSelection.appendChild(optionElem);
 }
-if (mazeGen.class) algoTypeSelection.value = mazeGen.class.key;
+if (mazeGenManager.current) algoTypeSelection.value = mazeGenManager.current;
+else algoTypeSelection.prepend(emptyOption);
 
 algoTypeSelection.addEventListener('change', () => {
 	const newVal = algoTypeSelection.value;
-	for (const mazeAlgo of mazeGenerators) {
+	for (const mazeAlgo of MazeGenerators) {
 		if (mazeAlgo.key !== newVal) continue;
-		if (!mazeGen.class) emptyOption.remove();
-		mazeGen.class = mazeAlgo;
+		if (emptyOption && !mazeGenManager.current) {
+			emptyOption.remove();
+			emptyOption = undefined;
+		}
+		mazeGenManager.current = mazeAlgo.key;
 		restart({});
 		return;
 	}
@@ -283,45 +251,46 @@ algoTypeSelection.addEventListener('change', () => {
 const rdTraversalSelection = document.querySelector(
 	'.recursiveDivisionTraversal select',
 ) as HTMLSelectElement;
-const rdOption = mazeGen.options['Recursive Division'];
-const brdOption = mazeGen.options['Blobby Recursive Division'];
-rdTraversalSelection.value = rdOption.useBfs ? 'BFS' : 'DFS';
+rdTraversalSelection.value = mazeGenManager.getOption('useBfs') ? 'BFS' : 'DFS';
 rdTraversalSelection.addEventListener('click', () => {
-	const method = rdTraversalSelection.value === 'BFS' ? true : false;
-	brdOption.useBfs = rdOption.useBfs = method;
+	const method = rdTraversalSelection.value === 'BFS';
+	mazeGenManager.setOption('useBfs', method);
 	if (
-		['Recursive Division', 'Blobby Recursive Division'].includes(
-			mazeGen.class?.key!,
-		)
-	)
+		mazeGenManager.current === 'Recursive Division' ||
+		mazeGenManager.current === 'Recursive Cluster Division'
+	) {
 		restart({});
+	}
 });
 
-const brdSizeInput = document.querySelector(
+const rcdSizeInput = document.querySelector(
 	'.blobbyDivisionGInput input',
 ) as HTMLInputElement;
-brdSizeInput.valueAsNumber = brdOption.roomSize;
-brdSizeInput.addEventListener('change', () => {
-	const newSize = brdSizeInput.valueAsNumber;
+rcdSizeInput.valueAsNumber = mazeGenManager.getOption('roomMaxSize');
+rcdSizeInput.addEventListener('change', () => {
+	const newSize = rcdSizeInput.valueAsNumber;
 	if (isNaN(newSize) || newSize < 1) {
-		brdSizeInput.valueAsNumber = brdOption.roomSize;
-		return;
+		rcdSizeInput.valueAsNumber = mazeGenManager.getOption('roomMaxSize');
+	} else {
+		mazeGenManager.setOption('roomMaxSize', newSize);
+		if (mazeGenManager.current === 'Recursive Cluster Division') {
+			restart({});
+		}
 	}
-	brdOption.roomSize = newSize;
-	if (mazeGen.class?.key === 'Blobby Recursive Division') restart({});
 });
 
 const binaryTreeSelection = document.querySelector(
 	'.binaryTree select',
 ) as HTMLSelectElement;
-const binaryTreeOptions = mazeGen.options['Binary Tree'];
 binaryTreeSelection.value =
-	binaryTreeOptions.vertical + '-' + binaryTreeOptions.horizontal;
+	mazeGenManager.getOption('vert') + '-' + mazeGenManager.getOption('horz');
 binaryTreeSelection.addEventListener('change', () => {
 	const [vertical, horizontal] = binaryTreeSelection.value.split('-') as any;
-	binaryTreeOptions.horizontal = horizontal;
-	binaryTreeOptions.vertical = vertical;
-	if (mazeGen.class?.key === 'Binary Tree') restart({});
+	mazeGenManager.setOption('horz', horizontal);
+	mazeGenManager.setOption('vert', vertical);
+	if (mazeGenManager.current === 'Binary Tree') {
+		restart({});
+	}
 });
 
 function toSigFigs(n: number, sigFigCnt: number) {
@@ -331,29 +300,32 @@ function toSigFigs(n: number, sigFigCnt: number) {
 const ellersCarveChanceInput = document.querySelector(
 	'.ellersCarveChance input',
 ) as HTMLInputElement;
-const ellersOptions = mazeGen.options["Eller's"];
 ellersCarveChanceInput.valueAsNumber =
-	Math.floor(ellersOptions.mergeChance * 100) / 100;
+	Math.floor(mazeGenManager.getOption('mergeChance') * 100) / 100;
 ellersCarveChanceInput.addEventListener('change', () => {
 	const newChance = toSigFigs(ellersCarveChanceInput.valueAsNumber, 2);
 	if (isNaN(newChance) || newChance < 0 || newChance > 1) {
 		ellersCarveChanceInput.valueAsNumber = toSigFigs(
-			ellersOptions.mergeChance,
+			mazeGenManager.getOption('mergeChance'),
 			2,
 		);
-		return;
+	} else {
+		mazeGenManager.setOption('mergeChance', newChance);
+		ellersCarveChanceInput.valueAsNumber = newChance;
+		if (mazeGenManager.current === 'Ellers') {
+			restart({});
+		}
 	}
-	ellersOptions.mergeChance = newChance;
-	ellersCarveChanceInput.valueAsNumber = newChance;
-	if (mazeGen.class?.key === "Eller's") restart({});
 });
 
 const growingTreePickingStyleSelection = document.querySelector(
 	'.growingTree select',
 ) as HTMLSelectElement;
-const growingTreeOptions = mazeGen.options['Growing Tree'];
 {
-	const pickStyleEntries = Object.entries(growingTreeOptions.pickingStyle);
+	// Init
+	const pickStyleEntries = Object.entries(
+		mazeGenManager.getOption('pickingStyle'),
+	);
 	const initValue =
 		pickStyleEntries.length === 1
 			? pickStyleEntries[0][0]
@@ -375,40 +347,29 @@ growingTreePickingStyleSelection.addEventListener('change', () => {
 	const value = growingTreePickingStyleSelection.value as any;
 	if (value.includes('-')) {
 		const [style1, style2, chance1, chance2] = value.split('-');
-		growingTreeOptions.pickingStyle = {
+		mazeGenManager.setOption('pickingStyle', {
 			[style1]: +chance1,
 			[style2]: +chance2,
-		};
+		});
 	} else {
 		const pickingStyle = value;
-		growingTreeOptions.pickingStyle = { [pickingStyle]: 1 };
+		mazeGenManager.setOption('pickingStyle', { [pickingStyle]: 1 });
 	}
-	if (mazeGen.class?.key === 'Growing Tree') restart({});
+	if (mazeGenManager.current === 'Growing Tree') restart({});
 });
-
-// function restartSolver() {
-// 	mazeSolver = new MazeSolver(
-// 		grid,
-// 		mazeSolver!.start,
-// 		mazeSolver!.dest,
-// 	);
-// }
 
 let prevTime = Date.now();
 (function loop() {
 	requestAnimationFrame(loop);
 
 	const nothingIsRunning =
-		(!mazeGen.instance || mazeGen.instance.isComplete) &&
-		(!mazeSolver || mazeSolver.isComplete);
-
-	// grid.drawWalls(ctx);
+		mazeGenManager.isComplete && (!mazeSolver || mazeSolver.isComplete);
 
 	let stepRunners = true;
-	if (simulationSpeed.capped) {
+	if (simulation.capped) {
 		const time = Date.now();
 		const delta = time - prevTime;
-		if (delta < 1000 / simulationSpeed.sps) {
+		if (delta < 1000 / simulation.sps) {
 			stepRunners = false;
 		} else {
 			prevTime = time;
@@ -417,15 +378,15 @@ let prevTime = Date.now();
 
 	fastForwardBtn.disabled = nothingIsRunning;
 	if (nothingIsRunning) {
-		pause = false;
+		simulation.paused = false;
 		pauseBtn.disabled = true;
 		stepBtn.disabled = true;
 	}
-	pauseBtn.textContent = pause ? 'Resume' : 'Pause';
-	if (!mazeGen.instance) canvas.setAttribute('data-state', 'EMPTY');
+	pauseBtn.textContent = simulation.paused ? 'Resume' : 'Pause';
+	if (!mazeGenManager.current) canvas.setAttribute('data-state', 'EMPTY');
 	else canvas.setAttribute('data-state', nothingIsRunning ? 'IDLE' : 'RUNNING');
 
-	const mazeHasGenerated = !mazeGen.instance || !mazeGen.instance.isComplete;
+	const mazeHasGenerated = !mazeGenManager.isComplete;
 	exportAsImageBtn.disabled = mazeHasGenerated;
 	exportAsGridBtn.disabled = mazeHasGenerated;
 	exportAsGraphBtn.disabled = mazeHasGenerated;
@@ -472,12 +433,13 @@ let prevTime = Date.now();
 
 	grid.drawGrayedCells(ctx);
 
-	if (mazeGen.instance && !mazeGen.instance.isComplete) {
-		if (!pause && stepRunners) mazeGen.instance.step();
+	if (mazeGenManager && !mazeGenManager.isComplete) {
+		if (!simulation.paused && stepRunners) mazeGenManager.step();
 		// @ts-ignore
-		if (mazeGen.instance.draw) mazeGen.instance.draw(ctx);
+		if (mazeGenManager.draw) mazeGenManager.draw(ctx);
 	} else if (mazeSolver) {
-		if (!mazeSolver.isComplete && !pause && stepRunners) mazeSolver.step();
+		if (!mazeSolver.isComplete && !simulation.paused && stepRunners)
+			mazeSolver.step();
 		mazeSolver.draw(ctx);
 	}
 
@@ -488,8 +450,8 @@ let prevTime = Date.now();
 // Activate Mouse solver on clicks
 canvas.addEventListener('click', (e) => {
 	if (
-		mazeGen.instance &&
-		mazeGen.instance.isComplete &&
+		mazeGenManager &&
+		mazeGenManager.isComplete &&
 		(!mazeSolver || mazeSolver.isComplete) &&
 		e.x >= grid.centerOffsetX &&
 		e.y >= grid.centerOffsetY
