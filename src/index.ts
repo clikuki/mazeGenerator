@@ -31,7 +31,7 @@ function restart({ colCnt = grid.colCnt, rowCnt = grid.rowCnt }) {
 		mazeSolver = new MazeSolver(grid, mazeSolver!.start, mazeSolver!.dest);
 	} else {
 		grid = new Grid(colCnt, rowCnt, canvas);
-		mazeGenManager.restart();
+		mazeGenManager.restart(grid);
 	}
 	mazeSolver = undefined;
 	simulation.paused = false;
@@ -65,14 +65,11 @@ const fastForwardBtn = document.querySelector(
 	'.fastForward',
 ) as HTMLButtonElement;
 fastForwardBtn.addEventListener('click', () => {
-	if (mazeGenManager.isComplete) {
-		while (!mazeGenManager.isComplete) {
-			mazeGenManager.step();
-		}
-	} else if (mazeSolver && !mazeSolver.isComplete) {
-		while (!mazeSolver.isComplete) {
-			mazeSolver.step();
-		}
+	while (!mazeGenManager.isComplete) {
+		mazeGenManager.step();
+	}
+	while (mazeSolver && !mazeSolver.isComplete) {
+		mazeSolver!.step();
 	}
 	fastForwardBtn.disabled = true;
 });
@@ -222,8 +219,10 @@ exportAsGraphBtn.addEventListener('click', () => {
 const algoTypeSelection = document.querySelector(
 	'.algoType select',
 ) as HTMLSelectElement;
-let emptyOption: HTMLElement | undefined = document.createElement('option');
+let emptyOption: HTMLOptionElement | undefined =
+	document.createElement('option');
 emptyOption.textContent = '-- Choose Algorithm --';
+emptyOption.value = 'null';
 for (const mazeGenClass of MazeGenerators) {
 	const optionElem = document.createElement('option');
 	optionElem.textContent = mazeGenClass.key;
@@ -231,7 +230,10 @@ for (const mazeGenClass of MazeGenerators) {
 	algoTypeSelection.appendChild(optionElem);
 }
 if (mazeGenManager.current) algoTypeSelection.value = mazeGenManager.current;
-else algoTypeSelection.prepend(emptyOption);
+else {
+	algoTypeSelection.prepend(emptyOption);
+	algoTypeSelection.value = emptyOption.value;
+}
 
 algoTypeSelection.addEventListener('change', () => {
 	const newVal = algoTypeSelection.value;
@@ -293,22 +295,15 @@ binaryTreeSelection.addEventListener('change', () => {
 	}
 });
 
-function toSigFigs(n: number, sigFigCnt: number) {
-	return +n.toPrecision(sigFigCnt);
-}
-
 const ellersCarveChanceInput = document.querySelector(
 	'.ellersCarveChance input',
 ) as HTMLInputElement;
 ellersCarveChanceInput.valueAsNumber =
 	Math.floor(mazeGenManager.getOption('mergeChance') * 100) / 100;
 ellersCarveChanceInput.addEventListener('change', () => {
-	const newChance = toSigFigs(ellersCarveChanceInput.valueAsNumber, 2);
+	const newChance = +ellersCarveChanceInput.valueAsNumber.toPrecision(2);
 	if (isNaN(newChance) || newChance < 0 || newChance > 1) {
-		ellersCarveChanceInput.valueAsNumber = toSigFigs(
-			mazeGenManager.getOption('mergeChance'),
-			2,
-		);
+		+mazeGenManager.getOption('mergeChance').toPrecision(2);
 	} else {
 		mazeGenManager.setOption('mergeChance', newChance);
 		ellersCarveChanceInput.valueAsNumber = newChance;
@@ -391,7 +386,7 @@ let prevTime = Date.now();
 	exportAsGridBtn.disabled = mazeHasGenerated;
 	exportAsGraphBtn.disabled = mazeHasGenerated;
 
-	// Draw outside of grid
+	// Draw yellow and black stripes behind maze
 	if (grid.colCnt !== grid.rowCnt) {
 		ctx.fillStyle = '#dd0';
 		ctx.fillRect(0, 0, canvas.width, canvas.height);
@@ -420,7 +415,6 @@ let prevTime = Date.now();
 		Math.ceil(grid.cellSize * grid.rowCnt),
 	);
 
-	// Center draws
 	ctx.save();
 	ctx.translate(grid.centerOffsetX, grid.centerOffsetY);
 
@@ -433,13 +427,13 @@ let prevTime = Date.now();
 
 	grid.drawGrayedCells(ctx);
 
-	if (mazeGenManager && !mazeGenManager.isComplete) {
+	if (!mazeGenManager.isComplete) {
 		if (!simulation.paused && stepRunners) mazeGenManager.step();
-		// @ts-ignore
-		if (mazeGenManager.draw) mazeGenManager.draw(ctx);
+		mazeGenManager.draw(ctx);
 	} else if (mazeSolver) {
-		if (!mazeSolver.isComplete && !simulation.paused && stepRunners)
+		if (!mazeSolver.isComplete && !simulation.paused && stepRunners) {
 			mazeSolver.step();
+		}
 		mazeSolver.draw(ctx);
 	}
 

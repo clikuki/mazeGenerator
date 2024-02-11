@@ -828,7 +828,7 @@ export class Sidewinder {
         if (nextCell)
             nextCell.open = true;
         else
-            this.isComplete = true;
+            this.isComplete = true; // Grid end reached
         if (index >= width && (atEndColumn || Math.random() < 1 / 3)) {
             // End run and carve north
             const bridgeIndex = randIntBetween(this.runStart, index);
@@ -850,6 +850,7 @@ export class Sidewinder {
     draw(ctx) {
         if (this.isComplete)
             return;
+        // Current cell
         const cell = this.grid.cells[this.index];
         ctx.fillStyle = '#55ff55';
         ctx.fillRect(cell.screenX, cell.screenY, this.grid.cellSize, this.grid.cellSize);
@@ -875,6 +876,7 @@ export class HuntAndKill {
         switch (this.phase) {
             case 0:
                 {
+                    // Random walk
                     const directions = findValidDirections(this.grid, this.index);
                     for (const dir of shuffle(directions)) {
                         const nextCell = this.grid.cells[this.index + dir];
@@ -892,10 +894,12 @@ export class HuntAndKill {
                 break;
             case 1:
                 {
+                    // Maze complete when check cell reached
                     if (this.index >= Number(this.mazeCheckUntil)) {
                         this.isComplete = true;
                         return;
                     }
+                    // Search surrounding open cells to restart random walk
                     if (!curCell.open) {
                         const directions = findValidDirections(this.grid, this.index);
                         for (const dir of shuffle(directions)) {
@@ -910,12 +914,8 @@ export class HuntAndKill {
                             }
                         }
                     }
-                    // Final check if maze is truly complete
+                    // Loop back to start when end of grid reached
                     if (++this.index >= this.grid.cells.length) {
-                        if (this.mazeCheckUntil !== undefined) {
-                            this.isComplete = true;
-                            return;
-                        }
                         const { colCnt, rowCnt } = this.grid;
                         this.mazeCheckUntil = Math.min(this.huntStart + 1, rowCnt - 1) * colCnt;
                         this.huntStart = 0;
@@ -1010,7 +1010,7 @@ export class RecursiveClusterDivision {
     isComplete = false;
     grid;
     regions = [[]];
-    currRegion = new Set();
+    currRegion;
     subregionA = new Set();
     subregionB = new Set();
     bag = [];
@@ -1028,6 +1028,7 @@ export class RecursiveClusterDivision {
         };
         this.useBfs = useBfs;
         this.roomMaxSize = roomMaxSize;
+        // Open up all cells and remove walls between cells
         grid.cells.forEach((c, i) => {
             this.regions[0][i] = i;
             c.open = true;
@@ -1041,17 +1042,6 @@ export class RecursiveClusterDivision {
             if (c.y === grid.rowCnt - 1)
                 c.walls[2] = true;
         });
-        let a = randomItemInArray(this.regions[0]);
-        let b;
-        do {
-            b = randomItemInArray(this.regions[0]);
-        } while (b === a);
-        if (a > b)
-            [a, b] = [b, a];
-        this.currRegion = new Set(this.regions[0]);
-        this.subregionA.add(a);
-        this.subregionB.add(b);
-        this.bag.push(a, b);
     }
     getOccupancy(index) {
         if (this.subregionA.has(index))
@@ -1064,45 +1054,48 @@ export class RecursiveClusterDivision {
         if (this.isComplete)
             return;
         if (this.bag.length === 0) {
-            // Bag is empty; start on new region
-            // Carve hole in wall
-            const [index, dir] = randomItemInArray(this.edges);
-            carveWall(this.grid.cells[index], this.grid.cells[index + dir], dir);
-            this.edges.length = 0;
-            // Add subregions to stack
-            this.regions.length--;
-            for (const subregion of [this.subregionA, this.subregionB]) {
-                // Only add if subregion is bigger than a given threshold
-                if (subregion.size > this.roomMaxSize) {
-                    this.regions.push(Array.from(subregion));
+            // Start new region to subdivide
+            // Skip on first iteration
+            if (this.currRegion) {
+                // Carve a hole in one wall, and discard remaining walls
+                const [index, dir] = randomItemInArray(this.edges);
+                carveWall(this.grid.cells[index], this.grid.cells[index + dir], dir);
+                this.edges.length = 0;
+                // Add subregions to stack
+                this.regions.length--;
+                for (const subregion of [this.subregionA, this.subregionB]) {
+                    // Stop subdividing when region is smaller than given threshold
+                    if (subregion.size > this.roomMaxSize) {
+                        this.regions.push(Array.from(subregion));
+                    }
+                    subregion.clear();
                 }
-                subregion.clear();
+                // If stack is empty, end algorthim
+                if (this.regions.length === 0) {
+                    this.isComplete = true;
+                    return;
+                }
             }
-            // If stack is empty, end algorthim
-            if (this.regions.length === 0) {
-                this.isComplete = true;
-                return;
-            }
-            // Choose starting points
+            // Choose subregion starting points
             const region = this.regions[this.useBfs ? 0 : this.regions.length - 1];
             let a = randomItemInArray(region);
             let b;
             do {
                 b = randomItemInArray(region);
             } while (b === a);
-            if (a > b)
-                [a, b] = [b, a];
             this.currRegion = new Set(region);
             this.subregionA.add(a);
             this.subregionB.add(b);
             this.bag.push(a, b);
         }
         else {
-            const _i = randIntBetween(0, this.bag.length - 1);
-            const index = this.bag[_i];
+            // Take out random item from bag
+            const bagIndex = randIntBetween(0, this.bag.length - 1);
+            const index = this.bag[bagIndex];
             const last = this.bag.length - 1;
-            [this.bag[_i], this.bag[last]] = [this.bag[last], this.bag[_i]];
+            [this.bag[bagIndex], this.bag[last]] = [this.bag[last], this.bag[bagIndex]];
             this.bag.length -= 1;
+            // Check surrounding cells
             const occupancy = this.getOccupancy(index);
             for (const dir of findValidDirections(this.grid, index)) {
                 const neighbor = index + dir;
@@ -1110,7 +1103,7 @@ export class RecursiveClusterDivision {
                 if (!this.currRegion.has(neighbor))
                     continue;
                 if (neighborOccupancy === 'NONE') {
-                    // add unassociated cell to bag and subregion
+                    // Add unassociated cell to bag and subregion
                     this.bag.push(neighbor);
                     if (occupancy === 'A')
                         this.subregionA.add(neighbor);
@@ -1118,10 +1111,11 @@ export class RecursiveClusterDivision {
                         this.subregionB.add(neighbor);
                 }
                 else if (neighborOccupancy !== occupancy) {
-                    // add wall against opposite set
+                    // Add wall against opposite set
                     const cells = this.grid.cells;
                     cells[index].walls[this.wallMap[dir]] = true;
                     cells[neighbor].walls[this.wallMap[-dir]] = true;
+                    // Remember walls to remove later
                     this.edges.push([index, dir]);
                 }
             }
@@ -1188,16 +1182,13 @@ export class MazeGenManager {
         mergeChance: 2 / 3,
         pickingStyle: { NEWEST: 1 },
     };
-    _current;
-    get current() {
-        return this._current;
-    }
+    current;
     get isComplete() {
-        return this.instance?.isComplete ?? false;
+        return this.instance?.isComplete ?? true;
     }
     constructor(init) {
         if (init) {
-            this._current = init[0];
+            this.current = init[0];
             this.restart(init[1]);
         }
     }
@@ -1211,13 +1202,10 @@ export class MazeGenManager {
             return;
         this.instance.draw(ctx);
     }
-    restart(grid) {
-        if (!this.instance)
+    restart(grid = this.instance?.grid) {
+        if (!grid)
             return;
-        this.instance = new (MazeGenerators.find(({ key }) => key === this.current))(grid ?? this.instance.grid, this.options);
-    }
-    use(key) {
-        this._current = key;
+        this.instance = new (MazeGenerators.find(({ key }) => key === this.current))(grid, this.options);
     }
     setOption(prop, val) {
         this.options[prop] = val;
