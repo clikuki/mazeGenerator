@@ -106,40 +106,19 @@ simulationInput.addEventListener('change', () => {
     }
     simulation.sps = newVal;
 });
-function download(url, fileExtension) {
-    // Download img by clicking link with js
-    const link = document.createElement('a');
-    document.body.appendChild(link);
-    link.href = url;
-    // Set datetime filename
-    const date = new Date();
-    const numToTwoCharStr = (num) => String(num).padStart(2, '0');
-    const year = date.getFullYear();
-    const month = numToTwoCharStr(date.getMonth());
-    const day = numToTwoCharStr(date.getDate());
-    const hour = numToTwoCharStr(date.getHours());
-    const minutes = numToTwoCharStr(date.getMinutes());
-    const seconds = numToTwoCharStr(date.getSeconds());
-    const milliseconds = numToTwoCharStr(date.getMilliseconds());
-    const fileName = `maze-${year}-${month}-${day}-T${hour}-${minutes}-${seconds}-${milliseconds}`;
-    link.download = `${fileName}.${fileExtension}`;
-    link.click();
-    link.remove();
-}
 const exportAsImageBtn = document.querySelector('.exportAsImage');
 exportAsImageBtn.addEventListener('click', () => {
     if (!mazeGenManager.isComplete)
         return;
-    const dimensions = [canvas.width, canvas.height];
+    // Resize canvas into full grid
     canvas.width = grid.cellSize * grid.colCnt;
     canvas.height = grid.cellSize * grid.rowCnt;
+    // Get image of only the walls
     ctx.fillStyle = 'black';
     ctx.fillRect(0, 0, canvas.width, canvas.height);
     grid.drawWalls(ctx);
     const imgUrl = canvas.toDataURL();
-    canvas.width = dimensions[0];
-    canvas.height = dimensions[1];
-    download(imgUrl, 'png');
+    window.open(imgUrl, '_blank');
 });
 const exportAsGridBtn = document.querySelector('.exportAsGrid');
 exportAsGridBtn.addEventListener('click', () => {
@@ -153,8 +132,10 @@ exportAsGridBtn.addEventListener('click', () => {
         bottom: cell.walls[2],
         left: cell.walls[3],
     }));
-    const blob = new Blob([JSON.stringify(simplifiedGrid)], { type: 'text/json' });
-    download(URL.createObjectURL(blob), 'json');
+    const file = new File([JSON.stringify(simplifiedGrid)], `maze_grid_${new Date().getTime()}.json`, { type: 'application/json' });
+    const fileLink = URL.createObjectURL(file);
+    window.open(fileLink, '_blank');
+    URL.revokeObjectURL(fileLink);
 });
 const exportAsGraphBtn = document.querySelector('.exportAsGraph');
 exportAsGraphBtn.addEventListener('click', () => {
@@ -167,7 +148,7 @@ exportAsGraphBtn.addEventListener('click', () => {
     function getNodeId(node) {
         let id = nodeIdMap.get(node);
         if (!id) {
-            id = (++idCounter).toString(16);
+            id = String(++idCounter);
             nodeIdMap.set(node, id);
         }
         return id;
@@ -176,10 +157,10 @@ exportAsGraphBtn.addEventListener('click', () => {
         const id = getNodeId(node);
         simplifiedGraph[id] = node.neighbors.map((neighbor) => getNodeId(neighbor));
     }
-    const blob = new Blob([JSON.stringify(simplifiedGraph)], {
-        type: 'text/json',
-    });
-    download(URL.createObjectURL(blob), 'json');
+    const file = new File([JSON.stringify(simplifiedGraph)], `maze_graph_${new Date().getTime()}.json`, { type: 'application/json' });
+    const fileLink = URL.createObjectURL(file);
+    window.open(fileLink, '_blank');
+    URL.revokeObjectURL(fileLink);
 });
 const algoTypeSelection = document.querySelector('.algoType select');
 let emptyOption = document.createElement('option');
