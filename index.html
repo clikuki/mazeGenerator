@@ -3,617 +3,69 @@
 	<head>
 		<meta charset="utf-8" />
 		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-		<title>Maze Visualizations</title>
+		<title>Maze Algorithms</title>
 		<link rel="stylesheet" type="text/css" href="style.css" />
-		<script src="dest/index.js" type="module"></script>
+		<!-- <script src="dest/index.js" type="module"></script> -->
 	</head>
 	<body>
+		<h1>Maze Algorithms</h1>
 		<canvas></canvas>
-		<div class="ui">
-			<h1>Maze Algorithm Visualizations</h1>
-			<div class="options">
-				<div class="inputs">
-					<div class="buttons">
-						<button class="step">Step</button>
-						<button class="pause">Pause</button>
-						<button class="restart">Restart</button>
-						<button class="fastForward">Fast Forward</button>
-						<button
-							class="exportAsImage"
-							title="Walls can be more than 1px wide, so reading image file for walls and stuff will be hard"
-						>
-							Export as PNG
-						</button>
-						<button
-							class="exportAsGrid"
-							title="JSON format:
-[
-	{
-		// Position in grid
-		x: number,
-		y: number,
-
-		// Walls on four sides
-		top: boolean,
-		right: boolean,
-		bottom: boolean,
-		left: boolean,
-	}
-]"
-						>
-							Export as grid
-						</button>
-						<button
-							class="exportAsGraph"
-							title="JSON format:
-{
-	// id with array of more Id's showing adjacencies
-	<Id>: Id[]
-}"
-						>
-							Export as graph
-						</button>
+		<section class="menu controls" style="left: 5ch; top: 5rem;">
+			<button data-control="pause">Pause</button>
+			<button data-control="step">Step</button>
+			<button data-control="restart">Restart</button>
+		</section>
+		<section class="menu algorithm" style="left: 40ch; top: 1rem;">
+			<h2>Algorithm</h2>
+			<div role="tablist">
+				<article class="dropdown" data-open="" data-algo="RecursiveBacktracking">
+					<h3>Recursive Backtracking</h3>
+					<div class="content">
+						Lorem ipsum dolor sit amet consectetur adipisicing elit. Earum sed quasi
+						dolorem, odit totam omnis eius nobis voluptatibus perspiciatis rem
+						excepturi veniam quae itaque dignissimos delectus? Officiis deleniti sit
+						cum?
 					</div>
-					<div class="misc">
-						<div class="algoType">
-							<label for="algoTypeInput">Algorithm</label>
-							<select id="algoTypeInput"></select>
-						</div>
-						<label>Columns<input type="number" class="column" min="3" /></label>
-						<label>Rows<input type="number" class="row" min="3" /></label>
-						<div class="stepsPerSecond">
-							<label
-								for="stepsPerSecondInput"
-								title="Limits how many steps simulation can take in a second"
-								>Max steps per Second</label
-							>
-							<button>Uncapped</button>
-							<input id="stepsPerSecondInput" type="number" min="0" disabled />
-						</div>
-						<div class="pathDrawMethod">
-							<label for="pathDrawMethodInput" title="Type of path visualization"
-								>Path Draw Method</label
-							>
-							<select id="pathDrawMethodInput"></select>
-						</div>
+				</article>
+				<article class="dropdown" data-algo="Wilsons">
+					<h3>Wilsons</h3>
+					<div class="content">
+						Lorem ipsum dolor sit amet consectetur adipisicing elit. Earum sed quasi
+						dolorem, odit totam omnis eius nobis voluptatibus perspiciatis rem
+						excepturi veniam quae itaque dignissimos delectus? Officiis deleniti sit
+						cum?
 					</div>
-					<div class="mazeAlgo">
-						<div class="recursiveDivisionTraversal">
-							<label
-								title="Includes both versions of recursive division"
-								for="recursiveDivisionTraversalInput"
-								>Recursive Division Traversal Method</label
-							>
-							<select id="recursiveDivisionTraversalInput">
-								<option value="DFS">Depth-First</option>
-								<option value="BFS">Breadth-First</option>
-							</select>
-						</div>
-						<div class="blobbyDivisionGInput">
-							<label
-								>Blobby Division Room Size<input type="number" class="column" min="1"
-							/></label>
-						</div>
-						<div class="binaryTree">
-							<label for="binaryTreeInput">Binary Tree Direction</label>
-							<select id="binaryTreeInput">
-								<option value="NORTH-WEST">North-West</option>
-								<option value="NORTH-EAST">North-East</option>
-								<option value="SOUTH-WEST">South-West</option>
-								<option value="SOUTH-EAST">South-East</option>
-							</select>
-						</div>
-						<div class="ellersCarveChance">
-							<label
-								>Eller's cell merge chance<input
-									type="number"
-									class="column"
-									min="0"
-									max="1"
-									step=".01"
-							/></label>
-						</div>
-						<div class="growingTree">
-							<label for="growingTreeInput">Growing Tree Picking Method</label>
-							<select id="growingTreeInput">
-								<option value="NEWEST">Newest - Recursive Backtracking</option>
-								<option value="RANDOM">Random - Prim's</option>
-								<option value="OLDEST">Oldest</option>
-								<option value="MIDDLE">Middle</option>
-								<!-- newest/random -->
-								<option value="NEWEST-RANDOM-3-1">Newest/Random - 3/1</option>
-								<option value="NEWEST-RANDOM-1-1">Newest/Random - 1/1</option>
-								<option value="NEWEST-RANDOM-1-3">Newest/Random - 1/3</option>
-								<!-- random/oldest -->
-								<option value="RANDOM-OLDEST-3-1">Random/Oldest - 3/1</option>
-								<option value="RANDOM-OLDEST-1-1">Random/Oldest - 1/1</option>
-								<option value="RANDOM-OLDEST-1-3">Random/Oldest - 1/3</option>
-								<!-- newest/oldest -->
-								<option value="NEWEST-OLDEST-3-1">Newest/Oldest - 3/1</option>
-								<option value="NEWEST-OLDEST-1-1">Newest/Oldest - 1/1</option>
-								<option value="NEWEST-OLDEST-1-3">Newest/Oldest - 1/3</option>
-							</select>
-						</div>
+				</article>
+				<article class="dropdown" data-algo="AldousBroder">
+					<h3>Aldous Broder</h3>
+					<div class="content">
+						Lorem ipsum dolor sit amet consectetur adipisicing elit. Earum sed quasi
+						dolorem, odit totam omnis eius nobis voluptatibus perspiciatis rem
+						excepturi veniam quae itaque dignissimos delectus? Officiis deleniti sit
+						cum?
 					</div>
-					<div class="mazeSolver">
-						<div class="distanceMethod">
-							<label for="distanceMethodSelection">Hueristic distance method</label>
-							<select id="distanceMethodSelection">
-								<option value="MANHATTAN">Manhattan/Taxicab</option>
-								<option value="EUCLIDEAN">Euclidean</option>
-								<option value="DIAGONAL">Diagonal</option>
-							</select>
-						</div>
-						<div class="useDeadEndFilling">
-							<label>Use Dead-end filling</label>
-							<button></button>
-						</div>
-						<div class="hMult">
-							<label
-								>H multiplier
-								<input type="number" />
-							</label>
-						</div>
-					</div>
+				</article>
+			</div>
+		</section>
+		<section class="menu options" style="left: 95ch; top: 1rem;">
+			<h2>Options</h2>
+			<article class="dropdown" class="general">
+				<h3>General</h3>
+				<div class="content">
+					Lorem ipsum dolor sit amet, consectetur adipisicing elit. Nesciunt natus
+					quidem quas recusandae odio consequuntur, nostrum doloremque reiciendis
+					eius, quae blanditiis consectetur? Velit qui, fugit corrupti quis placeat
+					hic eveniet.
 				</div>
-			</div>
-			<p style="font-style: italic;">
-				Once the maze has finished generating, click on any two cells to find a path
-				between them.
-			</p>
-			<div class="algorithm-list">
-				<h2>Algorithms Used</h2>
-				<ul>
-					<li>
-						<span>Recursive Backtracking</span>
-						<ol>
-							<li>Create a walker, starting from a random spot on the grid</li>
-							<li>Walk to a random unvisited neighbor and carve a wall in between</li>
-							<li>
-								If all neighbors are visited, backtrack to the last cell and try again
-							</li>
-							<li>
-								The maze is finished when we backtrack all the way back to the start
-							</li>
-						</ol>
-						<ul>
-							<li>Creates long, winding corridors</li>
-							<li>
-								Few branches - can only create branches when a dead-end is reached
-							</li>
-						</ul>
-					</li>
-					<li>
-						<span>Recursive Division</span>
-						<ol>
-							<li>Collect all of the cells into a chamber</li>
-							<li>
-								Split the chamber with a wall horizontally or vertically, then cut a
-								hole in the wall
-							</li>
-							<li>
-								Repeat for each subchamber until a region cannot be split anymore or a
-								size threshold is reached
-							</li>
-						</ol>
-						<ul>
-							<li>
-								Very quick - Can quickly split large spaces into smaller chambers
-							</li>
-							<li>
-								Has obvious walls and bottlenecks due to how recursively cut rectangles
-								into smaller and smaller rectangles within itself
-							</li>
-						</ul>
-					</li>
-					<li>
-						<span>Blobby Recursive Division</span>
-						<br />
-						<em
-							>Algorithm from
-							<a
-								href="https://weblog.jamisbuck.org/2015/1/15/better-recursive-division-algorithm.html"
-								>Jamis Buck's blog</a
-							></em
-						>
-						<ol>
-							<li>Collect all the cells in the maze into a single region.</li>
-							<li>
-								Split the region into two, using the following process:
-								<ol>
-									<li>
-										Choose two cells from the region at random as “seeds”. Identify one as
-										subregion A and one as subregion B. Put them into a set S.
-									</li>
-									<li>Choose a cell at random from S. Remove it from the set.</li>
-									<li>
-										For each of that cell's neighbors, if the neighbor is not already
-										associated with a subregion, add it to S, and associate it with the
-										same subregion as the cell itself.
-									</li>
-									<li>
-										Repeat 2.2 and 2.3 until the entire region has been split into two.
-									</li>
-								</ol>
-							</li>
-							<li>
-								Construct a wall between the two regions by identifying cells in one
-								region that have neighbors in the other region. Leave a gap by omitting
-								the wall from one such cell pair.
-							</li>
-							<li>Repeat 2 and 3 for each subregion, recursively.</li>
-						</ol>
-						<ul>
-							<li>
-								Based off of the recursive division algorithm, but avoid the issue of
-								straight lines by creating more natural walls
-							</li>
-							<li>Much slower than the original algorithm</li>
-						</ul>
-					</li>
-					<li>
-						<span>Aldous-Broder algorithm</span>
-						<ol>
-							<li>Create a walker, starting from a random spot on the grid</li>
-							<li>
-								Walk to a random neighbor, carving a hole in between if that neighbor is
-								unvisited
-							</li>
-							<li>Repeat until all cells are visited</li>
-						</ol>
-						<ul>
-							<li>
-								Creates a uniformly spanning tree, ie. corridors, dead-ends, and
-								junctions are completely random, and the maze has no distinguishable
-								features unlike Recursive Division's chambers
-							</li>
-							<li>
-								Very slow - Fast in the beginning but slows down by the end, as there
-								are less cells to carve
-							</li>
-							<li>Not guaranteed to finish - Could keep generating for forever!</li>
-						</ul>
-					</li>
-					<li>
-						<span>Wilson's algorithm</span>
-						<ol>
-							<li>
-								Create a walker, starting from a random spot on the grid. Initialize one
-								of the cells as part of the maze
-							</li>
-							<li>
-								Randomly walk around the grid, keeping track of the direction taken when
-								leaving a cell
-							</li>
-							<li>
-								When the walker arrives at a part of the maze, return to the walker's
-								start and follow the directions taken at each cell
-							</li>
-							<li>
-								Move the walker to a random unvisited cell and repeat the walk until all
-								cells are visited
-							</li>
-						</ol>
-						<ul>
-							<li>Creates a uniformly spanning tree</li>
-							<li>
-								Very slow - Slow at the start, but gets faster as it creates more cells
-								for it to path back to
-							</li>
-							<li>Not guaranteed to finish - Could keep generating for forever!</li>
-						</ul>
-					</li>
-					<li>
-						<span> Aldous-Broder + Wilson's hybrid algorithm </span>
-						<ul>
-							<li>
-								A mix of the Aldous-Broder and Wilson's algorithm, using the former at
-								the start to create a large amount of visited cells for the latter to
-								path back to
-							</li>
-							<li>
-								May not create a uniformly spanning tree (Haven't researched that yet)
-							</li>
-							<li>
-								Average to slow - Faster than its constituent algorithms but still takes
-								longer than other algorithms due to its randomness
-							</li>
-							<li>Not guaranteed to finish - Could keep generating for forever!</li>
-						</ul>
-					</li>
-					<li>
-						<span>Binary Tree</span>
-						<ol>
-							<li>
-								Start at the corner of the grid opposite to a chosen directional bias
-								(eg. south-east, north-west)
-							</li>
-							<li>
-								For each cell, carve a wall randomly in one of the chosen directions
-								(horizontal or vertical). If a direction is blocked, choose the other.
-							</li>
-							<li>When the last cell is reached, the maze is complet</li>
-						</ol>
-						<ul>
-							<li>Creates a binary tree, as the name suggests</li>
-							<li>
-								Has a strong diagonal bias, as well as long corridors at the two end
-								edges
-							</li>
-							<li>
-								Memory efficient - Its main selling point. As it only looks at the
-								current cell, it needs very little state. If using a seedable PRNG,
-								instead of keeping the maze in memory, it can just regenerate the maze
-								when needed. This allows for absolutely massive mazes that don't use too
-								much memory
-							</li>
-						</ul>
-					</li>
-					<li>
-						<span>Kruskal's</span>
-						<ol>
-							<li>Make a set E of all edges in the maze</li>
-							<li>
-								While E is not empty:
-								<ol>
-									<li>Set A as a random edge from E and remove it from the set</li>
-									<li>
-										If the sets at each side of A are disjoint, remove/carve A from the
-										maze.
-									</li>
-								</ol>
-							</li>
-						</ol>
-						<ul>
-							<li>
-								Slow - the number of edges are directly proportional to the width and
-								height of the grid
-							</li>
-							<li>Creates many short dead-ends</li>
-						</ul>
-					</li>
-					<li>
-						<span>Prim's</span>
-						<ol>
-							<li>
-								Choose a random cell as the starting point, and add its neighbors to the
-								set F
-							</li>
-							<li>
-								While set F is not empty:
-								<ol>
-									<li>Set C as a random cell in F and remove it from the set</li>
-									<li>Carve a wall from C to any adjacent visited cell</li>
-									<li>Add all unvisited neighbors of C to F</li>
-								</ol>
-							</li>
-						</ol>
-						<ul>
-							<li>Creates many short dead-ends</li>
-							<li>
-								All paths tend to go back to the algorithm's starting point, which may
-								be undesirable
-							</li>
-						</ul>
-					</li>
-					<li>
-						<span>Eller's</span>
-						<ol>
-							<li>Initialize the first row by adding each cell into their own set</li>
-							<li>
-								For each row except the last:
-								<ol>
-									<li>Merge some of the sets together</li>
-									<li>
-										For each set, pick a random cell in the set and carve down to the next
-										row.
-									</li>
-									<li>Initialize the next row's remaining cells in their own set</li>
-								</ol>
-							</li>
-							<li>On the last row, connect every disjoint cell together</li>
-						</ol>
-						<ul>
-							<li>
-								Slow/Quick - Can be fast if set operations are fast and went row-by-row
-								instead cell by cell
-							</li>
-							<li>Can create infinitely long or tall mazes</li>
-							<li>
-								Usually creates a long corridor at the end where most paths pass through
-							</li>
-						</ul>
-					</li>
-					<li>
-						<span>Sidewinder</span>
-						<ol>
-							<li>Start from the corner cell, and create set R</li>
-							<li>
-								For each cell C:
-								<ol>
-									<li>Add C to R</li>
-									<li>Decide whether to carve to the next cell or not</li>
-									<ul>
-										<li>If on the first row, carve to the next cell</li>
-										<li>If at the end of the column, do not carve</li>
-										<li>Otherwise, pick randomly</li>
-									</ul>
-									<li>
-										If we did not carve, pick a random cell to carve vertically from.
-										Empty set R
-									</li>
-								</ol>
-							</li>
-						</ol>
-						<ul>
-							<li>
-								The Sidewinder is called so because you can solve the maze from bottom
-								to top by winding side to side and going up when possible
-							</li>
-							<li>Creates a long corridor at the top where most paths pass through</li>
-							<li>
-								It is impossible for northern dead-ends to occur with this algorithm
-							</li>
-						</ul>
-					</li>
-					<li>
-						<span>Hunt And Kill</span>
-						<ol>
-							<li>Create a walker, starting from a random spot on the grid</li>
-							<li>Walk to a random unvisited neighbor and carve a wall in between</li>
-							<li>
-								If all neighbors are visited, "hunt" for an unvisited cell neighboring a
-								visited cell and start the walker from there
-							</li>
-							<li>
-								The maze is finished when we can no longer find any unvisited cells
-							</li>
-						</ol>
-						<ul>
-							<li>
-								Very similar to the recursive backtracking in features and generation,
-								the only difference is that instead of backtracking, it searches through
-								the maze instead.
-							</li>
-							<li>
-								My implementation includes an optimization where it remembers the row it
-								last found an unvisited cell, which speeds up the later phases when most
-								of the maze is already visited
-							</li>
-							<li>
-								Slow - Only updates one cell per step and can take some time to find an
-								unvisited cell when in the hunt phase
-							</li>
-						</ul>
-					</li>
-					<li>
-						<span>Growing Tree</span>
-						<ol>
-							<li>Create list S and initialize it with a random cell</li>
-							<li>
-								While S is not empty:
-								<ol>
-									<li>Pick cell C from the list</li>
-									<li>
-										Select a neighbor of C to carve to and add it to the S. If there are
-										no unvisited neighbors, remove C from S
-									</li>
-								</ol>
-							</li>
-						</ol>
-						<ul>
-							<li>
-								While simple, the fun of this algorithm comes from how you pick cells
-								from the list
-								<ul>
-									<li>
-										Picking the newest/last leads it to act like the Recursive
-										Backtracking Algorithm
-									</li>
-									<li>Picking randomly leads it to act like Prim's</li>
-									<li>
-										Picking the oldest/first leads it to create long straight corridors
-									</li>
-								</ul>
-								You can also mix these picking styles to create interesting and varied
-								mazes
-							</li>
-						</ul>
-					</li>
-					<span
-						style="font-style: italic; color: #222; margin-top: .5rem; display: inline-block;"
-						>EXTRA: Maze Solver algorithms</span
-					>
-					<li>
-						<span>Flood-Fill Algorithm</span>
-						<ol>
-							<li>Create a list L of all dead-ends in the maze</li>
-							<li>
-								While L is not empty:
-								<ol>
-									<li>Pick a random dead-end D and fill it in</li>
-									<li>
-										If D has a neighbor with a wall count (including filled in cells)
-										greater than 1, add it to L
-									</li>
-								</ol>
-							</li>
-						</ol>
-						<ul>
-							<li>
-								If a maze is imperfect (has loops, multiple solutions), it will feature
-								multiple unfilled paths. BFS, A*, or a similar algorithm could then be
-								used to find the shortest route among them
-							</li>
-							<li>
-								Requires full knowledge of the maze, unlike other algorithms that use
-								walkers
-							</li>
-						</ul>
-					</li>
-					<li>
-						<span>A*</span>
-						<br />
-						<span>
-							Better explanation:
-							<a href="https://en.wikipedia.org/wiki/A*_search_algorithm">
-								Wikipedia</a
-							></span
-						>
-						<ol>
-							<li>
-								Create the following:
-								<ul>
-									<li>Set O containing the set of all open/fringe/frontier nodes</li>
-									<li>Map G containing the cost of traveling to a node</li>
-									<li>
-										Function H that calculates the hueristic for any given cell, which can
-										be the distance from the node to the end node
-									</li>
-									<li>Map F to store the sum of a node's G and H</li>
-									<li>Map P to store a nodes parent</li>
-								</ul>
-								Let start be the start of the maze, and initialize O, G[start], and
-								F[start] with start, 0 and H(start), respectively
-							</li>
-							<li>
-								While O is not empty:
-								<ol>
-									<li>
-										Let N be the node in O with the lowest F, and remove it from the set
-									</li>
-									<li>
-										If N is the destination, end the search and trace the path by
-										following P[goal] until start is reached
-									</li>
-									<li>
-										For each of N's neighbors M:
-										<ol>
-											<li>Let New_G be the cost of going from N to M</li>
-											<li>
-												If New_G &lt; G[M], then:
-												<ol>
-													<li>Add M to O</li>
-													<li>Set P[M] to N</li>
-													<li>Set G[M] to New_G</li>
-													<li>Set F[M] to New_G + H(M)</li>
-												</ol>
-											</li>
-										</ol>
-									</li>
-								</ol>
-							</li>
-							<li>If O is empty, the search has failed</li>
-						</ol>
-						<ul>
-							<li>
-								Used to trace the path from the dead-end filling or to solve mazes with
-								rooms, as is the case with blobby recursive division
-							</li>
-						</ul>
-					</li>
-				</ul>
-			</div>
-		</div>
+			</article>
+			<article class="dropdown" class="solver">
+				<h3>Solver</h3>
+				<div class="content">
+					Lorem ipsum dolor sit amet consectetur adipisicing elit. Error accusantium
+					nemo dolor dolorum suscipit veritatis aut labore quasi nulla in tenetur
+					impedit officiis, quam asperiores odit ea expedita at alias.
+				</div>
+			</article>
+		</section>
 	</body>
 </html>
