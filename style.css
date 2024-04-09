@@ -21,6 +21,10 @@ h1 {
 	top: 0.5rem;
 	left: 0.5rem;
 	margin: 0;
+	transition: opacity 300ms;
+}
+h1:hover {
+	opacity: 0.1;
 }
 
 canvas {
@@ -91,7 +95,7 @@ ol {
 	left: 0;
 	max-width: 50ch;
 	padding: 1rem;
-	background-color: rgba(255, 255, 255, 0.1);
+	background-color: #1a1a1a;
 	border-radius: 5px;
 }
 .menu > :is(h2, h3) {
@@ -101,16 +105,18 @@ ol {
 .dropdown {
 	background-color: rgba(219, 218, 218, 0.1);
 	border-radius: 0;
+	margin-top: 2px;
 	--r: 7px;
 }
 .dropdown:first-of-type {
 	border-radius: var(--r) var(--r) 0 0;
+	margin: 0;
 }
 .dropdown:last-of-type {
 	border-radius: 0 0 var(--r) var(--r);
 }
 .dropdown > :is(h2, h3) {
-	background-color: rgba(255, 255, 255, 0.1);
+	background-color: rgba(255, 255, 255, 0.13);
 	margin: 0;
 	padding: 5px;
 	border-radius: inherit;
