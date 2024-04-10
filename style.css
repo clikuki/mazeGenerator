@@ -4,6 +4,10 @@
 	box-sizing: border-box;
 }
 
+p {
+	margin: 0.5rem 0;
+}
+
 body {
 	height: 100vh;
 	display: flex;
@@ -14,6 +18,7 @@ body {
 	margin: 0;
 	font-family: system-ui;
 	overflow: hidden;
+	user-select: none;
 }
 
 h1 {
@@ -93,46 +98,57 @@ ol {
 	position: absolute;
 	top: 0;
 	left: 0;
-	max-width: 50ch;
 	padding: 1rem;
 	background-color: #1a1a1a;
 	border-radius: 5px;
 }
-.menu > :is(h2, h3) {
+.menu > :where(h2, h3) {
 	margin: 0 0 1rem 0;
 }
 
+.menu > .content,
 .dropdown {
-	background-color: rgba(219, 218, 218, 0.1);
+	background-color: rgba(255, 255, 255, 0.2);
 	border-radius: 0;
 	margin-top: 2px;
+	width: 50ch;
+	overflow: hidden;
 	--r: 7px;
 }
-.dropdown:first-of-type {
-	border-radius: var(--r) var(--r) 0 0;
+:is(.menu > .content, .dropdown):nth-child(2) {
+	border-top-left-radius: var(--r);
+	border-top-right-radius: var(--r);
 	margin: 0;
 }
-.dropdown:last-of-type {
-	border-radius: 0 0 var(--r) var(--r);
+:is(.menu > .content, .dropdown):last-child {
+	border-bottom-left-radius: var(--r);
+	border-bottom-right-radius: var(--r);
 }
-.dropdown > :is(h2, h3) {
-	background-color: rgba(255, 255, 255, 0.13);
+.dropdown :where(h2, h3) {
+	line-height: 1.3rem;
 	margin: 0;
 	padding: 5px;
-	border-radius: inherit;
+	white-space: nowrap;
+	background-color: rgba(40, 40, 40, 0.6);
 }
-.dropdown > :is(h2, h3)::before {
+.dropdown :where(h2, h3)::before {
 	content: '\25B8';
 	display: inline-block;
 	margin: 0 var(--r);
-	transition: rotate 100ms ease-in;
+	color: #b1b1b1;
+	transition: rotate 100ms ease-in, color 100ms;
 }
-.dropdown[data-open] > :is(h2, h3)::before {
+.dropdown[data-open] :where(h2, h3)::before {
 	rotate: 90deg;
+	color: #fd5a1e;
+}
+:where(.menu, .dropdown) > .content {
+	padding: 5px;
+	min-width: 100%;
+	text-align: justify;
 }
 .dropdown > .content {
-	max-height: 20rem;
-	padding: 5px;
+	max-height: 30rem;
 	overflow-y: scroll;
 	/* transition: all 500ms ease-in; */
 }
@@ -140,4 +156,13 @@ ol {
 	padding: 0 5px;
 	height: 0;
 	overflow-y: scroll;
+}
+.menu > .content :where(h2, h3) {
+	margin: 0 0 0.3rem 0;
+	padding-left: 0.5rem;
+	text-align: center;
+	white-space: nowrap;
+}
+.menu > .content > :last-child {
+	margin-bottom: 0;
 }
