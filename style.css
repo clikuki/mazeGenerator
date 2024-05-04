@@ -106,14 +106,17 @@ ol {
 	margin: 0 0 1rem 0;
 }
 
+.menu {
+	--r: 7px;
+}
 .menu > .content,
-.dropdown {
+.dropdown,
+.slider {
 	background-color: rgba(255, 255, 255, 0.2);
 	border-radius: 0;
 	margin-top: 2px;
 	width: 50ch;
 	overflow: hidden;
-	--r: 7px;
 }
 :is(.menu > .content, .dropdown):nth-child(2) {
 	border-top-left-radius: var(--r);
@@ -124,7 +127,7 @@ ol {
 	border-bottom-left-radius: var(--r);
 	border-bottom-right-radius: var(--r);
 }
-.dropdown :where(h2, h3) {
+:where(.dropdown, .slider) :where(h2, h3) {
 	line-height: 1.3rem;
 	margin: 0;
 	padding: 5px;
@@ -142,7 +145,7 @@ ol {
 	rotate: 90deg;
 	color: #fd5a1e;
 }
-:where(.menu, .dropdown) > .content {
+:where(.menu, .dropdown, .slider) > .content {
 	padding: 5px;
 	min-width: 100%;
 	text-align: justify;
@@ -165,4 +168,31 @@ ol {
 }
 .menu > .content > :last-child {
 	margin-bottom: 0;
+}
+
+.slidesContainer {
+	display: flex;
+	flex-wrap: nowrap;
+	overflow: hidden;
+	max-width: 50ch;
+	gap: 0.3rem;
+}
+.slider {
+	flex-shrink: 0;
+	border-radius: var(--r);
+	translate: 0px 0;
+}
+.slider > :where(h2, h3) {
+	text-align: center;
+	position: relative;
+}
+.slider:not(:first-child) > :where(h2, h3)::before {
+	content: '\25c0';
+	position: absolute;
+	left: 1rem;
+}
+.slider:not(:last-child) > :where(h2, h3)::after {
+	content: '\25b6';
+	position: absolute;
+	right: 1rem;
 }
