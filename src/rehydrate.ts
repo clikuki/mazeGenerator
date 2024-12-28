@@ -18,11 +18,6 @@
 		mouse.y = e.y;
 
 		if (grabbed instanceof Object) {
-			for (let i = 0; i < menus.length; i++) {
-				const other = menus[i];
-				other.style.zIndex = `${i + 1}`;
-			}
-
 			// Don't let menu disappear beyond edges
 			grabbed.position.x = Math.min(
 				Math.max(mouse.x - grabbed.offset.x, minimumVisibleMenu - grabbed.size.w),
@@ -72,6 +67,10 @@
 				const oldIndex = menus.findIndex((v) => v === menu);
 				menus.splice(oldIndex, 1);
 				menus.push(menu);
+				for (let i = 0; i < menus.length; i++) {
+					const other = menus[i];
+					other.style.zIndex = `${i + 1}`;
+				}
 			}
 		});
 
