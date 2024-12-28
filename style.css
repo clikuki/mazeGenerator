@@ -4,8 +4,12 @@
 	box-sizing: border-box;
 }
 
+:root {
+	--pad: 0.5rem;
+}
+
 p {
-	margin: 0.5rem 0;
+	margin: var(--pad) 0;
 }
 
 body {
@@ -23,8 +27,8 @@ body {
 
 h1 {
 	position: absolute;
-	top: 0.5rem;
-	left: 0.5rem;
+	top: var(--pad);
+	left: var(--pad);
 	margin: 0;
 	transition: opacity 300ms;
 }
@@ -65,7 +69,7 @@ button:disabled {
 
 ul,
 ol {
-	padding-left: 1.5rem;
+	padding-left: calc(var(--pad) + 1rem);
 }
 
 .algorithm-list > ul > li > span {
@@ -90,7 +94,7 @@ ol {
 .inputs input {
 	display: flex;
 	align-items: center;
-	gap: 0.5rem;
+	gap: var(--pad);
 	width: 100%;
 }
 
@@ -98,7 +102,7 @@ ol {
 	position: absolute;
 	top: 0;
 	left: 0;
-	padding: 0.5rem;
+	padding: var(--pad);
 	background-color: #1a1a1a;
 	border-radius: 5px;
 }
@@ -139,9 +143,10 @@ ol {
 	display: inline-block;
 	margin: 0 var(--r);
 	color: #b1b1b1;
-	transition: rotate 100ms ease-in, color 100ms;
+	transition: rotate 100ms ease-out, color 100ms;
 }
 .dropdown[data-open] :where(h2, h3)::before {
+	transition: rotate 100ms ease-in, color 100ms;
 	rotate: 90deg;
 	color: #fd5a1e;
 }
@@ -162,7 +167,7 @@ ol {
 }
 .menu > .content :where(h2, h3) {
 	margin: 0 0 0.3rem 0;
-	padding-left: 0.5rem;
+	padding-left: var(--pad);
 	text-align: center;
 	white-space: nowrap;
 }
@@ -170,29 +175,9 @@ ol {
 	margin-bottom: 0;
 }
 
-/* .slidesContainer {
-	display: flex;
-	flex-wrap: nowrap;
-	overflow: hidden;
-	max-width: 50ch;
-	gap: 0.3rem;
-}
-.slider {
-	flex-shrink: 0;
-	border-radius: var(--r);
-	translate: 0px 0;
-}
-.slider > :where(h2, h3) {
-	text-align: center;
-	position: relative;
-}
-.slider:not(:first-child) > :where(h2, h3)::before {
-	content: "\25c0";
+/* || Specific Menu Stylings */
+.menu.controls .simulation {
 	position: absolute;
-	left: 1rem;
+	top: calc(var(--pad) + 5px);
+	right: var(--pad);
 }
-.slider:not(:last-child) > :where(h2, h3)::after {
-	content: "\25b6";
-	position: absolute;
-	right: 1rem;
-} */
