@@ -123,6 +123,7 @@ legend {
 	padding: 5px;
 	white-space: nowrap;
 	background-color: rgba(40, 40, 40, 0.6);
+	transition: rotate 100ms ease-out, color 100ms;
 }
 .dropdown :where(h2, h3)::before {
 	content: "\25B8";
@@ -130,6 +131,9 @@ legend {
 	margin: 0 var(--radius);
 	color: #b1b1b1;
 	transition: rotate 100ms ease-out, color 100ms;
+}
+.dropdown[data-open] > :where(h2, h3) {
+	color: var(--accent-clr);
 }
 .dropdown[data-open] :where(h2, h3)::before {
 	transition: rotate 100ms ease-in, color 100ms;
@@ -152,6 +156,7 @@ legend {
 	padding: 0 var(--content-pad);
 	height: 0;
 }
+
 .menu > .content :where(h2, h3) {
 	margin: 0 0 0.3rem 0;
 	padding-left: var(--pad);
