@@ -6,6 +6,7 @@
 
 :root {
 	--pad: 0.7rem;
+	--radius: 7px;
 }
 
 p {
@@ -105,16 +106,13 @@ ol {
 	left: 0;
 	padding: var(--pad);
 	background-color: #1a1a1a;
-	border-radius: 5px;
+	border-radius: var(--radius);
+	box-shadow: inset 0 3px 7px #ffffff22;
 }
 .menu > :where(h2, h3) {
 	margin: 0 0 1rem 0;
 }
 
-.menu {
-	--r: 7px;
-	box-shadow: inset 0 3px 7px #ffffff22;
-}
 .menu > .content,
 .dropdown {
 	background-color: rgba(255, 255, 255, 0.2);
@@ -125,14 +123,14 @@ ol {
 }
 .menu > .content,
 .dropdown:first-child {
-	border-top-left-radius: var(--r);
-	border-top-right-radius: var(--r);
+	border-top-left-radius: var(--radius);
+	border-top-right-radius: var(--radius);
 	margin: 0;
 }
 .menu > .content,
 .dropdown:last-child {
-	border-bottom-left-radius: var(--r);
-	border-bottom-right-radius: var(--r);
+	border-bottom-left-radius: var(--radius);
+	border-bottom-right-radius: var(--radius);
 }
 .dropdown :where(h2, h3) {
 	line-height: 1.3rem;
@@ -144,7 +142,7 @@ ol {
 .dropdown :where(h2, h3)::before {
 	content: "\25B8";
 	display: inline-block;
-	margin: 0 var(--r);
+	margin: 0 var(--radius);
 	color: #b1b1b1;
 	transition: rotate 100ms ease-out, color 100ms;
 }
