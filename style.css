@@ -39,11 +39,11 @@ canvas {
 	height: var(--s);
 	/* image-rendering: crisp-edges; */
 }
-canvas[data-state='IDLE'] {
+canvas[data-state="IDLE"] {
 	cursor: pointer;
 }
-canvas[data-state='RUNNING'],
-canvas[data-state='EMPTY'] {
+canvas[data-state="RUNNING"],
+canvas[data-state="EMPTY"] {
 	cursor: not-allowed;
 }
 
@@ -98,7 +98,7 @@ ol {
 	position: absolute;
 	top: 0;
 	left: 0;
-	padding: 1rem;
+	padding: 0.5rem;
 	background-color: #1a1a1a;
 	border-radius: 5px;
 }
@@ -135,7 +135,7 @@ ol {
 	background-color: rgba(40, 40, 40, 0.6);
 }
 .dropdown :where(h2, h3)::before {
-	content: '\25B8';
+	content: "\25B8";
 	display: inline-block;
 	margin: 0 var(--r);
 	color: #b1b1b1;
@@ -152,7 +152,7 @@ ol {
 }
 .dropdown > .content {
 	max-height: 30rem;
-	overflow-y: scroll;
+	overflow-y: auto;
 	/* transition: all 500ms ease-in; */
 }
 .dropdown:not([data-open]) > .content {
@@ -170,7 +170,7 @@ ol {
 	margin-bottom: 0;
 }
 
-.slidesContainer {
+/* .slidesContainer {
 	display: flex;
 	flex-wrap: nowrap;
 	overflow: hidden;
@@ -187,12 +187,12 @@ ol {
 	position: relative;
 }
 .slider:not(:first-child) > :where(h2, h3)::before {
-	content: '\25c0';
+	content: "\25c0";
 	position: absolute;
 	left: 1rem;
 }
 .slider:not(:last-child) > :where(h2, h3)::after {
-	content: '\25b6';
+	content: "\25b6";
 	position: absolute;
 	right: 1rem;
-}
+} */
