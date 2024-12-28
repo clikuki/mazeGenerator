@@ -53,13 +53,13 @@
 		position.y = initRectData.y;
 		size.w = initRectData.width;
 		size.h = initRectData.height;
-		menu.firstElementChild!.addEventListener("mousemove", () => {
+		menu.addEventListener("mousemove", () => {
 			if (!(grabbed instanceof Object)) {
 				grabOffset.x = mouse.x - position.x;
 				grabOffset.y = mouse.y - position.y;
 			}
 		});
-		menu.firstElementChild!.addEventListener("mousedown", () => {
+		menu.addEventListener("mousedown", () => {
 			if (grabbed === GrabStates.WAITING) {
 				grabbed = { menu, position, size, offset: grabOffset };
 
@@ -73,6 +73,12 @@
 				}
 			}
 		});
+
+		menu
+			.getElementsByClassName("dropdowns")[0]
+			.addEventListener("mousedown", (e) => {
+				e.stopPropagation();
+			});
 
 		// Dropdowns
 		let focused: Element | null = null;
