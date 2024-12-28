@@ -21,9 +21,13 @@ body {
 	background-color: black;
 	color: white;
 	margin: 0;
-	font-family: system-ui;
 	overflow: hidden;
 	user-select: none;
+
+	font-family: "Roboto Slab", serif;
+	font-optical-sizing: auto;
+	font-weight: 300;
+	font-style: normal;
 }
 
 h1 {
@@ -32,6 +36,7 @@ h1 {
 	left: var(--pad);
 	margin: 0;
 	text-shadow: 0 1px 4px #ffffffaa;
+	font-weight: 500;
 	transition: opacity 300ms;
 }
 h1:hover {
@@ -61,43 +66,13 @@ button {
 	cursor: pointer;
 	color: inherit;
 	text-transform: uppercase;
-	font-weight: bold;
+	font: inherit;
+	font-weight: 400;
 }
 
 button:disabled {
 	border-color: currentColor;
 	cursor: not-allowed;
-}
-
-ul,
-ol {
-	padding-left: calc(var(--pad) + 1rem);
-}
-
-.algorithm-list > ul > li > span {
-	font-weight: bold;
-}
-
-.algorithm-list ol > li::marker {
-	font-weight: bold;
-}
-
-.inputs {
-	display: flex;
-	justify-content: center;
-	flex-wrap: wrap;
-	gap: 1rem;
-}
-
-.inputs label {
-	font-weight: bold;
-}
-
-.inputs input {
-	display: flex;
-	align-items: center;
-	gap: var(--pad);
-	width: 100%;
 }
 
 .menu {
@@ -111,6 +86,10 @@ ol {
 }
 .menu > :where(h2, h3) {
 	margin: 0 0 1rem 0;
+	font-weight: 500;
+}
+.menu h3 {
+	font-weight: 400;
 }
 
 .menu > .content,
@@ -152,16 +131,18 @@ ol {
 	color: #fd5a1e;
 }
 :where(.menu, .dropdown) > .content {
-	padding: 5px;
+	--content-pad: 5px;
+	padding: var(--content-pad);
 	min-width: 100%;
 	text-align: justify;
 }
 .dropdown > .content {
-	max-height: 30rem;
-	/* transition: all 500ms ease-in; */
+	height: calc(var(--height) + var(--content-pad) * 2);
+	transition: height 250ms ease-in, padding 250ms ease-in;
 }
 .dropdown:not([data-open]) > .content {
-	padding: 0 5px;
+	transition: height 250ms ease-out, padding 250ms ease-out;
+	padding: 0 var(--content-pad);
 	height: 0;
 }
 .menu > .content :where(h2, h3) {
@@ -174,9 +155,102 @@ ol {
 	margin-bottom: 0;
 }
 
+.sideBySide {
+	display: grid;
+	grid-template-columns: 2fr 1fr;
+	row-gap: 3px;
+	align-items: center;
+	padding: 0 var(--pad);
+}
+
 /* || Specific Menu Stylings */
-.menu.controls .simulation {
+.options .simulation {
 	position: absolute;
-	top: calc(var(--pad) + 5px);
+	top: var(--pad);
 	right: var(--pad);
+	display: flex;
+	column-gap: 5px;
+}
+
+.options .simulation button {
+	position: relative;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+}
+.options .simulation ::before {
+	position: absolute;
+	font-family: Arial, Helvetica, sans-serif;
+	font-weight: 1000;
+}
+.options .simulation .pause::before {
+	content: "II";
+}
+.options .simulation .step::before {
+	content: "I\25BA";
+}
+.options .simulation .skip::before {
+	content: "\23ED";
+	font-size: 1.2rem;
+}
+.options .simulation .restart::before {
+	content: "\21BB";
+	font-size: 1.4rem;
+}
+
+.menu input {
+	accent-color: rgb(182, 0, 182);
+	font: inherit;
+	font-weight: 400;
+}
+
+.menu input[type="number"],
+.menu input[type="text"][inputmode="numeric"] {
+	position: relative;
+	/* background-color: #ffffff23; */
+	background-color: transparent;
+	background-image: linear-gradient(to left, #ffffff23 80%, transparent);
+	border: none;
+	padding: 0;
+	text-align: center;
+	color: inherit;
+}
+
+.options .simulSpeed {
+	display: flex;
+	justify-content: center;
+}
+.options .simulSpeed .display {
+	width: 5ch;
+	text-align: center;
+	background-color: transparent;
+	color: inherit;
+	border: none;
+}
+.options .simulSpeed button {
+	position: relative;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	border: none;
+	border-radius: 10%;
+	background-color: white;
+	padding: 0;
+	width: 1.5rem;
+	height: 1.5rem;
+	margin: 5px 0;
+}
+.options .simulSpeed button:disabled {
+	opacity: 0.4;
+}
+.options .simulSpeed .increase::before {
+	position: absolute;
+	content: "\23F6";
+	color: #212121;
+}
+.options .simulSpeed .decrease::before {
+	position: absolute;
+	content: "\23F7";
+	color: #212121;
+	translate: 0 -2px;
 }

@@ -7,6 +7,13 @@
 		<link rel="stylesheet" type="text/css" href="style.css" />
 		<!-- <script src="dest/index.js" type="module"></script> -->
 		<script src="dest/rehydrate.js" defer></script>
+
+		<link rel="preconnect" href="https://fonts.googleapis.com" />
+		<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+		<link
+			href="https://fonts.googleapis.com/css2?family=Roboto+Slab:wght@100..900&display=swap"
+			rel="stylesheet"
+		/>
 	</head>
 	<body>
 		<h1>Maze Algorithms</h1>
@@ -75,7 +82,7 @@
 						adipisci. Magni!
 					</div>
 				</article>
-				<article class="dropdown" data-key="binarytree" data-open="">
+				<article class="dropdown" data-key="binarytree">
 					<h3>Binary Tree</h3>
 					<div class="content">
 						Iusto facilis nulla dolor vitae dolorum at tempora, pariatur officia
@@ -137,7 +144,7 @@
 				</article>
 			</div>
 		</section>
-		<section class="menu options" style="left: 40ch; top: 1rem;">
+		<section class="menu solver" style="left: 40ch; top: 1rem;">
 			<h2>Solver</h2>
 			<div class="dropdowns">
 				<article class="dropdown" data-key="bfs">
@@ -167,17 +174,28 @@
 				</article>
 			</div>
 		</section>
-		<section class="menu controls" style="left: 40ch; top: 25rem;">
+		<section class="menu options" style="left: 40ch; top: 25rem;">
 			<h2>Options</h2>
 			<div class="content">
 				<div class="simulation">
-					<button data-control="pause">Pause</button>
-					<button data-control="step">Step</button>
-					<button data-control="restart">Restart</button>
+					<button class="pause" title="Pause">&nbsp;</button>
+					<button class="step" title="Step">&nbsp;</button>
+					<button class="skip" title="Skip">&nbsp;</button>
+					<button class="restart" title="Restart">&nbsp;</button>
 				</div>
-				Lorem ipsum dolor sit amet, consectetur adipisicing elit. Molestias
-				recusandae numquam natus et asperiores magni, nam tempora sunt dolor iusto,
-				a quibusdam deserunt repellendus expedita eius inventore nihil, optio quis.
+
+				<div class="sideBySide">
+					<label for="speed">Simulation speed</label>
+					<div class="simulSpeed">
+						<button class="decrease">&nbsp;</button>
+						<input class="display" type="text" value="1&times;" id="speed" disabled />
+						<button class="increase">&nbsp;</button>
+					</div>
+					<label for="columnCount"># of Columns</label>
+					<input type="number" id="columnCount" min="2" max="1000" value="10" />
+					<label for="rowCount"># of Rows</label>
+					<input type="number" id="rowCount" min="2" max="1000" value="10" />
+				</div>
 			</div>
 		</section>
 	</body>

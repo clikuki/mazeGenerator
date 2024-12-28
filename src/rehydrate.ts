@@ -40,6 +40,25 @@
 		grabbed = GrabStates.WAITING;
 	});
 
+	function updateMenuData(
+		menu: HTMLElement,
+		pos: { x: number; y: number },
+		size: { w: number; h: number }
+	) {
+		const rectData = menu.getBoundingClientRect();
+		pos.x = rectData.x;
+		pos.y = rectData.y;
+		size.w = rectData.width;
+		size.h = rectData.height;
+	}
+
+	function getDropdownHeight(content: HTMLElement) {
+		content.style.height = "auto";
+		const elHeight = content.offsetHeight;
+		content.style.height = "";
+		return elHeight;
+	}
+
 	const menus = Array.from(
 		document.body.getElementsByClassName("menu")
 	) as HTMLElement[];
@@ -48,11 +67,7 @@
 		const position = { x: NaN, y: NaN };
 		const size = { w: NaN, h: NaN };
 		const grabOffset = { x: 0, y: 0 };
-		const initRectData = menu.getBoundingClientRect();
-		position.x = initRectData.x;
-		position.y = initRectData.y;
-		size.w = initRectData.width;
-		size.h = initRectData.height;
+		updateMenuData(menu, position, size);
 		menu.addEventListener("mousemove", () => {
 			if (!(grabbed instanceof Object)) {
 				grabOffset.x = mouse.x - position.x;
@@ -76,29 +91,42 @@
 
 		menu
 			.getElementsByClassName("dropdowns")[0]
-			.addEventListener("mousedown", (e) => {
+			?.addEventListener("mousedown", (e) => {
 				e.stopPropagation();
 			});
 
 		// Dropdowns
 		let focused: Element | null = null;
-		for (const dropdown of menu.getElementsByClassName("dropdown")) {
+		for (const dropdown of menu.getElementsByClassName(
+			"dropdown"
+		) as HTMLCollectionOf<HTMLElement>) {
 			if (dropdown.hasAttribute("data-open")) focused = dropdown;
 
+			// Allow height to be animatable
+			const content = dropdown.children[1] as HTMLElement;
+			let height = getDropdownHeight(content);
+			content.style.setProperty("--height", `${height}px`);
+
 			dropdown.firstElementChild!.addEventListener("click", () => {
+				// Set focus to current dropdown and close all others
+				// or if already focused, close this one
 				if (focused) focused.removeAttribute("data-open");
 				if (focused === dropdown) {
 					focused = null;
 				} else {
-					focused = dropdown;
-					focused.setAttribute("data-open", "");
+					const newHeight = getDropdownHeight(content);
+					if (newHeight !== height) {
+						height = newHeight;
+						content.style.setProperty("--height", `${height}px`);
+					}
+
+					requestAnimationFrame(() => {
+						focused = dropdown;
+						focused.setAttribute("data-open", "");
+					});
 				}
 
-				const rectData = menu.getBoundingClientRect();
-				position.x = rectData.x;
-				position.y = rectData.y;
-				size.w = rectData.width;
-				size.h = rectData.height;
+				updateMenuData(menu, position, size);
 			});
 		}
 	}
