@@ -7,6 +7,7 @@
 :root {
 	--pad: 0.7rem;
 	--radius: 7px;
+	--accent-clr: #fd5a1e;
 }
 
 p {
@@ -75,6 +76,11 @@ button:disabled {
 	cursor: not-allowed;
 }
 
+legend {
+	font-weight: 400;
+}
+
+/* || Classes */
 .menu {
 	position: absolute;
 	top: 0;
@@ -128,7 +134,7 @@ button:disabled {
 .dropdown[data-open] :where(h2, h3)::before {
 	transition: rotate 100ms ease-in, color 100ms;
 	rotate: 90deg;
-	color: #fd5a1e;
+	color: var(--accent-clr);
 }
 :where(.menu, .dropdown) > .content {
 	--content-pad: 5px;
@@ -140,7 +146,8 @@ button:disabled {
 	height: calc(var(--height) + var(--content-pad) * 2);
 	transition: height 250ms ease-in, padding 250ms ease-in;
 }
-.dropdown:not([data-open]) > .content {
+.dropdown:not([data-open]) > .content,
+.dropdown > .content:empty {
 	transition: height 250ms ease-out, padding 250ms ease-out;
 	padding: 0 var(--content-pad);
 	height: 0;
@@ -161,6 +168,13 @@ button:disabled {
 	row-gap: 3px;
 	align-items: center;
 	padding: 0 var(--pad);
+}
+.sideBySide.half {
+	grid-template-columns: 1fr 1fr;
+}
+.sideBySide.radio {
+	grid-template-columns: min-content 1fr;
+	column-gap: var(--pad);
 }
 
 /* || Specific Menu Stylings */
@@ -199,7 +213,7 @@ button:disabled {
 }
 
 .menu input {
-	accent-color: rgb(182, 0, 182);
+	accent-color: var(--accent-clr);
 	font: inherit;
 	font-weight: 400;
 }
@@ -253,4 +267,21 @@ button:disabled {
 	content: "\23F7";
 	color: #212121;
 	translate: 0 -2px;
+}
+
+.exports {
+	display: grid;
+	grid-template-columns: repeat(3, 1fr);
+	column-gap: var(--pad);
+	margin-top: var(--pad);
+}
+
+.dropdown legend + .radio {
+	border-left: 2px solid #00000033;
+}
+
+.dropdown .sliderLabels {
+	display: flex;
+	align-items: center;
+	column-gap: 3px;
 }
