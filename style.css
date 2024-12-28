@@ -5,7 +5,7 @@
 }
 
 :root {
-	--pad: 0.5rem;
+	--pad: 0.7rem;
 }
 
 p {
@@ -30,6 +30,7 @@ h1 {
 	top: var(--pad);
 	left: var(--pad);
 	margin: 0;
+	text-shadow: 0 1px 4px #ffffffaa;
 	transition: opacity 300ms;
 }
 h1:hover {
@@ -115,24 +116,25 @@ ol {
 	box-shadow: inset 0 3px 7px #ffffff22;
 }
 .menu > .content,
-.dropdown,
-.slider {
+.dropdown {
 	background-color: rgba(255, 255, 255, 0.2);
 	border-radius: 0;
 	margin-top: 2px;
 	width: 50ch;
 	overflow: hidden;
 }
-:is(.menu > .content, .dropdown):nth-child(2) {
+.menu > .content,
+.dropdown:first-child {
 	border-top-left-radius: var(--r);
 	border-top-right-radius: var(--r);
 	margin: 0;
 }
-:is(.menu > .content, .dropdown):last-child {
+.menu > .content,
+.dropdown:last-child {
 	border-bottom-left-radius: var(--r);
 	border-bottom-right-radius: var(--r);
 }
-:where(.dropdown, .slider) :where(h2, h3) {
+.dropdown :where(h2, h3) {
 	line-height: 1.3rem;
 	margin: 0;
 	padding: 5px;
@@ -151,20 +153,18 @@ ol {
 	rotate: 90deg;
 	color: #fd5a1e;
 }
-:where(.menu, .dropdown, .slider) > .content {
+:where(.menu, .dropdown) > .content {
 	padding: 5px;
 	min-width: 100%;
 	text-align: justify;
 }
 .dropdown > .content {
 	max-height: 30rem;
-	overflow-y: auto;
 	/* transition: all 500ms ease-in; */
 }
 .dropdown:not([data-open]) > .content {
 	padding: 0 5px;
 	height: 0;
-	overflow-y: scroll;
 }
 .menu > .content :where(h2, h3) {
 	margin: 0 0 0.3rem 0;
