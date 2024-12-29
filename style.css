@@ -131,6 +131,7 @@ legend {
 			padding: 0 var(--content-pad);
 			height: 0;
 			opacity: 0;
+			pointer-events: none;
 		}
 	}
 
