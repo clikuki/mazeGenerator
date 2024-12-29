@@ -37,6 +37,18 @@
     }
     const menus = Array.from(document.body.getElementsByClassName("menu"));
     for (const menu of menus) {
+        // Open-close
+        // Allow height to be animatable
+        const menuContent = menu.children[1];
+        let height = getDropdownHeight(menuContent);
+        menuContent.style.setProperty("--height", `${height}px`);
+        let isOpen = menu.hasAttribute("data-open");
+        menu.firstElementChild.addEventListener("click", () => {
+            if ((isOpen = !isOpen))
+                menu.setAttribute("data-open", "");
+            else
+                menu.removeAttribute("data-open");
+        });
         // Drag
         const position = { x: NaN, y: NaN };
         const size = { w: NaN, h: NaN };

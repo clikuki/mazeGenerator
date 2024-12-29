@@ -86,7 +86,7 @@ legend {
 	font-weight: 400;
 }
 
-/* || Menus and dropdowns */
+/* || Menus related */
 .menu {
 	position: absolute;
 	top: 0;
@@ -96,13 +96,42 @@ legend {
 	border-radius: var(--radius);
 	box-shadow: inset 0 3px 7px #ffffff22;
 
-	> :where(h2, h3) {
+	> h2 {
+		display: flex;
+		align-items: center;
 		margin: 0 0 1rem 0;
 		font-weight: 500;
+		transition: margin 100ms ease-in;
+
+		&::before {
+			content: "\25B8";
+			margin-right: var(--pad);
+			color: #b1b1b1;
+			transition: rotate 100ms ease-out, color 100ms ease-out;
+		}
 	}
 
-	h3 {
-		font-weight: 400;
+	> .content,
+	> .dropdowns {
+		transition: opacity 100ms ease-in, padding 100ms ease-in;
+	}
+
+	&[data-open] > h2::before {
+		rotate: 90deg;
+	}
+
+	&:not([data-open]) {
+		> h2 {
+			transition: margin 100ms ease-out;
+			margin: 0;
+		}
+
+		> .content,
+		> .dropdowns {
+			padding: 0 var(--content-pad);
+			height: 0;
+			opacity: 0;
+		}
 	}
 
 	/* || General .content styling */
@@ -116,8 +145,10 @@ legend {
 		text-align: justify;
 	}
 
+	/* || Dropdown Component */
 	.dropdown {
 		> h3 {
+			font-weight: 400;
 			line-height: 1.3rem;
 			margin: 0;
 			padding: 5px;
@@ -160,22 +191,23 @@ legend {
 		}
 	}
 
+	/* Inputs */
 	input {
 		accent-color: var(--accent-clr);
 		font: inherit;
 		font-weight: 400;
-	}
 
-	input[type="number"],
-	input[type="text"][inputmode="numeric"] {
-		position: relative;
-		/* || background-color: #ffffff23; */
-		background-color: transparent;
-		background-image: linear-gradient(to left, #ffffff23 80%, transparent);
-		border: none;
-		padding: 0;
-		text-align: center;
-		color: inherit;
+		&[type="number"],
+		&[type="text"][inputmode="numeric"] {
+			position: relative;
+			/* || background-color: #ffffff23; */
+			background-color: transparent;
+			background-image: linear-gradient(to left, #ffffff23 80%, transparent);
+			border: none;
+			padding: 0;
+			text-align: center;
+			color: inherit;
+		}
 	}
 }
 
