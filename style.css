@@ -8,6 +8,7 @@
 	--pad: 0.7rem;
 	--radius: 7px;
 	--accent-clr: #fd5a1e;
+	--dropdown-clr: #28282899;
 }
 
 p {
@@ -106,37 +107,28 @@ legend {
 	width: 50ch;
 	overflow: hidden;
 }
-.menu > .content,
-.dropdown:first-child {
-	border-top-left-radius: var(--radius);
-	border-top-right-radius: var(--radius);
-	margin: 0;
-}
-.menu > .content,
-.dropdown:last-child {
-	border-bottom-left-radius: var(--radius);
-	border-bottom-right-radius: var(--radius);
-}
 .dropdown :where(h2, h3) {
 	line-height: 1.3rem;
 	margin: 0;
 	padding: 5px;
 	white-space: nowrap;
-	background-color: rgba(40, 40, 40, 0.6);
-	transition: rotate 100ms ease-out, color 100ms;
+	background-color: var(--dropdown-clr);
+	border-left: 2px solid transparent;
+	transition: color 100ms, border-left 100ms;
 }
 .dropdown :where(h2, h3)::before {
 	content: "\25B8";
 	display: inline-block;
-	margin: 0 var(--radius);
+	margin: 0 var(--pad) 0 0;
 	color: #b1b1b1;
-	transition: rotate 100ms ease-out, color 100ms;
+	transition: rotate 100ms ease-out, color 100ms ease-out;
 }
 .dropdown[data-open] > :where(h2, h3) {
 	color: var(--accent-clr);
+	border-left: 2px solid var(--accent-clr);
 }
 .dropdown[data-open] :where(h2, h3)::before {
-	transition: rotate 100ms ease-in, color 100ms;
+	transition: rotate 100ms ease-in, color 100ms ease-in;
 	rotate: 90deg;
 	color: var(--accent-clr);
 }

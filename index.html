@@ -18,23 +18,6 @@
 	<body>
 		<h1>Maze Algorithms</h1>
 		<canvas></canvas>
-		<section class="menu solver" style="left: 40ch; top: 1rem;">
-			<h2>Solver</h2>
-			<div class="dropdowns">
-				<article class="dropdown" data-key="bfs">
-					<h3>Breadth First Search</h3>
-					<div class="content"></div>
-				</article>
-				<article class="dropdown" data-key="astar">
-					<h3>A*</h3>
-					<div class="content"></div>
-				</article>
-				<article class="dropdown" data-key="deadend">
-					<h3>Dead-end Filling</h3>
-					<div class="content"></div>
-				</article>
-			</div>
-		</section>
 		<section class="menu options" style="left: 40ch; top: 25rem;">
 			<h2>Options</h2>
 			<div class="content">
@@ -64,10 +47,10 @@
 				</div>
 			</div>
 		</section>
-		<section class="menu algorithm" style="left: 10ch; top: 1rem;">
+		<section class="menu algorithm" style="left: 10ch; top: 1rem;" data-required>
 			<h2>Algorithm</h2>
 			<div class="dropdowns">
-				<article class="dropdown" data-key="recursiveBacktracking">
+				<article class="dropdown" data-key="recursiveBacktracking" data-open>
 					<h3>Recursive Backtracking</h3>
 					<div class="content"></div>
 				</article>
@@ -198,7 +181,7 @@
 					<h3>Hunt-and-Kill</h3>
 					<div class="content"></div>
 				</article>
-				<article class="dropdown" data-key="growingTree" data-open>
+				<article class="dropdown" data-key="growingTree">
 					<h3>Growing Tree</h3>
 					<div class="content">
 						<legend>Picking Ratios</legend>
@@ -226,6 +209,55 @@
 								<span>0</span>
 								<input type="range" id="middle" min="0" max="10" value="0" />
 								<span>10</span>
+							</div>
+						</div>
+					</div>
+				</article>
+			</div>
+		</section>
+		<section class="menu solver" style="left: 40ch; top: 1rem;" data-required>
+			<h2>Solver</h2>
+			<div class="dropdowns">
+				<article class="dropdown" data-key="randomWalk">
+					<h3>Random Walk</h3>
+					<div class="content"></div>
+				</article>
+				<article class="dropdown" data-key="handOnWall">
+					<h3>Hand-On-Wall</h3>
+					<div class="content"></div>
+				</article>
+				<article class="dropdown" data-key="pledge">
+					<h3>Pledge's</h3>
+					<div class="content"></div>
+				</article>
+				<article class="dropdown" data-key="tremaux">
+					<h3>Trémaux's</h3>
+					<div class="content"></div>
+				</article>
+				<article class="dropdown" data-key="dfs">
+					<h3>Depth First Search</h3>
+					<div class="content"></div>
+				</article>
+				<article class="dropdown" data-key="bfs">
+					<h3>Breadth First Search</h3>
+					<div class="content"></div>
+				</article>
+				<article class="dropdown" data-key="deadend" data-open>
+					<h3>Dead-end Filling</h3>
+					<div class="content"></div>
+				</article>
+				<article class="dropdown" data-key="astar">
+					<h3>A*</h3>
+					<div class="content">
+						<div class="sideBySide half">
+							<legend>Heuristic Distance</legend>
+							<div class="sideBySide radio">
+								<input type="radio" id="taxicab" name="heuristicDistance" checked />
+								<label for="taxicab">Taxicab</label>
+								<input type="radio" id="euclid" name="heuristicDistance" />
+								<label for="euclid">Euclidean</label>
+								<input type="radio" id="chebyshev" name="heuristicDistance" />
+								<label for="chebyshev">Chebyshev</label>
 							</div>
 						</div>
 					</div>

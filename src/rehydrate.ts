@@ -89,6 +89,7 @@
 			}
 		});
 
+		// Don't grab on dropdowns
 		menu
 			.getElementsByClassName("dropdowns")[0]
 			?.addEventListener("mousedown", (e) => {
@@ -96,10 +97,12 @@
 			});
 
 		// Dropdowns
+		let isRequired = menu.hasAttribute("data-required");
 		let focused: Element | null = null;
-		for (const dropdown of menu.getElementsByClassName(
+		const dropdowns = menu.getElementsByClassName(
 			"dropdown"
-		) as HTMLCollectionOf<HTMLElement>) {
+		) as HTMLCollectionOf<HTMLElement>;
+		for (const dropdown of dropdowns) {
 			if (dropdown.hasAttribute("data-open")) focused = dropdown;
 
 			// Allow height to be animatable
@@ -128,6 +131,11 @@
 
 				updateMenuData(menu, position, size);
 			});
+		}
+
+		// Initialize required dropdown sets
+		if (isRequired && !focused) {
+			(dropdowns[0].firstElementChild! as HTMLElement).click();
 		}
 	}
 }
