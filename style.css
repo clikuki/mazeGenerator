@@ -238,11 +238,14 @@ legend {
 		right: var(--pad);
 		display: flex;
 		column-gap: 5px;
+		font-size: medium;
 
 		button {
 			display: flex;
 			align-items: center;
 			justify-content: center;
+			width: 2.5rem;
+			aspect-ratio: 1;
 
 			&::before {
 				position: absolute;
