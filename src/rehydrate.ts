@@ -90,7 +90,9 @@
 
 	function setupMenuToggle(menu: HTMLElement): void {
 		let isOpen = menu.hasAttribute("data-open");
-		menu.firstElementChild!.addEventListener("click", () => {
+		const title = menu.firstElementChild! as HTMLElement;
+
+		title.addEventListener("click", () => {
 			// Don't toggle after dragging menu
 			if (isDraggingMenu) return;
 
@@ -100,6 +102,13 @@
 			} else {
 				menu.removeAttribute("data-open");
 			}
+		});
+
+		// Don't toggle on button clicks
+		title.querySelectorAll("button").forEach((el) => {
+			el.addEventListener("click", (e) => {
+				e.stopImmediatePropagation();
+			});
 		});
 	}
 
@@ -121,9 +130,11 @@
 		menu.addEventListener("mousedown", (e) => {
 			isDraggingMenu = false;
 
+			const invalidTargets = ["INPUT", "BUTTON"];
 			const targetExists = e.target instanceof HTMLElement;
-			const targetIsInput = targetExists && e.target.tagName !== "INPUT";
-			if (grabbedMenu === GrabStates.WAITING && targetIsInput) {
+			const isInvalidTarget =
+				targetExists && invalidTargets.includes(e.target.tagName);
+			if (grabbedMenu === GrabStates.WAITING && !isInvalidTarget) {
 				grabbedMenu = { menu, position, size, offset: grabOffset };
 				moveToTopOfStack(menu);
 			}

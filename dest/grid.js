@@ -63,9 +63,9 @@ export class Grid {
                 }
             }
         }
-        ctx.strokeStyle = 'white';
+        ctx.strokeStyle = "white";
         ctx.lineWidth = 1;
-        ctx.lineCap = 'square';
+        ctx.lineCap = "square";
         ctx.stroke();
     }
     drawGrayedCells(ctx) {
@@ -83,7 +83,7 @@ export class Grid {
                 ctx.moveTo(x, y);
             }
         }
-        ctx.fillStyle = '#333';
+        ctx.fillStyle = "#222";
         ctx.fill();
     }
 }
