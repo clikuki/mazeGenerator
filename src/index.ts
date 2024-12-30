@@ -72,6 +72,31 @@ fastForwardBtn.addEventListener("click", () => {
 	fastForwardBtn.disabled = true;
 });
 
+const columnInput = document.getElementById("columnCount") as HTMLInputElement;
+const rowInput = document.getElementById("rowCount") as HTMLInputElement;
+columnInput.valueAsNumber = grid.colCnt;
+rowInput.valueAsNumber = grid.rowCnt;
+
+const minDimensions = 2;
+const maxDimensions = 1000;
+columnInput.addEventListener("change", () => {
+	const newVal = columnInput.valueAsNumber;
+	if (isNaN(newVal) || newVal < minDimensions || newVal > maxDimensions) {
+		columnInput.valueAsNumber = grid.colCnt;
+		return;
+	}
+	restart({ colCnt: newVal });
+});
+
+rowInput.addEventListener("change", () => {
+	const newVal = rowInput.valueAsNumber;
+	if (isNaN(newVal) || newVal < minDimensions || newVal > maxDimensions) {
+		rowInput.valueAsNumber = grid.colCnt;
+		return;
+	}
+	restart({ rowCnt: newVal });
+});
+
 const exportAsImageBtn = document.querySelector(
 	".exports .image"
 ) as HTMLButtonElement;
@@ -244,4 +269,4 @@ canvas.addEventListener("click", (e) => {
 
 mazeGenManager.current = "Growing Tree";
 mazeGenManager.setOption("pickingStyle", { NEWEST: 2, OLDEST: 1 });
-restart({ colCnt: 10, rowCnt: 15 });
+restart({});
