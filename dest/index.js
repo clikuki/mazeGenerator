@@ -224,7 +224,4 @@ canvas.addEventListener("click", (e) => {
         }
     }
 });
-mazeGenManager.current = "Growing Tree";
-mazeGenManager.setOption("pickingStyle", { NEWEST: 2, OLDEST: 1 });
-restart({});
 //# sourceMappingURL=index.js.map
