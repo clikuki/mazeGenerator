@@ -157,19 +157,19 @@
 		size: { w: number; h: number }
 	): void {
 		let isRequired = menu.hasAttribute("data-required");
-		const sharedFocused = { current: null as Element | null };
+		const focused = { current: null as Element | null };
 
 		const dropdowns = Array.from(
 			menu.getElementsByClassName("dropdown")
 		) as HTMLElement[];
 		dropdowns.forEach((dropdown) => {
-			initializeDropdown(dropdown, menu, position, size, sharedFocused);
+			initializeDropdown(dropdown, menu, isRequired, position, size, focused);
 			if (dropdown.hasAttribute("data-open")) {
-				sharedFocused.current = dropdown;
+				focused.current = dropdown;
 			}
 		});
 
-		if (isRequired && !sharedFocused.current) {
+		if (isRequired && !focused.current) {
 			(dropdowns[0].firstElementChild! as HTMLElement).click();
 		}
 	}
@@ -177,22 +177,21 @@
 	function initializeDropdown(
 		dropdown: HTMLElement,
 		menu: HTMLElement,
+		isRequired: boolean,
 		position: { x: number; y: number },
 		size: { w: number; h: number },
-		sharedFocused: { current: Element | null }
+		focused: { current: Element | null }
 	): void {
 		const content = dropdown.children[1] as HTMLElement;
 		let height = getDropdownHeight(content);
 		content.style.setProperty("--height", `${height}px`);
 
 		dropdown.firstElementChild!.addEventListener("click", () => {
-			if (isDraggingMenu) return;
+			if (isDraggingMenu || (isRequired && focused.current === dropdown)) return;
 
-			if (sharedFocused.current)
-				sharedFocused.current.removeAttribute("data-open");
-
-			if (sharedFocused.current === dropdown) {
-				sharedFocused.current = null;
+			if (focused.current) focused.current.removeAttribute("data-open");
+			if (focused.current === dropdown) {
+				focused.current = null;
 			} else {
 				const newHeight = getDropdownHeight(content);
 				if (newHeight !== height) {
@@ -201,8 +200,8 @@
 				}
 
 				requestAnimationFrame(() => {
-					sharedFocused.current = dropdown;
-					sharedFocused.current.setAttribute("data-open", "");
+					focused.current = dropdown;
+					focused.current.setAttribute("data-open", "");
 				});
 			}
 
