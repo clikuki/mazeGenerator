@@ -1,4 +1,4 @@
-import { Grid } from './grid.js';
+import { Grid } from "./grid.js";
 
 type Color = [number, number, number];
 function arrayToClrStr([r, g, b]: Color) {
@@ -17,9 +17,17 @@ interface Track {
 	room: Room;
 	start: Node;
 	stack: number[];
-	goals?: Room['neighbors'];
+	goals?: Room["neighbors"];
 	goalsReached: number;
 }
+
+// TODO: split and create multiple solver algorithms
+export interface SolverStructure {
+	isComplete: boolean;
+	step(): void;
+	draw(ctx: CanvasRenderingContext2D): void;
+}
+export type SolverConstructor = new (grid: Grid) => SolverStructure;
 
 export class MazeSolver {
 	isComplete = false;
@@ -27,7 +35,7 @@ export class MazeSolver {
 	start: number;
 	dest: number;
 	path?: number[];
-	phase: 'ROOM' | 'FILL' | 'TRACE' = 'ROOM';
+	phase: "ROOM" | "FILL" | "TRACE" = "ROOM";
 
 	offsets: [number, number, number, number];
 	lineWidth: number;
@@ -64,16 +72,16 @@ export class MazeSolver {
 		this.indexToRoomDict[this.start] = this.rooms[0];
 		this.lineWidth = Math.max(
 			Math.ceil(50 / Math.min(grid.rowCnt, grid.colCnt)),
-			1,
+			1
 		);
 	}
 	step() {
 		if (this.isComplete) return;
 
-		if (this.phase === 'ROOM') {
+		if (this.phase === "ROOM") {
 			// Room identification
 			if (this.roomStack.length === 0) {
-				this.phase = 'FILL';
+				this.phase = "FILL";
 				this.ignoreRooms = [
 					this.indexToRoomDict[this.start],
 					this.indexToRoomDict[this.dest],
@@ -117,7 +125,7 @@ export class MazeSolver {
 					this.indexToRoomDict[neighbor] = room;
 				}
 			}
-		} else if (this.phase === 'FILL') {
+		} else if (this.phase === "FILL") {
 			// Dead-end filling
 			if (!this.roomsToCheck) {
 				this.roomsToCheck = this.rooms.filter((r) => {
@@ -128,7 +136,7 @@ export class MazeSolver {
 				while (this.roomsToCheck.length) {
 					const room = this.roomsToCheck.pop()!;
 					const filledNeighbors = room.neighbors.filter(([, , r]) =>
-						this.filled.has(r),
+						this.filled.has(r)
 					);
 					if (room.neighbors.length - filledNeighbors.length === 1) {
 						this.filled.add(room);
@@ -140,7 +148,7 @@ export class MazeSolver {
 
 				if (newChecks.length) this.roomsToCheck = newChecks;
 				else {
-					this.phase = 'TRACE';
+					this.phase = "TRACE";
 					console.log(`MOVING TO PHASE "${this.phase}"`);
 					this.trackedPaths = [
 						{
@@ -152,7 +160,7 @@ export class MazeSolver {
 					];
 				}
 			}
-		} else if (this.phase === 'TRACE') {
+		} else if (this.phase === "TRACE") {
 			// Trace a path out of unfilled rooms
 			const toDelete: Track[] = [];
 			const toAdd: Track[] = [];
@@ -166,7 +174,7 @@ export class MazeSolver {
 				// Goals array not set yet
 				if (!track.goals) {
 					track.goals = room.neighbors.filter(
-						([, t, r]) => !this.indexToNodeDict[t] && !this.filled.has(r),
+						([, t, r]) => !this.indexToNodeDict[t] && !this.filled.has(r)
 					);
 					for (const [goal, afterGoal] of track.goals) {
 						this.indexToNodeDict[afterGoal] = { index: afterGoal, next: [] };
@@ -177,7 +185,7 @@ export class MazeSolver {
 				const head = stack.shift()!;
 
 				if (head === this.dest) {
-					console.log('DEST REACHED');
+					console.log("DEST REACHED");
 					this.isComplete = true;
 
 					// Add remaining nodes to dest
@@ -213,7 +221,7 @@ export class MazeSolver {
 				) {
 					// All paths to next rooms reached, end track!
 					toDelete.push(track);
-					console.log('ALL GOALS REACHED');
+					console.log("ALL GOALS REACHED");
 
 					for (const [goal, afterGoal] of goals) {
 						toAdd.push({
@@ -263,7 +271,7 @@ export class MazeSolver {
 			for (const track of toDelete) {
 				this.trackedPaths.splice(
 					this.trackedPaths.findIndex((t) => t === track),
-					1,
+					1
 				);
 			}
 			if (toAdd.length) this.trackedPaths.push(...toAdd);
@@ -280,7 +288,7 @@ export class MazeSolver {
 				!this.isComplete
 			) {
 				clr = this.trackedClr;
-			} else if (this.phase !== 'TRACE') {
+			} else if (this.phase !== "TRACE") {
 				clr = this.roomClrDict.get(room);
 				if (!clr) {
 					clr = [
@@ -300,15 +308,15 @@ export class MazeSolver {
 					cell.screenX,
 					cell.screenY,
 					this.grid.cellSize,
-					this.grid.cellSize,
+					this.grid.cellSize
 				);
 			}
 			ctx.fillStyle = tmp;
 		}
 
-		if (this.phase === 'TRACE') {
+		if (this.phase === "TRACE") {
 			ctx.lineWidth = this.lineWidth;
-			ctx.lineCap = 'round';
+			ctx.lineCap = "round";
 
 			// BFS paths
 			// Go over each cell in a room and draw a path from it to the start

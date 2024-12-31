@@ -1,5 +1,5 @@
-import { Cell, Grid } from './grid.js';
-import { randomItemInArray, shuffle } from './utils.js';
+import { Cell, Grid } from "./grid.js";
+import { randomItemInArray, shuffle } from "./utils.js";
 
 // Does not check whether the two cells are actually neighbors
 // Don't know if I need to fix that :|
@@ -52,8 +52,16 @@ function randIntBetween(min: number, max: number) {
 	return Math.floor(Math.random() * (max - min + 1)) + min;
 }
 
-export class AldousBroder {
-	static readonly key = 'Aldous-Broder';
+// TODO: Make algorithms use the following types
+export interface GeneratorStructure {
+	isComplete: boolean;
+	step(): void;
+	draw(ctx: CanvasRenderingContext2D): void;
+}
+export type GeneratorConstructor = new (grid: Grid) => GeneratorStructure;
+
+export class AldousBroder implements GeneratorStructure {
+	static readonly key = "Aldous-Broder";
 	index: number;
 	isComplete = false;
 	grid: Grid;
@@ -95,16 +103,16 @@ export class AldousBroder {
 			cellSize / 4,
 			0,
 			0,
-			Math.PI * 2,
+			Math.PI * 2
 		);
-		ctx.fillStyle = 'rgb(0, 255, 0)';
+		ctx.fillStyle = "rgb(0, 255, 0)";
 		ctx.fill();
 		ctx.restore();
 	}
 }
 
-export class Wilsons {
-	static readonly key = 'Wilsons';
+export class Wilsons implements GeneratorStructure {
+	static readonly key = "Wilsons";
 	index: number;
 	isComplete = false;
 	grid: Grid;
@@ -173,7 +181,7 @@ export class Wilsons {
 		// Full path
 		for (const index of this.walkedCells) {
 			const cell = this.grid.cells[index];
-			ctx.fillStyle = 'rgb(255, 0, 0)';
+			ctx.fillStyle = "rgb(255, 0, 0)";
 			ctx.fillRect(cell.screenX, cell.screenY, cellSize - 2, cellSize - 2);
 		}
 
@@ -195,7 +203,7 @@ export class Wilsons {
 			else if (dir === 1) rot = Math.PI / 2;
 			else if (dir === this.grid.colCnt) rot = Math.PI;
 			else if (dir === -1) rot = -Math.PI / 2;
-			else throw 'Impossible direction encountered!';
+			else throw "Impossible direction encountered!";
 			ctx.rotate(rot);
 
 			ctx.beginPath();
@@ -206,11 +214,11 @@ export class Wilsons {
 			ctx.moveTo(cellSize / 4, 0);
 			ctx.lineTo(0, -cellSize / 4);
 
-			ctx.strokeStyle = 'rgb(0, 255, 0)';
+			ctx.strokeStyle = "rgb(0, 255, 0)";
 			const prevLineWidth = ctx.lineWidth;
 			ctx.lineWidth = 5;
 			if (26 > cellSize) ctx.lineWidth = 2;
-			ctx.lineCap = 'round';
+			ctx.lineCap = "round";
 			ctx.stroke();
 			ctx.lineWidth = prevLineWidth;
 
@@ -229,16 +237,16 @@ export class Wilsons {
 			this.grid.cellSize / 4,
 			0,
 			0,
-			Math.PI * 2,
+			Math.PI * 2
 		);
-		ctx.fillStyle = 'rgb(0, 255, 0)';
+		ctx.fillStyle = "rgb(0, 255, 0)";
 		ctx.fill();
 		ctx.restore();
 	}
 }
 
-export class RecursiveBacktracking {
-	static readonly key = 'Recursive Backtracking';
+export class RecursiveBacktracking implements GeneratorStructure {
+	static readonly key = "Recursive Backtracking";
 	grid: Grid;
 	isComplete = false;
 	stack: {
@@ -290,7 +298,7 @@ export class RecursiveBacktracking {
 	draw(ctx: CanvasRenderingContext2D): void {
 		if (this.isComplete || !this.stack.length) return;
 
-		ctx.fillStyle = '#f004';
+		ctx.fillStyle = "#f004";
 		const cellSize = this.grid.cellSize;
 		for (const {
 			cell: { screenX, screenY },
@@ -309,9 +317,9 @@ export class RecursiveBacktracking {
 			this.grid.cellSize / 4,
 			0,
 			0,
-			Math.PI * 2,
+			Math.PI * 2
 		);
-		ctx.fillStyle = 'rgb(0, 255, 0)';
+		ctx.fillStyle = "rgb(0, 255, 0)";
 		ctx.fill();
 		ctx.restore();
 	}
@@ -320,8 +328,8 @@ export class RecursiveBacktracking {
 export interface RecursiveDivisionOptions {
 	useBfs: boolean;
 }
-export class RecursiveDivision {
-	static readonly key = 'Recursive Division';
+export class RecursiveDivision implements GeneratorStructure {
+	static readonly key = "Recursive Division";
 	isComplete = false;
 	chambers: [x: number, y: number, w: number, h: number][];
 	grid: Grid;
@@ -340,9 +348,9 @@ export class RecursiveDivision {
 		this.chambers = [[0, 0, grid.colCnt, grid.rowCnt]];
 	}
 	chooseOrientation(width: number, height: number) {
-		if (width < height) return 'HORIZONTAL';
-		else if (height < width) return 'VERTICAL';
-		else return Math.random() < 0.5 ? 'HORIZONTAL' : 'VERTICAL';
+		if (width < height) return "HORIZONTAL";
+		else if (height < width) return "VERTICAL";
+		else return Math.random() < 0.5 ? "HORIZONTAL" : "VERTICAL";
 	}
 	step() {
 		if (this.isComplete) return;
@@ -357,7 +365,7 @@ export class RecursiveDivision {
 
 		const [areaX, areaY, areaWidth, areaHeight] = chamber;
 
-		if (this.chooseOrientation(areaWidth, areaHeight) === 'VERTICAL') {
+		if (this.chooseOrientation(areaWidth, areaHeight) === "VERTICAL") {
 			const wallX = Math.floor(Math.random() * (areaWidth - 1)) + areaX;
 			const holeY = Math.floor(Math.random() * areaHeight) + areaY;
 			for (let y = areaY; y < areaHeight + areaY; y++) {
@@ -412,19 +420,19 @@ export class RecursiveDivision {
 		const chamber = this.chambers[this.useBfs ? 0 : this.chambers.length - 1];
 		if (!chamber) return;
 
-		ctx.fillStyle = '#f00a';
+		ctx.fillStyle = "#f00a";
 		const cellSize = this.grid.cellSize;
 		ctx.fillRect(
 			chamber[0] * cellSize,
 			chamber[1] * cellSize,
 			chamber[2] * cellSize,
-			chamber[3] * cellSize,
+			chamber[3] * cellSize
 		);
 	}
 }
 
-export class AldousBroderWilsonHybrid {
-	static readonly key = 'Aldous-Broder + Wilsons';
+export class AldousBroderWilsonHybrid implements GeneratorStructure {
+	static readonly key = "Aldous-Broder + Wilsons";
 	phase = 0;
 	isComplete = false;
 	grid: Grid;
@@ -455,14 +463,14 @@ export class AldousBroderWilsonHybrid {
 	}
 }
 
-type Vertical = 'NORTH' | 'SOUTH';
-type Horizontal = 'EAST' | 'WEST';
+type Vertical = "NORTH" | "SOUTH";
+type Horizontal = "EAST" | "WEST";
 export interface BinaryTreeOptions {
 	horz: Horizontal;
 	vert: Vertical;
 }
-export class BinaryTree {
-	static readonly key = 'Binary Tree';
+export class BinaryTree implements GeneratorStructure {
+	static readonly key = "Binary Tree";
 	grid: Grid;
 	isComplete = false;
 	directions: [number, number];
@@ -474,11 +482,11 @@ export class BinaryTree {
 	constructor(grid: Grid, { horz, vert }: BinaryTreeOptions) {
 		this.grid = grid;
 		this.directions = [
-			horz === 'EAST' ? 1 : -1,
-			(vert === 'SOUTH' ? 1 : -1) * grid.colCnt,
+			horz === "EAST" ? 1 : -1,
+			(vert === "SOUTH" ? 1 : -1) * grid.colCnt,
 		];
-		this.x = horz === 'EAST' ? 0 : grid.colCnt - 1;
-		this.y = vert === 'SOUTH' ? 0 : grid.rowCnt - 1;
+		this.x = horz === "EAST" ? 0 : grid.colCnt - 1;
+		this.y = vert === "SOUTH" ? 0 : grid.rowCnt - 1;
 	}
 	step(): void {
 		if (this.isComplete) return;
@@ -516,7 +524,7 @@ export class BinaryTree {
 	draw(ctx: CanvasRenderingContext2D) {
 		if (this.isComplete) return;
 
-		ctx.fillStyle = '#0a0';
+		ctx.fillStyle = "#0a0";
 		const cell = this.grid.cells[this.index];
 		const cellSize = this.grid.cellSize;
 		ctx.fillRect(cell.screenX, cell.screenY, cellSize, cellSize);
@@ -545,8 +553,8 @@ function findBranchSize(node: TreeNode): number {
 	}
 	return nodes.length;
 }
-export class Kruskals {
-	static readonly key = 'Kruskals';
+export class Kruskals implements GeneratorStructure {
+	static readonly key = "Kruskals";
 	grid: Grid;
 	isComplete = false;
 	cellNodes: TreeNode[] = [];
@@ -664,18 +672,18 @@ export class Kruskals {
 						wallIndex = 3;
 						break;
 					default:
-						throw 'Impossible direction';
+						throw "Impossible direction";
 				}
 			}
-			ctx.strokeStyle = cell.walls[wallIndex!] ? '#a00' : '#0a0';
+			ctx.strokeStyle = cell.walls[wallIndex!] ? "#a00" : "#0a0";
 			ctx.lineWidth = 5;
 			ctx.stroke();
 		}
 	}
 }
 
-export class Prims {
-	static readonly key = 'Prims';
+export class Prims implements GeneratorStructure {
+	static readonly key = "Prims";
 	isComplete = false;
 	grid: Grid;
 	frontier: number[] = [];
@@ -685,7 +693,7 @@ export class Prims {
 		const startIndex = getRandomUnvisitedCellIndex(grid);
 		grid.cells[startIndex].open = true;
 		this.frontier = findValidDirections(grid, startIndex).map(
-			(dir) => startIndex + dir,
+			(dir) => startIndex + dir
 		);
 	}
 	step() {
@@ -704,8 +712,8 @@ export class Prims {
 
 		const dir = randomItemInArray(
 			findValidDirections(this.grid, pickedIndex).filter(
-				(dir) => this.grid.cells[pickedIndex + dir].open,
-			),
+				(dir) => this.grid.cells[pickedIndex + dir].open
+			)
 		);
 		const cell1 = this.grid.cells[pickedIndex];
 		const cell2 = this.grid.cells[pickedIndex + dir];
@@ -730,8 +738,8 @@ export class Prims {
 export interface EllersOptions {
 	mergeChance: number;
 }
-export class Ellers {
-	static readonly key = 'Ellers';
+export class Ellers implements GeneratorStructure {
+	static readonly key = "Ellers";
 	isComplete = false;
 	grid: Grid;
 	index = 0;
@@ -782,7 +790,7 @@ export class Ellers {
 
 						for (const id of idsInRow) {
 							const indicesInRow = this.sets[id].filter(
-								(i) => i / this.grid.colCnt >= y,
+								(i) => i / this.grid.colCnt >= y
 							);
 							const bridgeIndex = randomItemInArray(indicesInRow);
 							this.bridgeDown[bridgeIndex] = true;
@@ -858,13 +866,13 @@ export class Ellers {
 
 		// Row
 		const y = Math.floor(this.index / this.grid.colCnt);
-		ctx.fillStyle = '#a00a';
+		ctx.fillStyle = "#a00a";
 		ctx.fillRect(0, y * cellSize, this.grid.colCnt * cellSize, cellSize);
 
 		// Current cell
 		const curCell = this.grid.cells[this.index];
 		if (curCell) {
-			ctx.fillStyle = this.phase === 1 ? '#00aa' : '#0a0a';
+			ctx.fillStyle = this.phase === 1 ? "#00aa" : "#0a0a";
 			ctx.fillRect(curCell.screenX, curCell.screenY, cellSize, cellSize);
 		}
 
@@ -875,10 +883,10 @@ export class Ellers {
 				const { screenX, screenY } = this.grid.cells[i];
 				const x = screenX + cellSize / 2;
 				const y = screenY + cellSize / 2;
-				ctx.fillStyle = '#fff';
+				ctx.fillStyle = "#fff";
 				ctx.font = `${cellSize / 3}px monospace`;
-				ctx.textAlign = 'center';
-				ctx.textBaseline = 'middle';
+				ctx.textAlign = "center";
+				ctx.textBaseline = "middle";
 				ctx.fillText(String(id), x, y);
 			}
 		}
@@ -899,8 +907,8 @@ export class Ellers {
 	}
 }
 
-export class Sidewinder {
-	static readonly key = 'Sidewinder';
+export class Sidewinder implements GeneratorStructure {
+	static readonly key = "Sidewinder";
 	isComplete = false;
 	grid: Grid;
 	index = 0;
@@ -941,18 +949,18 @@ export class Sidewinder {
 		if (this.isComplete) return;
 		// Current cell
 		const cell = this.grid.cells[this.index];
-		ctx.fillStyle = '#55ff55';
+		ctx.fillStyle = "#55ff55";
 		ctx.fillRect(
 			cell.screenX,
 			cell.screenY,
 			this.grid.cellSize,
-			this.grid.cellSize,
+			this.grid.cellSize
 		);
 	}
 }
 
-export class HuntAndKill {
-	static readonly key = 'Hunt and Kill';
+export class HuntAndKill implements GeneratorStructure {
+	static readonly key = "Hunt and Kill";
 	isComplete = false;
 	grid: Grid;
 	index: number;
@@ -1028,23 +1036,23 @@ export class HuntAndKill {
 
 		const curCell = this.grid.cells[this.index];
 		if (curCell) {
-			ctx.fillStyle = this.phase === 0 ? '#0a0a' : '#a00a';
+			ctx.fillStyle = this.phase === 0 ? "#0a0a" : "#a00a";
 			ctx.fillRect(
 				curCell.screenX,
 				curCell.screenY,
 				this.grid.cellSize,
-				this.grid.cellSize,
+				this.grid.cellSize
 			);
 		}
 	}
 }
 
-type GrowingTreePickingStyle = 'NEWEST' | 'RANDOM' | 'OLDEST' | 'MIDDLE';
+type GrowingTreePickingStyle = "NEWEST" | "RANDOM" | "OLDEST" | "MIDDLE";
 export interface GrowingTreeOptions {
 	pickingStyle: Partial<Record<GrowingTreePickingStyle, number>>;
 }
-export class GrowingTree {
-	static readonly key = 'Growing Tree';
+export class GrowingTree implements GeneratorStructure {
+	static readonly key = "Growing Tree";
 	isComplete = false;
 	grid: Grid;
 	bag: number[];
@@ -1082,16 +1090,16 @@ export class GrowingTree {
 	}
 	chooseCell() {
 		switch (randomItemInArray(this.pickingStyle)) {
-			case 'NEWEST':
+			case "NEWEST":
 				return this.bag[this.bag.length - 1];
-			case 'RANDOM':
+			case "RANDOM":
 				return randomItemInArray(this.bag);
-			case 'OLDEST':
+			case "OLDEST":
 				return this.bag[0];
-			case 'MIDDLE':
+			case "MIDDLE":
 				return this.bag[Math.floor(this.bag.length / 2)];
 			default:
-				throw 'Invalid picking style';
+				throw "Invalid picking style";
 		}
 	}
 	draw(ctx: CanvasRenderingContext2D) {
@@ -1104,16 +1112,16 @@ export class GrowingTree {
 
 			// Cell clr
 			const { screenX, screenY } = this.grid.cells[index];
-			ctx.fillStyle = '#f004';
+			ctx.fillStyle = "#f004";
 			ctx.fillRect(screenX, screenY, cellSize, cellSize);
 
 			// Age
 			const x = screenX + cellSize / 2;
 			const y = screenY + cellSize / 2;
-			ctx.fillStyle = '#fff';
+			ctx.fillStyle = "#fff";
 			ctx.font = `${cellSize / 3}px monospace`;
-			ctx.textAlign = 'center';
-			ctx.textBaseline = 'middle';
+			ctx.textAlign = "center";
+			ctx.textBaseline = "middle";
 			ctx.fillText(String(i), x, y);
 		}
 	}
@@ -1123,8 +1131,8 @@ export interface RecursiveClusterDivisionOptions {
 	useBfs: boolean;
 	roomMaxSize: number;
 }
-export class RecursiveClusterDivision {
-	static readonly key = 'Recursive Cluster Division';
+export class RecursiveClusterDivision implements GeneratorStructure {
+	static readonly key = "Recursive Cluster Division";
 	isComplete = false;
 	grid: Grid;
 	regions: number[][] = [[]];
@@ -1138,7 +1146,7 @@ export class RecursiveClusterDivision {
 	roomMaxSize: number;
 	constructor(
 		grid: Grid,
-		{ roomMaxSize, useBfs }: RecursiveClusterDivisionOptions,
+		{ roomMaxSize, useBfs }: RecursiveClusterDivisionOptions
 	) {
 		this.grid = grid;
 		this.wallMap = {
@@ -1164,9 +1172,9 @@ export class RecursiveClusterDivision {
 		});
 	}
 	getOccupancy(index: number) {
-		if (this.subregionA.has(index)) return 'A';
-		if (this.subregionB.has(index)) return 'B';
-		return 'NONE';
+		if (this.subregionA.has(index)) return "A";
+		if (this.subregionB.has(index)) return "B";
+		return "NONE";
 	}
 	step() {
 		if (this.isComplete) return;
@@ -1225,10 +1233,10 @@ export class RecursiveClusterDivision {
 				const neighborOccupancy = this.getOccupancy(neighbor);
 				if (!this.currRegion.has(neighbor)) continue;
 
-				if (neighborOccupancy === 'NONE') {
+				if (neighborOccupancy === "NONE") {
 					// Add unassociated cell to bag and subregion
 					this.bag.push(neighbor);
-					if (occupancy === 'A') this.subregionA.add(neighbor);
+					if (occupancy === "A") this.subregionA.add(neighbor);
 					else this.subregionB.add(neighbor);
 				} else if (neighborOccupancy !== occupancy) {
 					// Add wall against opposite set
@@ -1249,12 +1257,12 @@ export class RecursiveClusterDivision {
 
 		// subregion coloring
 		for (const [subregion, clr] of [
-			[this.subregionA, '#00f'],
-			[this.subregionB, '#f00'],
+			[this.subregionA, "#00f"],
+			[this.subregionB, "#f00"],
 		] as const) {
 			for (const index of subregion) {
 				const { screenX, screenY } = this.grid.cells[index];
-				const opacity = this.bag.includes(index) ? 'a' : '4';
+				const opacity = this.bag.includes(index) ? "a" : "4";
 				ctx.fillStyle = clr + opacity;
 				ctx.fillRect(screenX, screenY, cellSize, cellSize);
 			}
@@ -1308,18 +1316,18 @@ export class MazeGenManager {
 	private options: MazeGeneratorOptions = {
 		useBfs: false,
 		roomMaxSize: 3,
-		horz: 'EAST',
-		vert: 'SOUTH',
+		horz: "EAST",
+		vert: "SOUTH",
 		mergeChance: 2 / 3,
 		pickingStyle: { NEWEST: 1 },
 	};
-	current?: MazeGeneratorClass['key'];
+	current?: MazeGeneratorClass["key"];
 
 	get isComplete() {
 		return this.instance?.isComplete ?? true;
 	}
 
-	constructor(init?: [MazeGeneratorClass['key'], Grid]) {
+	constructor(init?: [MazeGeneratorClass["key"], Grid]) {
 		if (init) {
 			this.current = init[0];
 			this.restart(init[1]);
@@ -1337,17 +1345,17 @@ export class MazeGenManager {
 		if (!grid) return;
 		this.instance = new (MazeGenerators.find(({ key }) => key === this.current)!)(
 			grid,
-			this.options,
+			this.options
 		);
 	}
 	setOption<T extends keyof MazeGeneratorOptions>(
 		prop: T,
-		val: (typeof this.options)[T],
+		val: (typeof this.options)[T]
 	) {
 		this.options[prop] = val;
 	}
 	getOption<T extends keyof MazeGeneratorOptions>(
-		prop: T,
+		prop: T
 	): (typeof this.options)[T] {
 		return structuredClone(this.options[prop]);
 	}

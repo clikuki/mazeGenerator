@@ -1,4 +1,4 @@
-import { randomItemInArray, shuffle } from './utils.js';
+import { randomItemInArray, shuffle } from "./utils.js";
 // Does not check whether the two cells are actually neighbors
 // Don't know if I need to fix that :|
 function carveWall(prevCell, curCell, offset) {
@@ -46,7 +46,7 @@ function randIntBetween(min, max) {
     return Math.floor(Math.random() * (max - min + 1)) + min;
 }
 export class AldousBroder {
-    static key = 'Aldous-Broder';
+    static key = "Aldous-Broder";
     index;
     isComplete = false;
     grid;
@@ -81,13 +81,13 @@ export class AldousBroder {
         const headCell = this.grid.cells[this.index];
         const cellSize = this.grid.cellSize;
         ctx.ellipse(headCell.screenX, headCell.screenY, cellSize / 4, cellSize / 4, 0, 0, Math.PI * 2);
-        ctx.fillStyle = 'rgb(0, 255, 0)';
+        ctx.fillStyle = "rgb(0, 255, 0)";
         ctx.fill();
         ctx.restore();
     }
 }
 export class Wilsons {
-    static key = 'Wilsons';
+    static key = "Wilsons";
     index;
     isComplete = false;
     grid;
@@ -154,7 +154,7 @@ export class Wilsons {
         // Full path
         for (const index of this.walkedCells) {
             const cell = this.grid.cells[index];
-            ctx.fillStyle = 'rgb(255, 0, 0)';
+            ctx.fillStyle = "rgb(255, 0, 0)";
             ctx.fillRect(cell.screenX, cell.screenY, cellSize - 2, cellSize - 2);
         }
         // True path
@@ -180,7 +180,7 @@ export class Wilsons {
             else if (dir === -1)
                 rot = -Math.PI / 2;
             else
-                throw 'Impossible direction encountered!';
+                throw "Impossible direction encountered!";
             ctx.rotate(rot);
             ctx.beginPath();
             ctx.moveTo(0, cellSize / 4);
@@ -189,12 +189,12 @@ export class Wilsons {
             ctx.lineTo(0, -cellSize / 4);
             ctx.moveTo(cellSize / 4, 0);
             ctx.lineTo(0, -cellSize / 4);
-            ctx.strokeStyle = 'rgb(0, 255, 0)';
+            ctx.strokeStyle = "rgb(0, 255, 0)";
             const prevLineWidth = ctx.lineWidth;
             ctx.lineWidth = 5;
             if (26 > cellSize)
                 ctx.lineWidth = 2;
-            ctx.lineCap = 'round';
+            ctx.lineCap = "round";
             ctx.stroke();
             ctx.lineWidth = prevLineWidth;
             ctx.restore();
@@ -205,13 +205,13 @@ export class Wilsons {
         ctx.beginPath();
         const headCell = this.grid.cells[this.index];
         ctx.ellipse(headCell.screenX, headCell.screenY, this.grid.cellSize / 4, this.grid.cellSize / 4, 0, 0, Math.PI * 2);
-        ctx.fillStyle = 'rgb(0, 255, 0)';
+        ctx.fillStyle = "rgb(0, 255, 0)";
         ctx.fill();
         ctx.restore();
     }
 }
 export class RecursiveBacktracking {
-    static key = 'Recursive Backtracking';
+    static key = "Recursive Backtracking";
     grid;
     isComplete = false;
     stack;
@@ -255,7 +255,7 @@ export class RecursiveBacktracking {
     draw(ctx) {
         if (this.isComplete || !this.stack.length)
             return;
-        ctx.fillStyle = '#f004';
+        ctx.fillStyle = "#f004";
         const cellSize = this.grid.cellSize;
         for (const { cell: { screenX, screenY }, } of this.stack) {
             ctx.fillRect(screenX, screenY, cellSize, cellSize);
@@ -265,13 +265,13 @@ export class RecursiveBacktracking {
         ctx.beginPath();
         const headCell = this.stack[this.stack.length - 1].cell;
         ctx.ellipse(headCell.screenX, headCell.screenY, this.grid.cellSize / 4, this.grid.cellSize / 4, 0, 0, Math.PI * 2);
-        ctx.fillStyle = 'rgb(0, 255, 0)';
+        ctx.fillStyle = "rgb(0, 255, 0)";
         ctx.fill();
         ctx.restore();
     }
 }
 export class RecursiveDivision {
-    static key = 'Recursive Division';
+    static key = "Recursive Division";
     isComplete = false;
     chambers;
     grid;
@@ -295,11 +295,11 @@ export class RecursiveDivision {
     }
     chooseOrientation(width, height) {
         if (width < height)
-            return 'HORIZONTAL';
+            return "HORIZONTAL";
         else if (height < width)
-            return 'VERTICAL';
+            return "VERTICAL";
         else
-            return Math.random() < 0.5 ? 'HORIZONTAL' : 'VERTICAL';
+            return Math.random() < 0.5 ? "HORIZONTAL" : "VERTICAL";
     }
     step() {
         if (this.isComplete)
@@ -314,7 +314,7 @@ export class RecursiveDivision {
             return;
         }
         const [areaX, areaY, areaWidth, areaHeight] = chamber;
-        if (this.chooseOrientation(areaWidth, areaHeight) === 'VERTICAL') {
+        if (this.chooseOrientation(areaWidth, areaHeight) === "VERTICAL") {
             const wallX = Math.floor(Math.random() * (areaWidth - 1)) + areaX;
             const holeY = Math.floor(Math.random() * areaHeight) + areaY;
             for (let y = areaY; y < areaHeight + areaY; y++) {
@@ -371,13 +371,13 @@ export class RecursiveDivision {
         const chamber = this.chambers[this.useBfs ? 0 : this.chambers.length - 1];
         if (!chamber)
             return;
-        ctx.fillStyle = '#f00a';
+        ctx.fillStyle = "#f00a";
         const cellSize = this.grid.cellSize;
         ctx.fillRect(chamber[0] * cellSize, chamber[1] * cellSize, chamber[2] * cellSize, chamber[3] * cellSize);
     }
 }
 export class AldousBroderWilsonHybrid {
-    static key = 'Aldous-Broder + Wilsons';
+    static key = "Aldous-Broder + Wilsons";
     phase = 0;
     isComplete = false;
     grid;
@@ -409,7 +409,7 @@ export class AldousBroderWilsonHybrid {
     }
 }
 export class BinaryTree {
-    static key = 'Binary Tree';
+    static key = "Binary Tree";
     grid;
     isComplete = false;
     directions;
@@ -421,11 +421,11 @@ export class BinaryTree {
     constructor(grid, { horz, vert }) {
         this.grid = grid;
         this.directions = [
-            horz === 'EAST' ? 1 : -1,
-            (vert === 'SOUTH' ? 1 : -1) * grid.colCnt,
+            horz === "EAST" ? 1 : -1,
+            (vert === "SOUTH" ? 1 : -1) * grid.colCnt,
         ];
-        this.x = horz === 'EAST' ? 0 : grid.colCnt - 1;
-        this.y = vert === 'SOUTH' ? 0 : grid.rowCnt - 1;
+        this.x = horz === "EAST" ? 0 : grid.colCnt - 1;
+        this.y = vert === "SOUTH" ? 0 : grid.rowCnt - 1;
     }
     step() {
         if (this.isComplete)
@@ -462,7 +462,7 @@ export class BinaryTree {
     draw(ctx) {
         if (this.isComplete)
             return;
-        ctx.fillStyle = '#0a0';
+        ctx.fillStyle = "#0a0";
         const cell = this.grid.cells[this.index];
         const cellSize = this.grid.cellSize;
         ctx.fillRect(cell.screenX, cell.screenY, cellSize, cellSize);
@@ -483,7 +483,7 @@ function findBranchSize(node) {
     return nodes.length;
 }
 export class Kruskals {
-    static key = 'Kruskals';
+    static key = "Kruskals";
     grid;
     isComplete = false;
     cellNodes = [];
@@ -599,17 +599,17 @@ export class Kruskals {
                         wallIndex = 3;
                         break;
                     default:
-                        throw 'Impossible direction';
+                        throw "Impossible direction";
                 }
             }
-            ctx.strokeStyle = cell.walls[wallIndex] ? '#a00' : '#0a0';
+            ctx.strokeStyle = cell.walls[wallIndex] ? "#a00" : "#0a0";
             ctx.lineWidth = 5;
             ctx.stroke();
         }
     }
 }
 export class Prims {
-    static key = 'Prims';
+    static key = "Prims";
     isComplete = false;
     grid;
     frontier = [];
@@ -651,7 +651,7 @@ export class Prims {
     }
 }
 export class Ellers {
-    static key = 'Ellers';
+    static key = "Ellers";
     isComplete = false;
     grid;
     index = 0;
@@ -770,12 +770,12 @@ export class Ellers {
         const cellSize = this.grid.cellSize;
         // Row
         const y = Math.floor(this.index / this.grid.colCnt);
-        ctx.fillStyle = '#a00a';
+        ctx.fillStyle = "#a00a";
         ctx.fillRect(0, y * cellSize, this.grid.colCnt * cellSize, cellSize);
         // Current cell
         const curCell = this.grid.cells[this.index];
         if (curCell) {
-            ctx.fillStyle = this.phase === 1 ? '#00aa' : '#0a0a';
+            ctx.fillStyle = this.phase === 1 ? "#00aa" : "#0a0a";
             ctx.fillRect(curCell.screenX, curCell.screenY, cellSize, cellSize);
         }
         // Cell ids
@@ -785,10 +785,10 @@ export class Ellers {
                 const { screenX, screenY } = this.grid.cells[i];
                 const x = screenX + cellSize / 2;
                 const y = screenY + cellSize / 2;
-                ctx.fillStyle = '#fff';
+                ctx.fillStyle = "#fff";
                 ctx.font = `${cellSize / 3}px monospace`;
-                ctx.textAlign = 'center';
-                ctx.textBaseline = 'middle';
+                ctx.textAlign = "center";
+                ctx.textBaseline = "middle";
                 ctx.fillText(String(id), x, y);
             }
         }
@@ -808,7 +808,7 @@ export class Ellers {
     }
 }
 export class Sidewinder {
-    static key = 'Sidewinder';
+    static key = "Sidewinder";
     isComplete = false;
     grid;
     index = 0;
@@ -852,12 +852,12 @@ export class Sidewinder {
             return;
         // Current cell
         const cell = this.grid.cells[this.index];
-        ctx.fillStyle = '#55ff55';
+        ctx.fillStyle = "#55ff55";
         ctx.fillRect(cell.screenX, cell.screenY, this.grid.cellSize, this.grid.cellSize);
     }
 }
 export class HuntAndKill {
-    static key = 'Hunt and Kill';
+    static key = "Hunt and Kill";
     isComplete = false;
     grid;
     index;
@@ -930,13 +930,13 @@ export class HuntAndKill {
             return;
         const curCell = this.grid.cells[this.index];
         if (curCell) {
-            ctx.fillStyle = this.phase === 0 ? '#0a0a' : '#a00a';
+            ctx.fillStyle = this.phase === 0 ? "#0a0a" : "#a00a";
             ctx.fillRect(curCell.screenX, curCell.screenY, this.grid.cellSize, this.grid.cellSize);
         }
     }
 }
 export class GrowingTree {
-    static key = 'Growing Tree';
+    static key = "Growing Tree";
     isComplete = false;
     grid;
     bag;
@@ -972,16 +972,16 @@ export class GrowingTree {
     }
     chooseCell() {
         switch (randomItemInArray(this.pickingStyle)) {
-            case 'NEWEST':
+            case "NEWEST":
                 return this.bag[this.bag.length - 1];
-            case 'RANDOM':
+            case "RANDOM":
                 return randomItemInArray(this.bag);
-            case 'OLDEST':
+            case "OLDEST":
                 return this.bag[0];
-            case 'MIDDLE':
+            case "MIDDLE":
                 return this.bag[Math.floor(this.bag.length / 2)];
             default:
-                throw 'Invalid picking style';
+                throw "Invalid picking style";
         }
     }
     draw(ctx) {
@@ -992,21 +992,21 @@ export class GrowingTree {
             const index = this.bag[i];
             // Cell clr
             const { screenX, screenY } = this.grid.cells[index];
-            ctx.fillStyle = '#f004';
+            ctx.fillStyle = "#f004";
             ctx.fillRect(screenX, screenY, cellSize, cellSize);
             // Age
             const x = screenX + cellSize / 2;
             const y = screenY + cellSize / 2;
-            ctx.fillStyle = '#fff';
+            ctx.fillStyle = "#fff";
             ctx.font = `${cellSize / 3}px monospace`;
-            ctx.textAlign = 'center';
-            ctx.textBaseline = 'middle';
+            ctx.textAlign = "center";
+            ctx.textBaseline = "middle";
             ctx.fillText(String(i), x, y);
         }
     }
 }
 export class RecursiveClusterDivision {
-    static key = 'Recursive Cluster Division';
+    static key = "Recursive Cluster Division";
     isComplete = false;
     grid;
     regions = [[]];
@@ -1045,10 +1045,10 @@ export class RecursiveClusterDivision {
     }
     getOccupancy(index) {
         if (this.subregionA.has(index))
-            return 'A';
+            return "A";
         if (this.subregionB.has(index))
-            return 'B';
-        return 'NONE';
+            return "B";
+        return "NONE";
     }
     step() {
         if (this.isComplete)
@@ -1102,10 +1102,10 @@ export class RecursiveClusterDivision {
                 const neighborOccupancy = this.getOccupancy(neighbor);
                 if (!this.currRegion.has(neighbor))
                     continue;
-                if (neighborOccupancy === 'NONE') {
+                if (neighborOccupancy === "NONE") {
                     // Add unassociated cell to bag and subregion
                     this.bag.push(neighbor);
-                    if (occupancy === 'A')
+                    if (occupancy === "A")
                         this.subregionA.add(neighbor);
                     else
                         this.subregionB.add(neighbor);
@@ -1127,12 +1127,12 @@ export class RecursiveClusterDivision {
         const cellSize = this.grid.cellSize;
         // subregion coloring
         for (const [subregion, clr] of [
-            [this.subregionA, '#00f'],
-            [this.subregionB, '#f00'],
+            [this.subregionA, "#00f"],
+            [this.subregionB, "#f00"],
         ]) {
             for (const index of subregion) {
                 const { screenX, screenY } = this.grid.cells[index];
-                const opacity = this.bag.includes(index) ? 'a' : '4';
+                const opacity = this.bag.includes(index) ? "a" : "4";
                 ctx.fillStyle = clr + opacity;
                 ctx.fillRect(screenX, screenY, cellSize, cellSize);
             }
@@ -1177,8 +1177,8 @@ export class MazeGenManager {
     options = {
         useBfs: false,
         roomMaxSize: 3,
-        horz: 'EAST',
-        vert: 'SOUTH',
+        horz: "EAST",
+        vert: "SOUTH",
         mergeChance: 2 / 3,
         pickingStyle: { NEWEST: 1 },
     };

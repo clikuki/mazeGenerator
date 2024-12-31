@@ -91,4 +91,7 @@ export class Grid {
 		ctx.fillStyle = "#222";
 		ctx.fill();
 	}
+	reset() {
+		// TODO
+	}
 }

@@ -1,4 +1,4 @@
-import { Cell, Grid } from './grid';
+import { Cell, Grid } from "./grid";
 
 export function randomItemInArray<T>(arr: T[]) {
 	if (arr.length === 1) return arr[0];

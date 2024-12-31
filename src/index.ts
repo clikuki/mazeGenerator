@@ -1,268 +1,158 @@
+import { GeneratorConstructor, GeneratorStructure } from "./mazeGenerator.js";
+import { SolverConstructor, SolverStructure } from "./mazeSolver.js";
+import { HTML } from "./htmlTools.js";
 import { Grid } from "./grid.js";
-import { MazeGenerators, MazeGenManager } from "./mazeGenerator.js";
-import { MazeSolver } from "./mazeSolver.js";
-import { GraphNode, convertGridToGraph } from "./utils.js";
 
 /*
-	SOME MAYBE PLANS
-==-==-==-==-==-==-==-==-==-==-==-==-==-==-==-==
-	Add option for symmetry
-	Different cell shapes? (triangle, hexagon)
+
+initialize states
+	canvas
+	simulation values
+	generator
+	solver
+
+begin loop
+	execute algorithms
+	draw
+		maze
+		visualizations
+
 */
 
-const canvas = document.querySelector("canvas")!;
-canvas.width = Math.min(innerHeight, innerWidth);
-canvas.height = Math.min(innerHeight, innerWidth);
-const ctx = canvas.getContext("2d")!;
-let grid = new Grid(10, 10, canvas);
-let mazeSolver: MazeSolver | undefined;
-let solveStartIndex: number | null = null;
-const mazeGenManager = new MazeGenManager();
-const simulation = {
-	paused: false,
-	capped: false,
-	sps: 60,
-};
-
-// Controls and displays
-function restart({ colCnt = grid.colCnt, rowCnt = grid.rowCnt }) {
-	if (!mazeGenManager.current) return;
-	if (mazeSolver) {
-		mazeSolver = new MazeSolver(grid, mazeSolver!.start, mazeSolver!.dest);
-	} else {
-		grid = new Grid(colCnt, rowCnt, canvas);
-		mazeGenManager.restart(grid);
+type NullOr<T> = null | T;
+class SimulationProperties {
+	width = 10;
+	height = 10;
+	isPaused = true;
+	performStep = false;
+	performSkip = false;
+	ctx: CanvasRenderingContext2D;
+	grid: Grid;
+	generator: NullOr<GeneratorStructure> = null;
+	solver: NullOr<SolverStructure> = null;
+	getGenerator: NullOr<GeneratorConstructor> = null;
+	getSolver: NullOr<SolverConstructor> = null;
+	constructor(canvas: HTMLCanvasElement) {
+		this.grid = new Grid(this.width, this.height, canvas);
 	}
-	mazeSolver = undefined;
-	simulation.paused = false;
-	pauseBtn.disabled = false;
-	stepBtn.disabled = false;
-	restartBtn.disabled = false;
-	solveStartIndex = null;
+
+	get canExecute() {
+		return !this.generator && !this.solver;
+	}
+	get isAlgoComplete() {
+		return this.generator?.isComplete || this.solver?.isComplete;
+	}
 }
 
-const restartBtn = document.querySelector(".restart") as HTMLButtonElement;
-restartBtn.disabled = !mazeGenManager.current;
-restartBtn.addEventListener("click", () => restart({}));
+function initialize() {
+	const canvas = HTML.getOne<HTMLCanvasElement>("canvas")!;
+	const simulationProperties = new SimulationProperties(canvas);
 
-const stepBtn = document.querySelector(".step") as HTMLButtonElement;
-stepBtn.addEventListener("click", () => {
-	if (!mazeGenManager.isComplete) {
-		mazeGenManager.step();
-		mazeGenManager.draw(ctx);
-	} else if (mazeSolver && !mazeSolver.isComplete) {
-		mazeSolver.step();
-		mazeSolver.draw(ctx);
-	}
-});
+	setUpSimulationControls(simulationProperties);
+	setUpCanvasResize(canvas);
+	simulationLoop(simulationProperties, 0);
+}
 
-const pauseBtn = document.querySelector(".pause") as HTMLButtonElement;
-pauseBtn.addEventListener("click", () => {
-	simulation.paused = !simulation.paused;
-});
+function setUpSimulationControls(simProps: SimulationProperties) {
+	const optionsMenu = HTML.getOne(".menu.options")!;
 
-const fastForwardBtn = document.querySelector(".skip") as HTMLButtonElement;
-fastForwardBtn.addEventListener("click", () => {
-	while (!mazeGenManager.isComplete) {
-		mazeGenManager.step();
-	}
-	while (mazeSolver && !mazeSolver.isComplete) {
-		mazeSolver!.step();
-	}
-	fastForwardBtn.disabled = true;
-});
+	const pauseBtn = HTML.getOne(".pause", optionsMenu);
+	const stepBtn = HTML.getOne(".step", optionsMenu);
+	const skipBtn = HTML.getOne(".skip", optionsMenu);
+	const restartBtn = HTML.getOne(".restart", optionsMenu);
 
-const columnInput = document.getElementById("columnCount") as HTMLInputElement;
-const rowInput = document.getElementById("rowCount") as HTMLInputElement;
-columnInput.valueAsNumber = grid.colCnt;
-rowInput.valueAsNumber = grid.rowCnt;
+	pauseBtn?.addEventListener("click", () => {
+		if (!simProps.canExecute) simProps.isPaused = false;
+		else simProps.isPaused = !simProps.isPaused;
+	});
+	stepBtn?.addEventListener("click", () => {
+		simProps.performStep = true;
+	});
+	skipBtn?.addEventListener("click", () => {
+		simProps.performSkip = true;
+	});
+	restartBtn?.addEventListener("click", () => {
+		if (!simProps.canExecute) return;
 
-const minDimensions = 2;
-const maxDimensions = 1000;
-columnInput.addEventListener("change", () => {
-	const newVal = columnInput.valueAsNumber;
-	if (isNaN(newVal) || newVal < minDimensions || newVal > maxDimensions) {
-		columnInput.valueAsNumber = grid.colCnt;
-		return;
-	}
-	restart({ colCnt: newVal });
-});
+		// Only reset algorithms if they and their constructor exist
+		if (simProps.generator && simProps.getGenerator) {
+			simProps.generator = new simProps.getGenerator!(simProps.grid);
+		} else if (simProps.solver && simProps.getSolver) {
+			simProps.solver = new simProps.getSolver!(simProps.grid);
+		}
 
-rowInput.addEventListener("change", () => {
-	const newVal = rowInput.valueAsNumber;
-	if (isNaN(newVal) || newVal < minDimensions || newVal > maxDimensions) {
-		rowInput.valueAsNumber = grid.colCnt;
-		return;
-	}
-	restart({ rowCnt: newVal });
-});
+		simProps.grid.reset();
+	});
 
-const exportAsImageBtn = document.querySelector(
-	".exports .image"
-) as HTMLButtonElement;
-exportAsImageBtn.addEventListener("click", () => {
-	if (!mazeGenManager.isComplete) return;
-
-	// Resize canvas into full grid
-	canvas.width = grid.cellSize * grid.colCnt;
-	canvas.height = grid.cellSize * grid.rowCnt;
-
-	// Get image of only the walls
-	ctx.fillStyle = "black";
-	ctx.fillRect(0, 0, canvas.width, canvas.height);
-	grid.drawWalls(ctx);
-	const imgUrl = canvas.toDataURL();
-	window.open(imgUrl, "_blank");
-});
-
-const exportAsGridBtn = document.querySelector(
-	".exports .grid"
-) as HTMLButtonElement;
-exportAsGridBtn.addEventListener("click", () => {
-	if (!mazeGenManager.isComplete) return;
-
-	const simplifiedGrid = grid.cells.map((cell) => ({
-		x: cell.x,
-		y: cell.y,
-		top: cell.walls[0],
-		right: cell.walls[1],
-		bottom: cell.walls[2],
-		left: cell.walls[3],
-	}));
-
-	const file = new File(
-		[JSON.stringify(simplifiedGrid)],
-		`maze_grid_${new Date().getTime()}.json`,
-		{ type: "application/json" }
+	// Column-Row inputs
+	const columnCountInput = HTML.getOne<HTMLInputElement>(
+		"#columnCount",
+		optionsMenu
 	);
-	const fileLink = URL.createObjectURL(file);
-	window.open(fileLink, "_blank");
-	URL.revokeObjectURL(fileLink);
-});
+	const rowCountInput = HTML.getOne<HTMLInputElement>("#rowCount", optionsMenu);
+	const minimumSize = 2;
+	const maximumSize = 1000;
 
-const exportAsGraphBtn = document.querySelector(
-	".exports .graph"
-) as HTMLButtonElement;
-exportAsGraphBtn.addEventListener("click", () => {
-	if (!mazeGenManager.isComplete) return;
-
-	const graph = convertGridToGraph(grid);
-	const simplifiedGraph: { [key: string]: string[] } = {};
-
-	let idCounter = 0;
-	const nodeIdMap = new Map<GraphNode, string>();
-	function getNodeId(node: GraphNode) {
-		let id = nodeIdMap.get(node);
-		if (!id) {
-			id = String(++idCounter);
-			nodeIdMap.set(node, id);
+	columnCountInput?.addEventListener("change", () => {
+		const newWidth = columnCountInput.valueAsNumber;
+		if (isNaN(newWidth)) {
+			columnCountInput.valueAsNumber = simProps.width;
+		} else if (newWidth > minimumSize && newWidth < maximumSize) {
+			simProps.width = newWidth;
 		}
-		return id;
-	}
-	for (const [, node] of graph) {
-		const id = getNodeId(node);
-		simplifiedGraph[id] = node.neighbors.map((neighbor) => getNodeId(neighbor));
-	}
-
-	const file = new File(
-		[JSON.stringify(simplifiedGraph)],
-		`maze_graph_${new Date().getTime()}.json`,
-		{ type: "application/json" }
-	);
-	const fileLink = URL.createObjectURL(file);
-	window.open(fileLink, "_blank");
-	URL.revokeObjectURL(fileLink);
-});
-
-let prevTime = Date.now();
-(function loop() {
-	requestAnimationFrame(loop);
-
-	const nothingIsRunning =
-		mazeGenManager.isComplete && (!mazeSolver || mazeSolver.isComplete);
-
-	let stepRunners = true;
-	if (simulation.capped) {
-		const time = Date.now();
-		const delta = time - prevTime;
-		if (delta < 1000 / simulation.sps) {
-			stepRunners = false;
-		} else {
-			prevTime = time;
+	});
+	rowCountInput?.addEventListener("change", () => {
+		const newHeight = rowCountInput.valueAsNumber;
+		if (isNaN(newHeight)) {
+			rowCountInput.valueAsNumber = simProps.height;
+		} else if (newHeight > minimumSize && newHeight < maximumSize) {
+			simProps.height = newHeight;
 		}
+	});
+
+	// Maze exports
+	const imageExportBtn = HTML.getOne(".exports .image", optionsMenu);
+	const gridExportBtn = HTML.getOne(".exports .grid", optionsMenu);
+	const graphExportBtn = HTML.getOne(".exports .graph", optionsMenu);
+
+	imageExportBtn?.addEventListener("click", () => {
+		// TODO: reimplement image export
+	});
+	gridExportBtn?.addEventListener("click", () => {
+		// TODO: reimplement grid export
+	});
+	graphExportBtn?.addEventListener("click", () => {
+		// TODO: reimplement graph export
+	});
+}
+
+function setUpCanvasResize(canvas: HTMLCanvasElement) {
+	function updateCanvasSize() {
+		canvas.width = innerWidth;
+		canvas.height = innerHeight;
 	}
 
-	fastForwardBtn.disabled = nothingIsRunning;
-	if (nothingIsRunning) {
-		simulation.paused = false;
-		pauseBtn.disabled = true;
-		stepBtn.disabled = true;
-	}
-	if (!mazeGenManager.current) canvas.setAttribute("data-state", "EMPTY");
-	else canvas.setAttribute("data-state", nothingIsRunning ? "IDLE" : "RUNNING");
+	window.addEventListener("resize", updateCanvasSize);
 
-	const mazeHasGenerated = !mazeGenManager.isComplete;
-	exportAsImageBtn.disabled = mazeHasGenerated;
-	exportAsGridBtn.disabled = mazeHasGenerated;
-	exportAsGraphBtn.disabled = mazeHasGenerated;
+	updateCanvasSize();
+}
 
-	// Draw maze background
-	ctx.fillStyle = "#000";
-	ctx.fillRect(
-		Math.floor(grid.centerOffsetX),
-		Math.floor(grid.centerOffsetY),
-		Math.ceil(grid.cellSize * grid.colCnt),
-		Math.ceil(grid.cellSize * grid.rowCnt)
-	);
+function simulationLoop(simProps: SimulationProperties, _: number) {
+	requestAnimationFrame(simulationLoop.bind(null, simProps));
 
-	ctx.save();
-	ctx.translate(grid.centerOffsetX, grid.centerOffsetY);
+	// Run algorithm
+	if (!simProps.isPaused || simProps.performStep) {
+		do {
+			if (simProps.generator) simProps.generator.step();
+			else if (simProps.solver) simProps.solver.step();
+		} while (simProps.performSkip && !simProps.isAlgoComplete);
 
-	// Draw solve starter cell
-	if (solveStartIndex !== null) {
-		const cell = grid.cells[solveStartIndex];
-		ctx.fillStyle = "#00f";
-		ctx.fillRect(cell.screenX, cell.screenY, grid.cellSize, grid.cellSize);
+		simProps.performStep = simProps.performSkip = false;
 	}
 
-	grid.drawGrayedCells(ctx);
+	// Draw algorithm visualization
+	if (simProps.generator) simProps.generator.draw(simProps.ctx);
+	else if (simProps.solver) simProps.solver.draw(simProps.ctx);
+}
 
-	if (!mazeGenManager.isComplete) {
-		if (!simulation.paused && stepRunners) mazeGenManager.step();
-		mazeGenManager.draw(ctx);
-	} else if (mazeSolver) {
-		if (!mazeSolver.isComplete && !simulation.paused && stepRunners) {
-			mazeSolver.step();
-		}
-		mazeSolver.draw(ctx);
-	}
-
-	grid.drawWalls(ctx);
-	ctx.restore();
-})();
-
-// Activate Mouse solver on clicks
-canvas.addEventListener("click", (e) => {
-	if (
-		mazeGenManager &&
-		mazeGenManager.isComplete &&
-		(!mazeSolver || mazeSolver.isComplete) &&
-		e.x >= grid.centerOffsetX &&
-		e.y >= grid.centerOffsetY
-	) {
-		const cellX = Math.floor((e.x - grid.centerOffsetX) / grid.cellSize);
-		const cellY = Math.floor((e.y - grid.centerOffsetY) / grid.cellSize);
-		if (cellX >= grid.colCnt || cellY >= grid.rowCnt) return;
-		const cellIndex = cellY * grid.colCnt + cellX;
-
-		if (solveStartIndex !== null && solveStartIndex !== cellIndex) {
-			mazeSolver = new MazeSolver(grid, solveStartIndex, cellIndex);
-			solveStartIndex = null;
-			pauseBtn.disabled = false;
-			stepBtn.disabled = false;
-		} else {
-			solveStartIndex = cellIndex;
-			mazeSolver = undefined;
-		}
-	}
-});
+initialize();

@@ -7,7 +7,7 @@ export class MazeSolver {
     start;
     dest;
     path;
-    phase = 'ROOM';
+    phase = "ROOM";
     offsets;
     lineWidth;
     // Room identification
@@ -42,10 +42,10 @@ export class MazeSolver {
     step() {
         if (this.isComplete)
             return;
-        if (this.phase === 'ROOM') {
+        if (this.phase === "ROOM") {
             // Room identification
             if (this.roomStack.length === 0) {
-                this.phase = 'FILL';
+                this.phase = "FILL";
                 this.ignoreRooms = [
                     this.indexToRoomDict[this.start],
                     this.indexToRoomDict[this.dest],
@@ -88,7 +88,7 @@ export class MazeSolver {
                 }
             }
         }
-        else if (this.phase === 'FILL') {
+        else if (this.phase === "FILL") {
             // Dead-end filling
             if (!this.roomsToCheck) {
                 this.roomsToCheck = this.rooms.filter((r) => {
@@ -110,7 +110,7 @@ export class MazeSolver {
                 if (newChecks.length)
                     this.roomsToCheck = newChecks;
                 else {
-                    this.phase = 'TRACE';
+                    this.phase = "TRACE";
                     console.log(`MOVING TO PHASE "${this.phase}"`);
                     this.trackedPaths = [
                         {
@@ -123,7 +123,7 @@ export class MazeSolver {
                 }
             }
         }
-        else if (this.phase === 'TRACE') {
+        else if (this.phase === "TRACE") {
             // Trace a path out of unfilled rooms
             const toDelete = [];
             const toAdd = [];
@@ -144,7 +144,7 @@ export class MazeSolver {
                 const goals = track.goals;
                 const head = stack.shift();
                 if (head === this.dest) {
-                    console.log('DEST REACHED');
+                    console.log("DEST REACHED");
                     this.isComplete = true;
                     // Add remaining nodes to dest
                     let index = this.dest;
@@ -177,7 +177,7 @@ export class MazeSolver {
                     ++track.goalsReached === goals.length) {
                     // All paths to next rooms reached, end track!
                     toDelete.push(track);
-                    console.log('ALL GOALS REACHED');
+                    console.log("ALL GOALS REACHED");
                     for (const [goal, afterGoal] of goals) {
                         toAdd.push({
                             room: this.indexToRoomDict[afterGoal],
@@ -234,7 +234,7 @@ export class MazeSolver {
                 !this.isComplete) {
                 clr = this.trackedClr;
             }
-            else if (this.phase !== 'TRACE') {
+            else if (this.phase !== "TRACE") {
                 clr = this.roomClrDict.get(room);
                 if (!clr) {
                     clr = [
@@ -255,9 +255,9 @@ export class MazeSolver {
             }
             ctx.fillStyle = tmp;
         }
-        if (this.phase === 'TRACE') {
+        if (this.phase === "TRACE") {
             ctx.lineWidth = this.lineWidth;
-            ctx.lineCap = 'round';
+            ctx.lineCap = "round";
             // BFS paths
             // Go over each cell in a room and draw a path from it to the start
             // Ignore cells that have already been pathed over
