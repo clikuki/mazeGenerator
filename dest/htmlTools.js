@@ -1,9 +1,2 @@
-export const HTML = {
-    getOne(selectors, base = document.body) {
-        return base.querySelector(selectors);
-    },
-    getAll(selectors, base = document.body) {
-        return Array.from(base.querySelectorAll(selectors));
-    },
-};
+"use strict";
 //# sourceMappingURL=htmlTools.js.map

@@ -13,18 +13,27 @@ export class Grid {
 	rowCnt: number;
 	cellSize: number;
 	cells: Cell[] = [];
-	centerOffsetX: number;
-	centerOffsetY: number;
+	offsetX: number;
+	offsetY: number;
 	constructor(colCnt: number, rowCnt: number, canvas: HTMLCanvasElement) {
 		this.colCnt = colCnt;
 		this.rowCnt = rowCnt;
+
+		// Cell size should fit to smallest screen side
 		this.cellSize = Math.min(canvas.width / colCnt, canvas.height / rowCnt);
-		this.centerOffsetX = (this.cellSize / 2) * Math.max(rowCnt - colCnt, 0);
-		this.centerOffsetY = (this.cellSize / 2) * Math.max(colCnt - rowCnt, 0);
-		for (let y = 0; y < rowCnt; y++) {
-			for (let x = 0; x < colCnt; x++) {
-				const cell: Cell = {
-					index: y * colCnt + x,
+
+		// Center maze on screen
+		this.offsetX = (canvas.width - colCnt * this.cellSize) / 2;
+		this.offsetY = (canvas.height - rowCnt * this.cellSize) / 2;
+
+		// Instantiate all cells
+		this.reset();
+	}
+	reset() {
+		for (let y = 0; y < this.rowCnt; y++) {
+			for (let x = 0; x < this.colCnt; x++) {
+				this.cells[y * this.colCnt + x] = {
+					index: y * this.colCnt + x,
 					x,
 					y,
 					screenX: Math.floor(x * this.cellSize),
@@ -32,7 +41,6 @@ export class Grid {
 					open: false,
 					walls: [true, true, true, true],
 				};
-				this.cells[y * colCnt + x] = cell;
 			}
 		}
 	}
@@ -46,23 +54,29 @@ export class Grid {
 					switch (i) {
 						case 0: // Top
 							if (y <= 0) break;
-							ctx.moveTo(screenX, screenY);
-							ctx.lineTo(screenX + cellSize, screenY);
+							ctx.moveTo(screenX + this.offsetX, screenY + this.offsetY);
+							ctx.lineTo(screenX + this.offsetX + cellSize, screenY + this.offsetY);
 							break;
 						case 1: // Right
 							if (x >= this.colCnt - 1) break;
-							ctx.moveTo(screenX + cellSize, screenY);
-							ctx.lineTo(screenX + cellSize, screenY + cellSize);
+							ctx.moveTo(screenX + this.offsetX + cellSize, screenY + this.offsetY);
+							ctx.lineTo(
+								screenX + this.offsetX + cellSize,
+								screenY + this.offsetY + cellSize
+							);
 							break;
 						case 2: // Bottom
 							if (y >= this.rowCnt - 1) break;
-							ctx.moveTo(screenX + cellSize, screenY + cellSize);
-							ctx.lineTo(screenX, screenY + cellSize);
+							ctx.moveTo(
+								screenX + this.offsetX + cellSize,
+								screenY + this.offsetY + cellSize
+							);
+							ctx.lineTo(screenX + this.offsetX, screenY + this.offsetY + cellSize);
 							break;
 						case 3: // Left
 							if (x <= 0) break;
-							ctx.moveTo(screenX, screenY + cellSize);
-							ctx.lineTo(screenX, screenY);
+							ctx.moveTo(screenX + this.offsetX, screenY + this.offsetY + cellSize);
+							ctx.lineTo(screenX + this.offsetX, screenY + this.offsetY);
 							break;
 					}
 				}
@@ -81,17 +95,14 @@ export class Grid {
 				// Do all this to fix the spaces between cells on larger grids
 				const w = Math.ceil(cellSize + (walls[1] ? 0 : 1));
 				const h = Math.ceil(cellSize + (walls[2] ? 0 : 1));
-				ctx.moveTo(x, y);
-				ctx.lineTo(x + w, y);
-				ctx.lineTo(x + w, y + h);
-				ctx.lineTo(x, y + h);
-				ctx.moveTo(x, y);
+				ctx.moveTo(x + this.offsetX, y + this.offsetY);
+				ctx.lineTo(x + this.offsetX + w, y + this.offsetY);
+				ctx.lineTo(x + this.offsetX + w, y + this.offsetY + h);
+				ctx.lineTo(x + this.offsetX, y + this.offsetY + h);
+				ctx.moveTo(x + this.offsetX, y + this.offsetY);
 			}
 		}
 		ctx.fillStyle = "#222";
 		ctx.fill();
-	}
-	reset() {
-		// TODO
 	}
 }

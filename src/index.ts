@@ -1,6 +1,10 @@
-import { GeneratorConstructor, GeneratorStructure } from "./mazeGenerator.js";
+import {
+	GeneratorConstructor,
+	generatorKeyMap,
+	GeneratorStructure,
+} from "./mazeGenerator.js";
 import { SolverConstructor, SolverStructure } from "./mazeSolver.js";
-import { HTML } from "./htmlTools.js";
+import { HTML } from "./utils.js";
 import { Grid } from "./grid.js";
 
 /*
@@ -26,6 +30,7 @@ class SimulationProperties {
 	isPaused = true;
 	performStep = false;
 	performSkip = false;
+	canvas: HTMLCanvasElement;
 	ctx: CanvasRenderingContext2D;
 	grid: Grid;
 	generator: NullOr<GeneratorStructure> = null;
@@ -34,23 +39,46 @@ class SimulationProperties {
 	getSolver: NullOr<SolverConstructor> = null;
 	constructor(canvas: HTMLCanvasElement) {
 		this.grid = new Grid(this.width, this.height, canvas);
+		this.canvas = canvas;
+		this.ctx = canvas.getContext("2d")!;
 	}
 
 	get canExecute() {
-		return !this.generator && !this.solver;
+		return !!(this.generator || this.solver);
 	}
 	get isAlgoComplete() {
-		return this.generator?.isComplete || this.solver?.isComplete;
+		return !!(this.generator?.isComplete || this.solver?.isComplete);
 	}
 }
 
 function initialize() {
 	const canvas = HTML.getOne<HTMLCanvasElement>("canvas")!;
-	const simulationProperties = new SimulationProperties(canvas);
-
-	setUpSimulationControls(simulationProperties);
 	setUpCanvasResize(canvas);
+
+	const simulationProperties = new SimulationProperties(canvas);
+	setUpSimulationControls(simulationProperties);
+	setUpAlgorithmSelection(simulationProperties);
 	simulationLoop(simulationProperties, 0);
+}
+
+function setUpAlgorithmSelection(simProps: SimulationProperties) {
+	const generatorMenu = HTML.getOne(".menu.generator")!;
+
+	function updateGenerator() {
+		const generatorKey = generatorMenu.getAttribute("data-value");
+		if (!generatorKey) return;
+
+		const Generator = generatorKeyMap.get(generatorKey);
+		if (Generator) {
+			simProps.grid.reset();
+
+			simProps.getGenerator = Generator;
+			simProps.generator = new Generator(simProps.grid);
+		}
+	}
+
+	generatorMenu.addEventListener("change", updateGenerator);
+	updateGenerator();
 }
 
 function setUpSimulationControls(simProps: SimulationProperties) {
@@ -76,12 +104,11 @@ function setUpSimulationControls(simProps: SimulationProperties) {
 
 		// Only reset algorithms if they and their constructor exist
 		if (simProps.generator && simProps.getGenerator) {
+			simProps.grid.reset();
 			simProps.generator = new simProps.getGenerator!(simProps.grid);
 		} else if (simProps.solver && simProps.getSolver) {
 			simProps.solver = new simProps.getSolver!(simProps.grid);
 		}
-
-		simProps.grid.reset();
 	});
 
 	// Column-Row inputs
@@ -141,18 +168,28 @@ function simulationLoop(simProps: SimulationProperties, _: number) {
 	requestAnimationFrame(simulationLoop.bind(null, simProps));
 
 	// Run algorithm
-	if (!simProps.isPaused || simProps.performStep) {
+	if (!simProps.isPaused || simProps.performStep || simProps.performSkip) {
 		do {
 			if (simProps.generator) simProps.generator.step();
 			else if (simProps.solver) simProps.solver.step();
 		} while (simProps.performSkip && !simProps.isAlgoComplete);
-
-		simProps.performStep = simProps.performSkip = false;
 	}
+
+	// DRAW
+	// TODO: improve drawing/rendering
+	// Clear screen
+	simProps.ctx.clearRect(0, 0, simProps.canvas.width, simProps.canvas.height);
+
+	simProps.grid.drawGrayedCells(simProps.ctx);
 
 	// Draw algorithm visualization
 	if (simProps.generator) simProps.generator.draw(simProps.ctx);
 	else if (simProps.solver) simProps.solver.draw(simProps.ctx);
+
+	simProps.grid.drawWalls(simProps.ctx);
+
+	if (simProps.performStep) simProps.performStep = false;
+	if (simProps.performSkip) simProps.performSkip = false;
 }
 
 initialize();

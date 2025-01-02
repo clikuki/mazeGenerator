@@ -1,5 +1,6 @@
 "use strict";
 (() => {
+    const dropdownEvent = new Event("change");
     const minimumVisibleMenu = 30;
     const mouse = { x: 0, y: 0 };
     let grabbedMenu = 0 /* GrabStates.WAITING */;
@@ -71,7 +72,7 @@
         // Don't toggle on button clicks
         title.querySelectorAll("button").forEach((el) => {
             el.addEventListener("click", (e) => {
-                e.stopImmediatePropagation();
+                e.stopPropagation();
             });
         });
     }
@@ -119,6 +120,13 @@
         }
     }
     function initializeDropdown(dropdown, menu, isRequired, position, size, focused) {
+        const dropdownValue = dropdown.getAttribute("data-key");
+        if (!dropdownValue)
+            throw Error("Dropdown has no value");
+        // Set value if dropdown is preselected
+        if (dropdown.hasAttribute("data-open"))
+            menu.setAttribute("data-value", dropdownValue);
+        // Get and set height of dropdown for css transition
         const content = dropdown.children[1];
         let height = getDropdownHeight(content);
         content.style.setProperty("--height", `${height}px`);
@@ -129,6 +137,7 @@
                 focused.current.removeAttribute("data-open");
             if (focused.current === dropdown) {
                 focused.current = null;
+                menu.setAttribute("data-value", "");
             }
             else {
                 const newHeight = getDropdownHeight(content);
@@ -140,8 +149,10 @@
                     focused.current = dropdown;
                     focused.current.setAttribute("data-open", "");
                 });
+                menu.setAttribute("data-value", dropdownValue);
             }
             updateMenuData(menu, position, size);
+            menu.dispatchEvent(dropdownEvent);
         });
     }
 })();

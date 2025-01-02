@@ -53,10 +53,8 @@ body {
 
 /* || Canvas styling */
 canvas {
-	--s: min(100vh, 100vw);
 	display: block;
-	width: var(--s);
-	height: var(--s);
+	image-rendering: crisp-edges;
 
 	&[data-state="IDLE"] {
 		cursor: pointer;

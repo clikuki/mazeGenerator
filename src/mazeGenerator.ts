@@ -53,6 +53,7 @@ function randIntBetween(min: number, max: number) {
 }
 
 // TODO: Make algorithms use the following types
+// TODO: Reimplement algo settings
 export interface GeneratorStructure {
 	isComplete: boolean;
 	step(): void;
@@ -61,7 +62,6 @@ export interface GeneratorStructure {
 export type GeneratorConstructor = new (grid: Grid) => GeneratorStructure;
 
 export class AldousBroder implements GeneratorStructure {
-	static readonly key = "Aldous-Broder";
 	index: number;
 	isComplete = false;
 	grid: Grid;
@@ -92,7 +92,10 @@ export class AldousBroder implements GeneratorStructure {
 	draw(ctx: CanvasRenderingContext2D) {
 		if (this.isComplete) return;
 		ctx.save();
-		ctx.translate(this.grid.cellSize / 2, this.grid.cellSize / 2);
+		ctx.translate(
+			this.grid.offsetX + this.grid.cellSize / 2,
+			this.grid.offsetY + this.grid.cellSize / 2
+		);
 		ctx.beginPath();
 		const headCell = this.grid.cells[this.index];
 		const cellSize = this.grid.cellSize;
@@ -112,7 +115,6 @@ export class AldousBroder implements GeneratorStructure {
 }
 
 export class Wilsons implements GeneratorStructure {
-	static readonly key = "Wilsons";
 	index: number;
 	isComplete = false;
 	grid: Grid;
@@ -176,6 +178,9 @@ export class Wilsons implements GeneratorStructure {
 	draw(ctx: CanvasRenderingContext2D) {
 		if (this.isComplete) return;
 
+		ctx.save();
+		ctx.translate(this.grid.offsetX, this.grid.offsetY);
+
 		const cellSize = this.grid.cellSize;
 
 		// Full path
@@ -226,7 +231,6 @@ export class Wilsons implements GeneratorStructure {
 		}
 
 		// Head
-		ctx.save();
 		ctx.translate(this.grid.cellSize / 2, this.grid.cellSize / 2);
 		ctx.beginPath();
 		const headCell = this.grid.cells[this.index];
@@ -246,7 +250,6 @@ export class Wilsons implements GeneratorStructure {
 }
 
 export class RecursiveBacktracking implements GeneratorStructure {
-	static readonly key = "Recursive Backtracking";
 	grid: Grid;
 	isComplete = false;
 	stack: {
@@ -298,6 +301,9 @@ export class RecursiveBacktracking implements GeneratorStructure {
 	draw(ctx: CanvasRenderingContext2D): void {
 		if (this.isComplete || !this.stack.length) return;
 
+		ctx.save();
+		ctx.translate(this.grid.offsetX, this.grid.offsetY);
+
 		ctx.fillStyle = "#f004";
 		const cellSize = this.grid.cellSize;
 		for (const {
@@ -306,7 +312,6 @@ export class RecursiveBacktracking implements GeneratorStructure {
 			ctx.fillRect(screenX, screenY, cellSize, cellSize);
 		}
 
-		ctx.save();
 		ctx.translate(this.grid.cellSize / 2, this.grid.cellSize / 2);
 		ctx.beginPath();
 		const headCell = this.stack[this.stack.length - 1].cell;
@@ -329,13 +334,13 @@ export interface RecursiveDivisionOptions {
 	useBfs: boolean;
 }
 export class RecursiveDivision implements GeneratorStructure {
-	static readonly key = "Recursive Division";
 	isComplete = false;
 	chambers: [x: number, y: number, w: number, h: number][];
 	grid: Grid;
 	useBfs: boolean;
-	constructor(grid: Grid, { useBfs }: RecursiveDivisionOptions) {
-		this.useBfs = useBfs;
+	constructor(grid: Grid) {
+		// this.useBfs = useBfs;
+		this.useBfs = true;
 		for (const cell of grid.cells) {
 			cell.open = true;
 			cell.walls = [false, false, false, false];
@@ -417,6 +422,9 @@ export class RecursiveDivision implements GeneratorStructure {
 	draw(ctx: CanvasRenderingContext2D) {
 		if (this.isComplete) return;
 
+		ctx.save();
+		ctx.translate(this.grid.offsetX, this.grid.offsetY);
+
 		const chamber = this.chambers[this.useBfs ? 0 : this.chambers.length - 1];
 		if (!chamber) return;
 
@@ -428,11 +436,12 @@ export class RecursiveDivision implements GeneratorStructure {
 			chamber[2] * cellSize,
 			chamber[3] * cellSize
 		);
+
+		ctx.restore();
 	}
 }
 
 export class AldousBroderWilsonHybrid implements GeneratorStructure {
-	static readonly key = "Aldous-Broder + Wilsons";
 	phase = 0;
 	isComplete = false;
 	grid: Grid;
@@ -470,7 +479,6 @@ export interface BinaryTreeOptions {
 	vert: Vertical;
 }
 export class BinaryTree implements GeneratorStructure {
-	static readonly key = "Binary Tree";
 	grid: Grid;
 	isComplete = false;
 	directions: [number, number];
@@ -479,7 +487,8 @@ export class BinaryTree implements GeneratorStructure {
 	get index() {
 		return this.y * this.grid.colCnt + this.x;
 	}
-	constructor(grid: Grid, { horz, vert }: BinaryTreeOptions) {
+	constructor(grid: Grid) {
+		const [horz, vert] = ["EAST", "SOUTH"];
 		this.grid = grid;
 		this.directions = [
 			horz === "EAST" ? 1 : -1,
@@ -524,10 +533,15 @@ export class BinaryTree implements GeneratorStructure {
 	draw(ctx: CanvasRenderingContext2D) {
 		if (this.isComplete) return;
 
+		ctx.save();
+		ctx.translate(this.grid.offsetX, this.grid.offsetY);
+
 		ctx.fillStyle = "#0a0";
 		const cell = this.grid.cells[this.index];
 		const cellSize = this.grid.cellSize;
 		ctx.fillRect(cell.screenX, cell.screenY, cellSize, cellSize);
+
+		ctx.restore();
 	}
 }
 
@@ -554,7 +568,6 @@ function findBranchSize(node: TreeNode): number {
 	return nodes.length;
 }
 export class Kruskals implements GeneratorStructure {
-	static readonly key = "Kruskals";
 	grid: Grid;
 	isComplete = false;
 	cellNodes: TreeNode[] = [];
@@ -623,6 +636,9 @@ export class Kruskals implements GeneratorStructure {
 	draw(ctx: CanvasRenderingContext2D) {
 		if (this.isComplete) return;
 
+		ctx.save();
+		ctx.translate(this.grid.offsetX, this.grid.offsetY);
+
 		const cellSize = this.grid.cellSize;
 
 		// Tree colors
@@ -679,11 +695,12 @@ export class Kruskals implements GeneratorStructure {
 			ctx.lineWidth = 5;
 			ctx.stroke();
 		}
+
+		ctx.restore();
 	}
 }
 
 export class Prims implements GeneratorStructure {
-	static readonly key = "Prims";
 	isComplete = false;
 	grid: Grid;
 	frontier: number[] = [];
@@ -725,6 +742,9 @@ export class Prims implements GeneratorStructure {
 	draw(ctx: CanvasRenderingContext2D) {
 		if (this.isComplete) return;
 
+		ctx.save();
+		ctx.translate(this.grid.offsetX, this.grid.offsetY);
+
 		const cellSize = this.grid.cellSize;
 
 		for (const index of this.frontier) {
@@ -732,6 +752,8 @@ export class Prims implements GeneratorStructure {
 			ctx.fillStyle = `#a00a`;
 			ctx.fillRect(screenX, screenY, cellSize, cellSize);
 		}
+
+		ctx.restore();
 	}
 }
 
@@ -739,7 +761,6 @@ export interface EllersOptions {
 	mergeChance: number;
 }
 export class Ellers implements GeneratorStructure {
-	static readonly key = "Ellers";
 	isComplete = false;
 	grid: Grid;
 	index = 0;
@@ -750,9 +771,10 @@ export class Ellers implements GeneratorStructure {
 	mergeChance: number;
 	phase: 0 | 1 | 2 = 0;
 	idCounter = 1;
-	constructor(grid: Grid, { mergeChance }: EllersOptions) {
+	constructor(grid: Grid) {
 		this.grid = grid;
-		this.mergeChance = mergeChance;
+		// this.mergeChance = mergeChance;
+		this.mergeChance = 0.5;
 	}
 	step() {
 		if (this.isComplete) return;
@@ -862,12 +884,15 @@ export class Ellers implements GeneratorStructure {
 	draw(ctx: CanvasRenderingContext2D) {
 		if (this.isComplete) return;
 
+		ctx.save();
+		ctx.translate(this.grid.offsetX, this.grid.offsetY);
+
 		const cellSize = this.grid.cellSize;
 
-		// Row
-		const y = Math.floor(this.index / this.grid.colCnt);
-		ctx.fillStyle = "#a00a";
-		ctx.fillRect(0, y * cellSize, this.grid.colCnt * cellSize, cellSize);
+		// // Row
+		// const y = Math.floor(this.index / this.grid.colCnt);
+		// ctx.fillStyle = "#a00a";
+		// ctx.fillRect(0, y * cellSize, this.grid.colCnt * cellSize, cellSize);
 
 		// Current cell
 		const curCell = this.grid.cells[this.index];
@@ -904,11 +929,12 @@ export class Ellers implements GeneratorStructure {
 		// 		);
 		// 	}
 		// }
+
+		ctx.restore();
 	}
 }
 
 export class Sidewinder implements GeneratorStructure {
-	static readonly key = "Sidewinder";
 	isComplete = false;
 	grid: Grid;
 	index = 0;
@@ -947,6 +973,10 @@ export class Sidewinder implements GeneratorStructure {
 	}
 	draw(ctx: CanvasRenderingContext2D) {
 		if (this.isComplete) return;
+
+		ctx.save();
+		ctx.translate(this.grid.offsetX, this.grid.offsetY);
+
 		// Current cell
 		const cell = this.grid.cells[this.index];
 		ctx.fillStyle = "#55ff55";
@@ -956,11 +986,12 @@ export class Sidewinder implements GeneratorStructure {
 			this.grid.cellSize,
 			this.grid.cellSize
 		);
+
+		ctx.restore();
 	}
 }
 
 export class HuntAndKill implements GeneratorStructure {
-	static readonly key = "Hunt and Kill";
 	isComplete = false;
 	grid: Grid;
 	index: number;
@@ -1034,6 +1065,9 @@ export class HuntAndKill implements GeneratorStructure {
 	draw(ctx: CanvasRenderingContext2D) {
 		if (this.isComplete) return;
 
+		ctx.save();
+		ctx.translate(this.grid.offsetX, this.grid.offsetY);
+
 		const curCell = this.grid.cells[this.index];
 		if (curCell) {
 			ctx.fillStyle = this.phase === 0 ? "#0a0a" : "#a00a";
@@ -1044,6 +1078,8 @@ export class HuntAndKill implements GeneratorStructure {
 				this.grid.cellSize
 			);
 		}
+
+		ctx.restore();
 	}
 }
 
@@ -1052,20 +1088,20 @@ export interface GrowingTreeOptions {
 	pickingStyle: Partial<Record<GrowingTreePickingStyle, number>>;
 }
 export class GrowingTree implements GeneratorStructure {
-	static readonly key = "Growing Tree";
 	isComplete = false;
 	grid: Grid;
 	bag: number[];
 	pickingStyle: GrowingTreePickingStyle[] = [];
-	constructor(grid: Grid, { pickingStyle }: GrowingTreeOptions) {
+	constructor(grid: Grid) {
 		this.grid = grid;
 		this.bag = [getRandomUnvisitedCellIndex(grid)];
 		grid.cells[this.bag[0]].open = true;
 
-		for (const name in pickingStyle) {
-			const chance = pickingStyle[name as GrowingTreePickingStyle]!;
-			this.pickingStyle.push(...Array(chance).fill(name));
-		}
+		// for (const name in pickingStyle) {
+		// 	const chance = pickingStyle[name as GrowingTreePickingStyle]!;
+		// 	this.pickingStyle.push(...Array(chance).fill(name));
+		// }
+		this.pickingStyle = ["NEWEST"];
 	}
 	step() {
 		if (this.isComplete) return;
@@ -1105,6 +1141,9 @@ export class GrowingTree implements GeneratorStructure {
 	draw(ctx: CanvasRenderingContext2D) {
 		if (this.isComplete) return;
 
+		ctx.save();
+		ctx.translate(this.grid.offsetX, this.grid.offsetY);
+
 		const cellSize = this.grid.cellSize;
 
 		for (let i = 0; i < this.bag.length; i++) {
@@ -1124,15 +1163,16 @@ export class GrowingTree implements GeneratorStructure {
 			ctx.textBaseline = "middle";
 			ctx.fillText(String(i), x, y);
 		}
+
+		ctx.restore();
 	}
 }
 
-export interface RecursiveClusterDivisionOptions {
+export interface ClusterDivisionOptions {
 	useBfs: boolean;
 	roomMaxSize: number;
 }
-export class RecursiveClusterDivision implements GeneratorStructure {
-	static readonly key = "Recursive Cluster Division";
+export class ClusterDivision implements GeneratorStructure {
 	isComplete = false;
 	grid: Grid;
 	regions: number[][] = [[]];
@@ -1144,10 +1184,7 @@ export class RecursiveClusterDivision implements GeneratorStructure {
 	wallMap: { [key: number]: number };
 	useBfs: boolean;
 	roomMaxSize: number;
-	constructor(
-		grid: Grid,
-		{ roomMaxSize, useBfs }: RecursiveClusterDivisionOptions
-	) {
+	constructor(grid: Grid) {
 		this.grid = grid;
 		this.wallMap = {
 			[-this.grid.colCnt]: 0,
@@ -1156,8 +1193,11 @@ export class RecursiveClusterDivision implements GeneratorStructure {
 			[-1]: 3,
 		};
 
-		this.useBfs = useBfs;
-		this.roomMaxSize = roomMaxSize;
+		// TODO: [useBfs = true] is broken
+		// this.useBfs = useBfs;
+		// this.roomMaxSize = roomMaxSize;
+		this.useBfs = false;
+		this.roomMaxSize = 1;
 
 		// Open up all cells and remove walls between cells
 		grid.cells.forEach((c, i) => {
@@ -1253,6 +1293,9 @@ export class RecursiveClusterDivision implements GeneratorStructure {
 	draw(ctx: CanvasRenderingContext2D) {
 		if (this.isComplete) return;
 
+		ctx.save();
+		ctx.translate(this.grid.offsetX, this.grid.offsetY);
+
 		const cellSize = this.grid.cellSize;
 
 		// subregion coloring
@@ -1267,12 +1310,14 @@ export class RecursiveClusterDivision implements GeneratorStructure {
 				ctx.fillRect(screenX, screenY, cellSize, cellSize);
 			}
 		}
+
+		ctx.restore();
 	}
 }
 
 // DEBUG ONLY
 // class EmptyGrid {
-// 	static readonly key = 'Empty Grid';
+//
 // 	isComplete = true;
 // 	constructor(grid: Grid) {
 // 		grid.cells.forEach((c) => {
@@ -1288,75 +1333,18 @@ export class RecursiveClusterDivision implements GeneratorStructure {
 // 	draw() {}
 // }
 
-export const MazeGenerators = [
-	// EmptyGrid,
-	RecursiveBacktracking,
-	RecursiveDivision,
-	RecursiveClusterDivision,
-	Wilsons,
-	AldousBroder,
-	AldousBroderWilsonHybrid,
-	BinaryTree,
-	Kruskals,
-	Prims,
-	Ellers,
-	Sidewinder,
-	HuntAndKill,
-	GrowingTree,
-];
-export type MazeGeneratorClass = (typeof MazeGenerators)[number];
-export type MazeGeneratorOptions = RecursiveDivisionOptions &
-	RecursiveClusterDivisionOptions &
-	GrowingTreeOptions &
-	EllersOptions &
-	BinaryTreeOptions;
-
-export class MazeGenManager {
-	private instance?: InstanceType<MazeGeneratorClass>;
-	private options: MazeGeneratorOptions = {
-		useBfs: false,
-		roomMaxSize: 3,
-		horz: "EAST",
-		vert: "SOUTH",
-		mergeChance: 2 / 3,
-		pickingStyle: { NEWEST: 1 },
-	};
-	current?: MazeGeneratorClass["key"];
-
-	get isComplete() {
-		return this.instance?.isComplete ?? true;
-	}
-
-	constructor(init?: [MazeGeneratorClass["key"], Grid]) {
-		if (init) {
-			this.current = init[0];
-			this.restart(init[1]);
-		}
-	}
-	step() {
-		if (!this.instance) return;
-		this.instance.step();
-	}
-	draw(ctx: CanvasRenderingContext2D) {
-		if (!this.instance) return;
-		this.instance.draw(ctx);
-	}
-	restart(grid = this.instance?.grid) {
-		if (!grid) return;
-		this.instance = new (MazeGenerators.find(({ key }) => key === this.current)!)(
-			grid,
-			this.options
-		);
-	}
-	setOption<T extends keyof MazeGeneratorOptions>(
-		prop: T,
-		val: (typeof this.options)[T]
-	) {
-		this.options[prop] = val;
-	}
-	getOption<T extends keyof MazeGeneratorOptions>(
-		prop: T
-	): (typeof this.options)[T] {
-		return structuredClone(this.options[prop]);
-	}
-}
+export const generatorKeyMap = new Map<string, GeneratorConstructor>([
+	["recursiveBacktracking", RecursiveBacktracking],
+	["recursiveDivision", RecursiveDivision],
+	["clusterDivision", ClusterDivision],
+	["wilsons", Wilsons],
+	["aldousbroder", AldousBroder],
+	["aldousbroder&wilsons", AldousBroderWilsonHybrid],
+	["binarytree", BinaryTree],
+	["kruskals", Kruskals],
+	["prims", Prims],
+	["ellers", Ellers],
+	["sidewinder", Sidewinder],
+	["hunt&kill", HuntAndKill],
+	["growingTree", GrowingTree],
+]);

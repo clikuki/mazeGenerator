@@ -1,4 +1,6 @@
 (() => {
+	const dropdownEvent = new Event("change");
+
 	interface Grabbed {
 		menu: HTMLElement;
 		position: { x: number; y: number };
@@ -107,7 +109,7 @@
 		// Don't toggle on button clicks
 		title.querySelectorAll("button").forEach((el) => {
 			el.addEventListener("click", (e) => {
-				e.stopImmediatePropagation();
+				e.stopPropagation();
 			});
 		});
 	}
@@ -182,6 +184,14 @@
 		size: { w: number; h: number },
 		focused: { current: Element | null }
 	): void {
+		const dropdownValue = dropdown.getAttribute("data-key");
+		if (!dropdownValue) throw Error("Dropdown has no value");
+
+		// Set value if dropdown is preselected
+		if (dropdown.hasAttribute("data-open"))
+			menu.setAttribute("data-value", dropdownValue);
+
+		// Get and set height of dropdown for css transition
 		const content = dropdown.children[1] as HTMLElement;
 		let height = getDropdownHeight(content);
 		content.style.setProperty("--height", `${height}px`);
@@ -192,6 +202,7 @@
 			if (focused.current) focused.current.removeAttribute("data-open");
 			if (focused.current === dropdown) {
 				focused.current = null;
+				menu.setAttribute("data-value", "");
 			} else {
 				const newHeight = getDropdownHeight(content);
 				if (newHeight !== height) {
@@ -203,9 +214,12 @@
 					focused.current = dropdown;
 					focused.current.setAttribute("data-open", "");
 				});
+
+				menu.setAttribute("data-value", dropdownValue);
 			}
 
 			updateMenuData(menu, position, size);
+			menu.dispatchEvent(dropdownEvent);
 		});
 	}
 })();

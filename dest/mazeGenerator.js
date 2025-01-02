@@ -46,7 +46,6 @@ function randIntBetween(min, max) {
     return Math.floor(Math.random() * (max - min + 1)) + min;
 }
 export class AldousBroder {
-    static key = "Aldous-Broder";
     index;
     isComplete = false;
     grid;
@@ -76,7 +75,7 @@ export class AldousBroder {
         if (this.isComplete)
             return;
         ctx.save();
-        ctx.translate(this.grid.cellSize / 2, this.grid.cellSize / 2);
+        ctx.translate(this.grid.offsetX + this.grid.cellSize / 2, this.grid.offsetY + this.grid.cellSize / 2);
         ctx.beginPath();
         const headCell = this.grid.cells[this.index];
         const cellSize = this.grid.cellSize;
@@ -87,7 +86,6 @@ export class AldousBroder {
     }
 }
 export class Wilsons {
-    static key = "Wilsons";
     index;
     isComplete = false;
     grid;
@@ -150,6 +148,8 @@ export class Wilsons {
     draw(ctx) {
         if (this.isComplete)
             return;
+        ctx.save();
+        ctx.translate(this.grid.offsetX, this.grid.offsetY);
         const cellSize = this.grid.cellSize;
         // Full path
         for (const index of this.walkedCells) {
@@ -200,7 +200,6 @@ export class Wilsons {
             ctx.restore();
         }
         // Head
-        ctx.save();
         ctx.translate(this.grid.cellSize / 2, this.grid.cellSize / 2);
         ctx.beginPath();
         const headCell = this.grid.cells[this.index];
@@ -211,7 +210,6 @@ export class Wilsons {
     }
 }
 export class RecursiveBacktracking {
-    static key = "Recursive Backtracking";
     grid;
     isComplete = false;
     stack;
@@ -255,12 +253,13 @@ export class RecursiveBacktracking {
     draw(ctx) {
         if (this.isComplete || !this.stack.length)
             return;
+        ctx.save();
+        ctx.translate(this.grid.offsetX, this.grid.offsetY);
         ctx.fillStyle = "#f004";
         const cellSize = this.grid.cellSize;
         for (const { cell: { screenX, screenY }, } of this.stack) {
             ctx.fillRect(screenX, screenY, cellSize, cellSize);
         }
-        ctx.save();
         ctx.translate(this.grid.cellSize / 2, this.grid.cellSize / 2);
         ctx.beginPath();
         const headCell = this.stack[this.stack.length - 1].cell;
@@ -271,13 +270,13 @@ export class RecursiveBacktracking {
     }
 }
 export class RecursiveDivision {
-    static key = "Recursive Division";
     isComplete = false;
     chambers;
     grid;
     useBfs;
-    constructor(grid, { useBfs }) {
-        this.useBfs = useBfs;
+    constructor(grid) {
+        // this.useBfs = useBfs;
+        this.useBfs = true;
         for (const cell of grid.cells) {
             cell.open = true;
             cell.walls = [false, false, false, false];
@@ -368,16 +367,18 @@ export class RecursiveDivision {
     draw(ctx) {
         if (this.isComplete)
             return;
+        ctx.save();
+        ctx.translate(this.grid.offsetX, this.grid.offsetY);
         const chamber = this.chambers[this.useBfs ? 0 : this.chambers.length - 1];
         if (!chamber)
             return;
         ctx.fillStyle = "#f00a";
         const cellSize = this.grid.cellSize;
         ctx.fillRect(chamber[0] * cellSize, chamber[1] * cellSize, chamber[2] * cellSize, chamber[3] * cellSize);
+        ctx.restore();
     }
 }
 export class AldousBroderWilsonHybrid {
-    static key = "Aldous-Broder + Wilsons";
     phase = 0;
     isComplete = false;
     grid;
@@ -409,7 +410,6 @@ export class AldousBroderWilsonHybrid {
     }
 }
 export class BinaryTree {
-    static key = "Binary Tree";
     grid;
     isComplete = false;
     directions;
@@ -418,7 +418,8 @@ export class BinaryTree {
     get index() {
         return this.y * this.grid.colCnt + this.x;
     }
-    constructor(grid, { horz, vert }) {
+    constructor(grid) {
+        const [horz, vert] = ["EAST", "SOUTH"];
         this.grid = grid;
         this.directions = [
             horz === "EAST" ? 1 : -1,
@@ -462,10 +463,13 @@ export class BinaryTree {
     draw(ctx) {
         if (this.isComplete)
             return;
+        ctx.save();
+        ctx.translate(this.grid.offsetX, this.grid.offsetY);
         ctx.fillStyle = "#0a0";
         const cell = this.grid.cells[this.index];
         const cellSize = this.grid.cellSize;
         ctx.fillRect(cell.screenX, cell.screenY, cellSize, cellSize);
+        ctx.restore();
     }
 }
 function findTreeRoot(node) {
@@ -483,7 +487,6 @@ function findBranchSize(node) {
     return nodes.length;
 }
 export class Kruskals {
-    static key = "Kruskals";
     grid;
     isComplete = false;
     cellNodes = [];
@@ -552,6 +555,8 @@ export class Kruskals {
     draw(ctx) {
         if (this.isComplete)
             return;
+        ctx.save();
+        ctx.translate(this.grid.offsetX, this.grid.offsetY);
         const cellSize = this.grid.cellSize;
         // Tree colors
         const allVisited = new Set();
@@ -606,10 +611,10 @@ export class Kruskals {
             ctx.lineWidth = 5;
             ctx.stroke();
         }
+        ctx.restore();
     }
 }
 export class Prims {
-    static key = "Prims";
     isComplete = false;
     grid;
     frontier = [];
@@ -642,16 +647,18 @@ export class Prims {
     draw(ctx) {
         if (this.isComplete)
             return;
+        ctx.save();
+        ctx.translate(this.grid.offsetX, this.grid.offsetY);
         const cellSize = this.grid.cellSize;
         for (const index of this.frontier) {
             const { screenX, screenY } = this.grid.cells[index];
             ctx.fillStyle = `#a00a`;
             ctx.fillRect(screenX, screenY, cellSize, cellSize);
         }
+        ctx.restore();
     }
 }
 export class Ellers {
-    static key = "Ellers";
     isComplete = false;
     grid;
     index = 0;
@@ -662,9 +669,10 @@ export class Ellers {
     mergeChance;
     phase = 0;
     idCounter = 1;
-    constructor(grid, { mergeChance }) {
+    constructor(grid) {
         this.grid = grid;
-        this.mergeChance = mergeChance;
+        // this.mergeChance = mergeChance;
+        this.mergeChance = 0.5;
     }
     step() {
         if (this.isComplete)
@@ -767,11 +775,13 @@ export class Ellers {
     draw(ctx) {
         if (this.isComplete)
             return;
+        ctx.save();
+        ctx.translate(this.grid.offsetX, this.grid.offsetY);
         const cellSize = this.grid.cellSize;
-        // Row
-        const y = Math.floor(this.index / this.grid.colCnt);
-        ctx.fillStyle = "#a00a";
-        ctx.fillRect(0, y * cellSize, this.grid.colCnt * cellSize, cellSize);
+        // // Row
+        // const y = Math.floor(this.index / this.grid.colCnt);
+        // ctx.fillStyle = "#a00a";
+        // ctx.fillRect(0, y * cellSize, this.grid.colCnt * cellSize, cellSize);
         // Current cell
         const curCell = this.grid.cells[this.index];
         if (curCell) {
@@ -805,10 +815,10 @@ export class Ellers {
         // 		);
         // 	}
         // }
+        ctx.restore();
     }
 }
 export class Sidewinder {
-    static key = "Sidewinder";
     isComplete = false;
     grid;
     index = 0;
@@ -850,14 +860,16 @@ export class Sidewinder {
     draw(ctx) {
         if (this.isComplete)
             return;
+        ctx.save();
+        ctx.translate(this.grid.offsetX, this.grid.offsetY);
         // Current cell
         const cell = this.grid.cells[this.index];
         ctx.fillStyle = "#55ff55";
         ctx.fillRect(cell.screenX, cell.screenY, this.grid.cellSize, this.grid.cellSize);
+        ctx.restore();
     }
 }
 export class HuntAndKill {
-    static key = "Hunt and Kill";
     isComplete = false;
     grid;
     index;
@@ -928,27 +940,30 @@ export class HuntAndKill {
     draw(ctx) {
         if (this.isComplete)
             return;
+        ctx.save();
+        ctx.translate(this.grid.offsetX, this.grid.offsetY);
         const curCell = this.grid.cells[this.index];
         if (curCell) {
             ctx.fillStyle = this.phase === 0 ? "#0a0a" : "#a00a";
             ctx.fillRect(curCell.screenX, curCell.screenY, this.grid.cellSize, this.grid.cellSize);
         }
+        ctx.restore();
     }
 }
 export class GrowingTree {
-    static key = "Growing Tree";
     isComplete = false;
     grid;
     bag;
     pickingStyle = [];
-    constructor(grid, { pickingStyle }) {
+    constructor(grid) {
         this.grid = grid;
         this.bag = [getRandomUnvisitedCellIndex(grid)];
         grid.cells[this.bag[0]].open = true;
-        for (const name in pickingStyle) {
-            const chance = pickingStyle[name];
-            this.pickingStyle.push(...Array(chance).fill(name));
-        }
+        // for (const name in pickingStyle) {
+        // 	const chance = pickingStyle[name as GrowingTreePickingStyle]!;
+        // 	this.pickingStyle.push(...Array(chance).fill(name));
+        // }
+        this.pickingStyle = ["NEWEST"];
     }
     step() {
         if (this.isComplete)
@@ -987,6 +1002,8 @@ export class GrowingTree {
     draw(ctx) {
         if (this.isComplete)
             return;
+        ctx.save();
+        ctx.translate(this.grid.offsetX, this.grid.offsetY);
         const cellSize = this.grid.cellSize;
         for (let i = 0; i < this.bag.length; i++) {
             const index = this.bag[i];
@@ -1003,10 +1020,10 @@ export class GrowingTree {
             ctx.textBaseline = "middle";
             ctx.fillText(String(i), x, y);
         }
+        ctx.restore();
     }
 }
-export class RecursiveClusterDivision {
-    static key = "Recursive Cluster Division";
+export class ClusterDivision {
     isComplete = false;
     grid;
     regions = [[]];
@@ -1018,7 +1035,7 @@ export class RecursiveClusterDivision {
     wallMap;
     useBfs;
     roomMaxSize;
-    constructor(grid, { roomMaxSize, useBfs }) {
+    constructor(grid) {
         this.grid = grid;
         this.wallMap = {
             [-this.grid.colCnt]: 0,
@@ -1026,8 +1043,11 @@ export class RecursiveClusterDivision {
             [this.grid.colCnt]: 2,
             [-1]: 3,
         };
-        this.useBfs = useBfs;
-        this.roomMaxSize = roomMaxSize;
+        // TODO: [useBfs = true] is broken
+        // this.useBfs = useBfs;
+        // this.roomMaxSize = roomMaxSize;
+        this.useBfs = false;
+        this.roomMaxSize = 1;
         // Open up all cells and remove walls between cells
         grid.cells.forEach((c, i) => {
             this.regions[0][i] = i;
@@ -1124,6 +1144,8 @@ export class RecursiveClusterDivision {
     draw(ctx) {
         if (this.isComplete)
             return;
+        ctx.save();
+        ctx.translate(this.grid.offsetX, this.grid.offsetY);
         const cellSize = this.grid.cellSize;
         // subregion coloring
         for (const [subregion, clr] of [
@@ -1137,11 +1159,12 @@ export class RecursiveClusterDivision {
                 ctx.fillRect(screenX, screenY, cellSize, cellSize);
             }
         }
+        ctx.restore();
     }
 }
 // DEBUG ONLY
 // class EmptyGrid {
-// 	static readonly key = 'Empty Grid';
+//
 // 	isComplete = true;
 // 	constructor(grid: Grid) {
 // 		grid.cells.forEach((c) => {
@@ -1156,62 +1179,19 @@ export class RecursiveClusterDivision {
 // 	step() {}
 // 	draw() {}
 // }
-export const MazeGenerators = [
-    // EmptyGrid,
-    RecursiveBacktracking,
-    RecursiveDivision,
-    RecursiveClusterDivision,
-    Wilsons,
-    AldousBroder,
-    AldousBroderWilsonHybrid,
-    BinaryTree,
-    Kruskals,
-    Prims,
-    Ellers,
-    Sidewinder,
-    HuntAndKill,
-    GrowingTree,
-];
-export class MazeGenManager {
-    instance;
-    options = {
-        useBfs: false,
-        roomMaxSize: 3,
-        horz: "EAST",
-        vert: "SOUTH",
-        mergeChance: 2 / 3,
-        pickingStyle: { NEWEST: 1 },
-    };
-    current;
-    get isComplete() {
-        return this.instance?.isComplete ?? true;
-    }
-    constructor(init) {
-        if (init) {
-            this.current = init[0];
-            this.restart(init[1]);
-        }
-    }
-    step() {
-        if (!this.instance)
-            return;
-        this.instance.step();
-    }
-    draw(ctx) {
-        if (!this.instance)
-            return;
-        this.instance.draw(ctx);
-    }
-    restart(grid = this.instance?.grid) {
-        if (!grid)
-            return;
-        this.instance = new (MazeGenerators.find(({ key }) => key === this.current))(grid, this.options);
-    }
-    setOption(prop, val) {
-        this.options[prop] = val;
-    }
-    getOption(prop) {
-        return structuredClone(this.options[prop]);
-    }
-}
+export const generatorKeyMap = new Map([
+    ["recursiveBacktracking", RecursiveBacktracking],
+    ["recursiveDivision", RecursiveDivision],
+    ["clusterDivision", ClusterDivision],
+    ["wilsons", Wilsons],
+    ["aldousbroder", AldousBroder],
+    ["aldousbroder&wilsons", AldousBroderWilsonHybrid],
+    ["binarytree", BinaryTree],
+    ["kruskals", Kruskals],
+    ["prims", Prims],
+    ["ellers", Ellers],
+    ["sidewinder", Sidewinder],
+    ["hunt&kill", HuntAndKill],
+    ["growingTree", GrowingTree],
+]);
 //# sourceMappingURL=mazeGenerator.js.map
