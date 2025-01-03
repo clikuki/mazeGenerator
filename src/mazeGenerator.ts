@@ -1,4 +1,5 @@
 import { Cell, Grid } from "./grid.js";
+import { settings } from "./settings.js";
 import { randomItemInArray, shuffle } from "./utils.js";
 
 // Does not check whether the two cells are actually neighbors
@@ -52,8 +53,6 @@ function randIntBetween(min: number, max: number) {
 	return Math.floor(Math.random() * (max - min + 1)) + min;
 }
 
-// TODO: Make algorithms use the following types
-// TODO: Reimplement algo settings
 export interface GeneratorStructure {
 	isComplete: boolean;
 	step(): void;
@@ -330,17 +329,12 @@ export class RecursiveBacktracking implements GeneratorStructure {
 	}
 }
 
-export interface RecursiveDivisionOptions {
-	useBfs: boolean;
-}
 export class RecursiveDivision implements GeneratorStructure {
 	isComplete = false;
 	chambers: [x: number, y: number, w: number, h: number][];
 	grid: Grid;
 	useBfs: boolean;
 	constructor(grid: Grid) {
-		// this.useBfs = useBfs;
-		this.useBfs = true;
 		for (const cell of grid.cells) {
 			cell.open = true;
 			cell.walls = [false, false, false, false];
@@ -351,6 +345,7 @@ export class RecursiveDivision implements GeneratorStructure {
 		}
 		this.grid = grid;
 		this.chambers = [[0, 0, grid.colCnt, grid.rowCnt]];
+		this.useBfs = settings.get("graphTraversal") === "bfs";
 	}
 	chooseOrientation(width: number, height: number) {
 		if (width < height) return "HORIZONTAL";
@@ -472,30 +467,26 @@ export class AldousBroderWilsonHybrid implements GeneratorStructure {
 	}
 }
 
-type Vertical = "NORTH" | "SOUTH";
-type Horizontal = "EAST" | "WEST";
-export interface BinaryTreeOptions {
-	horz: Horizontal;
-	vert: Vertical;
-}
 export class BinaryTree implements GeneratorStructure {
 	grid: Grid;
 	isComplete = false;
 	directions: [number, number];
 	x: number;
 	y: number;
-	get index() {
-		return this.y * this.grid.colCnt + this.x;
-	}
 	constructor(grid: Grid) {
-		const [horz, vert] = ["EAST", "SOUTH"];
+		const horz = settings.get("horizontalCarve") ?? "eastCarve";
+		const vert = settings.get("verticalCarve") ?? "southCarve";
+
 		this.grid = grid;
 		this.directions = [
-			horz === "EAST" ? 1 : -1,
-			(vert === "SOUTH" ? 1 : -1) * grid.colCnt,
+			horz === "eastCarve" ? 1 : -1,
+			(vert === "southCarve" ? 1 : -1) * grid.colCnt,
 		];
-		this.x = horz === "EAST" ? 0 : grid.colCnt - 1;
-		this.y = vert === "SOUTH" ? 0 : grid.rowCnt - 1;
+		this.x = horz === "eastCarve" ? 0 : grid.colCnt - 1;
+		this.y = vert === "southCarve" ? 0 : grid.rowCnt - 1;
+	}
+	private get index() {
+		return this.y * this.grid.colCnt + this.x;
 	}
 	step(): void {
 		if (this.isComplete) return;
@@ -757,9 +748,6 @@ export class Prims implements GeneratorStructure {
 	}
 }
 
-export interface EllersOptions {
-	mergeChance: number;
-}
 export class Ellers implements GeneratorStructure {
 	isComplete = false;
 	grid: Grid;
@@ -773,8 +761,7 @@ export class Ellers implements GeneratorStructure {
 	idCounter = 1;
 	constructor(grid: Grid) {
 		this.grid = grid;
-		// this.mergeChance = mergeChance;
-		this.mergeChance = 0.5;
+		this.mergeChance = settings.get("carveChance") ?? 0.5;
 	}
 	step() {
 		if (this.isComplete) return;
@@ -1084,9 +1071,6 @@ export class HuntAndKill implements GeneratorStructure {
 }
 
 type GrowingTreePickingStyle = "NEWEST" | "RANDOM" | "OLDEST" | "MIDDLE";
-export interface GrowingTreeOptions {
-	pickingStyle: Partial<Record<GrowingTreePickingStyle, number>>;
-}
 export class GrowingTree implements GeneratorStructure {
 	isComplete = false;
 	grid: Grid;
@@ -1097,11 +1081,20 @@ export class GrowingTree implements GeneratorStructure {
 		this.bag = [getRandomUnvisitedCellIndex(grid)];
 		grid.cells[this.bag[0]].open = true;
 
-		// for (const name in pickingStyle) {
-		// 	const chance = pickingStyle[name as GrowingTreePickingStyle]!;
-		// 	this.pickingStyle.push(...Array(chance).fill(name));
-		// }
-		this.pickingStyle = ["NEWEST"];
+		// Set picking style
+		const pickNewest = Math.max(settings.get<number>("pickNewest") ?? 1, 0);
+		const pickRandom = Math.max(settings.get<number>("pickRandom") ?? 0, 0);
+		const pickOldest = Math.max(settings.get<number>("pickOldest") ?? 0, 0);
+		const pickMiddle = Math.max(settings.get<number>("pickMiddle") ?? 0, 0);
+		const initializer: [GrowingTreePickingStyle, number][] = [
+			["NEWEST", pickNewest],
+			["RANDOM", pickRandom],
+			["OLDEST", pickOldest],
+			["MIDDLE", pickMiddle],
+		];
+		for (const [style, count] of initializer) {
+			this.pickingStyle.push(...Array(count).fill(style));
+		}
 	}
 	step() {
 		if (this.isComplete) return;
@@ -1168,10 +1161,6 @@ export class GrowingTree implements GeneratorStructure {
 	}
 }
 
-export interface ClusterDivisionOptions {
-	useBfs: boolean;
-	roomMaxSize: number;
-}
 export class ClusterDivision implements GeneratorStructure {
 	isComplete = false;
 	grid: Grid;
@@ -1193,11 +1182,8 @@ export class ClusterDivision implements GeneratorStructure {
 			[-1]: 3,
 		};
 
-		// TODO: [useBfs = true] is broken
-		// this.useBfs = useBfs;
-		// this.roomMaxSize = roomMaxSize;
-		this.useBfs = false;
-		this.roomMaxSize = 1;
+		this.useBfs = settings.get("graphTraversal") === "bfs";
+		this.roomMaxSize = settings.get("maximumRoomSize") ?? 3;
 
 		// Open up all cells and remove walls between cells
 		grid.cells.forEach((c, i) => {

@@ -1,3 +1,4 @@
+import { settings } from "./settings.js";
 import { randomItemInArray, shuffle } from "./utils.js";
 // Does not check whether the two cells are actually neighbors
 // Don't know if I need to fix that :|
@@ -275,8 +276,6 @@ export class RecursiveDivision {
     grid;
     useBfs;
     constructor(grid) {
-        // this.useBfs = useBfs;
-        this.useBfs = true;
         for (const cell of grid.cells) {
             cell.open = true;
             cell.walls = [false, false, false, false];
@@ -291,6 +290,7 @@ export class RecursiveDivision {
         }
         this.grid = grid;
         this.chambers = [[0, 0, grid.colCnt, grid.rowCnt]];
+        this.useBfs = settings.get("graphTraversal") === "bfs";
     }
     chooseOrientation(width, height) {
         if (width < height)
@@ -415,18 +415,19 @@ export class BinaryTree {
     directions;
     x;
     y;
-    get index() {
-        return this.y * this.grid.colCnt + this.x;
-    }
     constructor(grid) {
-        const [horz, vert] = ["EAST", "SOUTH"];
+        const horz = settings.get("horizontalCarve") ?? "eastCarve";
+        const vert = settings.get("verticalCarve") ?? "southCarve";
         this.grid = grid;
         this.directions = [
-            horz === "EAST" ? 1 : -1,
-            (vert === "SOUTH" ? 1 : -1) * grid.colCnt,
+            horz === "eastCarve" ? 1 : -1,
+            (vert === "southCarve" ? 1 : -1) * grid.colCnt,
         ];
-        this.x = horz === "EAST" ? 0 : grid.colCnt - 1;
-        this.y = vert === "SOUTH" ? 0 : grid.rowCnt - 1;
+        this.x = horz === "eastCarve" ? 0 : grid.colCnt - 1;
+        this.y = vert === "southCarve" ? 0 : grid.rowCnt - 1;
+    }
+    get index() {
+        return this.y * this.grid.colCnt + this.x;
     }
     step() {
         if (this.isComplete)
@@ -671,8 +672,7 @@ export class Ellers {
     idCounter = 1;
     constructor(grid) {
         this.grid = grid;
-        // this.mergeChance = mergeChance;
-        this.mergeChance = 0.5;
+        this.mergeChance = settings.get("carveChance") ?? 0.5;
     }
     step() {
         if (this.isComplete)
@@ -959,11 +959,20 @@ export class GrowingTree {
         this.grid = grid;
         this.bag = [getRandomUnvisitedCellIndex(grid)];
         grid.cells[this.bag[0]].open = true;
-        // for (const name in pickingStyle) {
-        // 	const chance = pickingStyle[name as GrowingTreePickingStyle]!;
-        // 	this.pickingStyle.push(...Array(chance).fill(name));
-        // }
-        this.pickingStyle = ["NEWEST"];
+        // Set picking style
+        const pickNewest = Math.max(settings.get("pickNewest") ?? 1, 0);
+        const pickRandom = Math.max(settings.get("pickRandom") ?? 0, 0);
+        const pickOldest = Math.max(settings.get("pickOldest") ?? 0, 0);
+        const pickMiddle = Math.max(settings.get("pickMiddle") ?? 0, 0);
+        const initializer = [
+            ["NEWEST", pickNewest],
+            ["RANDOM", pickRandom],
+            ["OLDEST", pickOldest],
+            ["MIDDLE", pickMiddle],
+        ];
+        for (const [style, count] of initializer) {
+            this.pickingStyle.push(...Array(count).fill(style));
+        }
     }
     step() {
         if (this.isComplete)
@@ -1043,11 +1052,8 @@ export class ClusterDivision {
             [this.grid.colCnt]: 2,
             [-1]: 3,
         };
-        // TODO: [useBfs = true] is broken
-        // this.useBfs = useBfs;
-        // this.roomMaxSize = roomMaxSize;
-        this.useBfs = false;
-        this.roomMaxSize = 1;
+        this.useBfs = settings.get("graphTraversal") === "bfs";
+        this.roomMaxSize = settings.get("maximumRoomSize") ?? 3;
         // Open up all cells and remove walls between cells
         grid.cells.forEach((c, i) => {
             this.regions[0][i] = i;

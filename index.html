@@ -5,8 +5,8 @@
 		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
 		<title>Maze Algorithms</title>
 		<link rel="stylesheet" type="text/css" href="style.css" />
-		<script src="dest/rehydrate.js" defer></script>
-		<script src="dest/index.js" type="module"></script>
+		<script src="dest/rehydrate.js" defer type="module"></script>
+		<script src="dest/index.js" defer type="module"></script>
 
 		<link rel="preconnect" href="https://fonts.googleapis.com" />
 		<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -33,13 +33,34 @@
 					<label for="speed">Simulation speed</label>
 					<div class="simulSpeed">
 						<button class="decrease">&nbsp;</button>
-						<input class="display" type="text" value="1&times;" id="speed" disabled />
+						<input
+							class="display"
+							type="text"
+							value="1&times;"
+							id="speed"
+							disabled
+							data-ignore
+						/>
 						<button class="increase">&nbsp;</button>
 					</div>
 					<label for="columnCount"># of Columns</label>
-					<input type="number" id="columnCount" min="2" max="1000" value="10" />
+					<input
+						type="number"
+						id="columnCount"
+						min="2"
+						max="1000"
+						value="10"
+						data-ignore
+					/>
 					<label for="rowCount"># of Rows</label>
-					<input type="number" id="rowCount" min="2" max="1000" value="10" />
+					<input
+						type="number"
+						id="rowCount"
+						min="2"
+						max="1000"
+						value="10"
+						data-ignore
+					/>
 				</div>
 				<div class="exports">
 					<button class="image">Export as image</button>
@@ -61,10 +82,10 @@
 						<div class="sideBySide half">
 							<legend>Graph Traversal Method</legend>
 							<div class="sideBySide radio">
-								<input type="radio" id="dfs1" name="graphTraversal1" />
-								<label for="dfs1">Depth First</label>
-								<input type="radio" id="bfs1" name="graphTraversal1" />
-								<label for="bfs1">Breadth First</label>
+								<input type="radio" id="dfs[1]" name="graphTraversal[1]" />
+								<label for="dfs[1]">Depth First</label>
+								<input type="radio" id="bfs[1]" name="graphTraversal[1]" />
+								<label for="bfs[1]">Breadth First</label>
 							</div>
 						</div>
 					</div>
@@ -75,10 +96,10 @@
 						<div class="sideBySide half">
 							<legend>Graph Traversal Method</legend>
 							<div class="sideBySide radio">
-								<input type="radio" id="dfs2" name="graphTraversal2" />
-								<label for="dfs2">Depth First</label>
-								<input type="radio" id="bfs2" name="graphTraversal2" />
-								<label for="bfs2">Breadth First</label>
+								<input type="radio" id="dfs[2]" name="graphTraversal[2]" />
+								<label for="dfs[2]">Depth First</label>
+								<input type="radio" id="bfs[2]" name="graphTraversal[2]" />
+								<label for="bfs[2]">Breadth First</label>
 							</div>
 						</div>
 						<br />
@@ -187,28 +208,28 @@
 					<div class="content">
 						<legend>Picking Ratios</legend>
 						<div class="sideBySide">
-							<label for="newest">Newest</label>
+							<label for="pickNewest">Newest</label>
 							<div class="sliderLabels">
 								<span>0</span>
-								<input type="range" id="newest" min="0" max="10" value="10" />
+								<input type="range" id="pickNewest" min="0" max="10" value="10" />
 								<span>10</span>
 							</div>
-							<label for="random">Random</label>
+							<label for="pickRandom">Random</label>
 							<div class="sliderLabels">
 								<span>0</span>
-								<input type="range" id="random" min="0" max="10" value="0" />
+								<input type="range" id="pickRandom" min="0" max="10" value="0" />
 								<span>10</span>
 							</div>
-							<label for="oldest">Oldest</label>
+							<label for="pickOldest">Oldest</label>
 							<div class="sliderLabels">
 								<span>0</span>
-								<input type="range" id="oldest" min="0" max="10" value="0" />
+								<input type="range" id="pickOldest" min="0" max="10" value="0" />
 								<span>10</span>
 							</div>
-							<label for="middle">Middle</label>
+							<label for="pickMiddle">Middle</label>
 							<div class="sliderLabels">
 								<span>0</span>
-								<input type="range" id="middle" min="0" max="10" value="0" />
+								<input type="range" id="pickMiddle" min="0" max="10" value="0" />
 								<span>10</span>
 							</div>
 						</div>
@@ -255,8 +276,8 @@
 							<div class="sideBySide radio">
 								<input type="radio" id="taxicab" name="heuristicDistance" checked />
 								<label for="taxicab">Taxicab</label>
-								<input type="radio" id="euclid" name="heuristicDistance" />
-								<label for="euclid">Euclidean</label>
+								<input type="radio" id="euclidean" name="heuristicDistance" />
+								<label for="euclidean">Euclidean</label>
 								<input type="radio" id="chebyshev" name="heuristicDistance" />
 								<label for="chebyshev">Chebyshev</label>
 							</div>
