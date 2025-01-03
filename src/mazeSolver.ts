@@ -23,16 +23,22 @@ interface Track {
 
 // TODO: split and create multiple solver algorithms
 export interface SolverStructure {
+	from: number;
+	dest: number;
 	isComplete: boolean;
 	step(): void;
 	draw(ctx: CanvasRenderingContext2D): void;
 }
-export type SolverConstructor = new (grid: Grid) => SolverStructure;
+export type SolverConstructor = new (
+	grid: Grid,
+	from: number,
+	dest: number
+) => SolverStructure;
 
-export class MazeSolver {
+export class MazeSolver implements SolverStructure {
 	isComplete = false;
 	grid: Grid;
-	start: number;
+	from: number;
 	dest: number;
 	path?: number[];
 	phase: "ROOM" | "FILL" | "TRACE" = "ROOM";
@@ -59,17 +65,17 @@ export class MazeSolver {
 	indexParentGrid: number[] = [];
 	indexToNodeDict: Node[] = [];
 	trackedClr: Color = [100, 200, 100];
-	constructor(grid: Grid, start: number, dest: number) {
+	constructor(grid: Grid, from: number, dest: number) {
 		this.grid = grid;
-		this.start = start;
+		this.from = from;
 		this.dest = dest;
 
 		this.offsets = [-this.grid.colCnt, 1, this.grid.colCnt, -1];
-		this.rooms = [{ neighbors: [], area: [start] }];
-		this.roomStack = [[start, this.rooms[0]]];
-		this.rootNode = { index: this.start, next: [] };
-		this.indexToNodeDict[this.start] = this.rootNode;
-		this.indexToRoomDict[this.start] = this.rooms[0];
+		this.rooms = [{ neighbors: [], area: [from] }];
+		this.roomStack = [[from, this.rooms[0]]];
+		this.rootNode = { index: this.from, next: [] };
+		this.indexToNodeDict[this.from] = this.rootNode;
+		this.indexToRoomDict[this.from] = this.rooms[0];
 		this.lineWidth = Math.max(
 			Math.ceil(50 / Math.min(grid.rowCnt, grid.colCnt)),
 			1
@@ -83,7 +89,7 @@ export class MazeSolver {
 			if (this.roomStack.length === 0) {
 				this.phase = "FILL";
 				this.ignoreRooms = [
-					this.indexToRoomDict[this.start],
+					this.indexToRoomDict[this.from],
 					this.indexToRoomDict[this.dest],
 				];
 				console.log(`MOVING TO PHASE "${this.phase}"`);
@@ -152,9 +158,9 @@ export class MazeSolver {
 					console.log(`MOVING TO PHASE "${this.phase}"`);
 					this.trackedPaths = [
 						{
-							room: this.indexToRoomDict[this.start],
+							room: this.indexToRoomDict[this.from],
 							start: this.rootNode,
-							stack: [this.start],
+							stack: [this.from],
 							goalsReached: 0,
 						},
 					];
@@ -278,6 +284,9 @@ export class MazeSolver {
 		}
 	}
 	draw(ctx: CanvasRenderingContext2D) {
+		ctx.save();
+		ctx.translate(this.grid.offsetX, this.grid.offsetY);
+
 		// Draw color of rooms
 		for (const room of this.rooms) {
 			let clr: Color | undefined;
@@ -371,5 +380,7 @@ export class MazeSolver {
 			ctx.stroke(nodePath);
 			ctx.restore();
 		}
+
+		ctx.restore();
 	}
 }

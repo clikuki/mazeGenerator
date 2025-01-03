@@ -4,7 +4,7 @@ function arrayToClrStr([r, g, b]) {
 export class MazeSolver {
     isComplete = false;
     grid;
-    start;
+    from;
     dest;
     path;
     phase = "ROOM";
@@ -27,16 +27,16 @@ export class MazeSolver {
     indexParentGrid = [];
     indexToNodeDict = [];
     trackedClr = [100, 200, 100];
-    constructor(grid, start, dest) {
+    constructor(grid, from, dest) {
         this.grid = grid;
-        this.start = start;
+        this.from = from;
         this.dest = dest;
         this.offsets = [-this.grid.colCnt, 1, this.grid.colCnt, -1];
-        this.rooms = [{ neighbors: [], area: [start] }];
-        this.roomStack = [[start, this.rooms[0]]];
-        this.rootNode = { index: this.start, next: [] };
-        this.indexToNodeDict[this.start] = this.rootNode;
-        this.indexToRoomDict[this.start] = this.rooms[0];
+        this.rooms = [{ neighbors: [], area: [from] }];
+        this.roomStack = [[from, this.rooms[0]]];
+        this.rootNode = { index: this.from, next: [] };
+        this.indexToNodeDict[this.from] = this.rootNode;
+        this.indexToRoomDict[this.from] = this.rooms[0];
         this.lineWidth = Math.max(Math.ceil(50 / Math.min(grid.rowCnt, grid.colCnt)), 1);
     }
     step() {
@@ -47,7 +47,7 @@ export class MazeSolver {
             if (this.roomStack.length === 0) {
                 this.phase = "FILL";
                 this.ignoreRooms = [
-                    this.indexToRoomDict[this.start],
+                    this.indexToRoomDict[this.from],
                     this.indexToRoomDict[this.dest],
                 ];
                 console.log(`MOVING TO PHASE "${this.phase}"`);
@@ -114,9 +114,9 @@ export class MazeSolver {
                     console.log(`MOVING TO PHASE "${this.phase}"`);
                     this.trackedPaths = [
                         {
-                            room: this.indexToRoomDict[this.start],
+                            room: this.indexToRoomDict[this.from],
                             start: this.rootNode,
-                            stack: [this.start],
+                            stack: [this.from],
                             goalsReached: 0,
                         },
                     ];
@@ -224,6 +224,8 @@ export class MazeSolver {
         }
     }
     draw(ctx) {
+        ctx.save();
+        ctx.translate(this.grid.offsetX, this.grid.offsetY);
         // Draw color of rooms
         for (const room of this.rooms) {
             let clr;
@@ -309,6 +311,7 @@ export class MazeSolver {
             ctx.stroke(nodePath);
             ctx.restore();
         }
+        ctx.restore();
     }
 }
 //# sourceMappingURL=mazeSolver.js.map

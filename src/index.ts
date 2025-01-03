@@ -3,7 +3,11 @@ import {
 	generatorKeyMap,
 	GeneratorStructure,
 } from "./mazeGenerator.js";
-import { SolverConstructor, SolverStructure } from "./mazeSolver.js";
+import {
+	MazeSolver,
+	SolverConstructor,
+	SolverStructure,
+} from "./mazeSolver.js";
 import { convertGridToGraph, GraphNode, HTML } from "./utils.js";
 import { Grid } from "./grid.js";
 
@@ -27,6 +31,7 @@ type NullOr<T> = null | T;
 class SimulationProperties {
 	width = 10;
 	height = 10;
+	solverStartIndex: NullOr<number> = null;
 	isPaused = true;
 	performStep = false;
 	performSkip = false;
@@ -47,18 +52,10 @@ class SimulationProperties {
 		return !!(this.generator || this.solver);
 	}
 	get isAlgoComplete() {
-		return !!(this.generator?.isComplete || this.solver?.isComplete);
+		if (this.generator && !this.generator.isComplete) return false;
+		if (this.solver && !this.solver.isComplete) return false;
+		return true;
 	}
-}
-
-function initialize() {
-	const canvas = HTML.getOne<HTMLCanvasElement>("canvas")!;
-	setUpCanvasResize(canvas);
-
-	const simulationProperties = new SimulationProperties(canvas);
-	setUpSimulationControls(simulationProperties);
-	setUpAlgorithmSelection(simulationProperties);
-	simulationLoop(simulationProperties, 0);
 }
 
 function setUpAlgorithmSelection(simProps: SimulationProperties) {
@@ -107,7 +104,11 @@ function setUpSimulationControls(simProps: SimulationProperties) {
 			simProps.grid.reset();
 			simProps.generator = new simProps.getGenerator!(simProps.grid);
 		} else if (simProps.solver && simProps.getSolver) {
-			simProps.solver = new simProps.getSolver!(simProps.grid);
+			simProps.solver = new simProps.getSolver!(
+				simProps.grid,
+				simProps.solver.from,
+				simProps.solver.dest
+			);
 		}
 	});
 
@@ -234,6 +235,45 @@ function setUpCanvasResize(canvas: HTMLCanvasElement) {
 	updateCanvasSize();
 }
 
+function setUpSolverStarter(simProps: SimulationProperties) {
+	simProps.canvas.addEventListener("click", (e) => {
+		if (!simProps.isAlgoComplete) return;
+
+		const cellX = Math.floor(
+			(e.x - simProps.grid.offsetX) / simProps.grid.cellSize
+		);
+		const cellY = Math.floor(
+			(e.y - simProps.grid.offsetY) / simProps.grid.cellSize
+		);
+
+		if (
+			cellX < 0 ||
+			cellY < 0 ||
+			cellX >= simProps.grid.colCnt ||
+			cellY >= simProps.grid.rowCnt
+		) {
+			return;
+		}
+		const cellIndex = cellY * simProps.grid.colCnt + cellX;
+
+		if (
+			simProps.solverStartIndex !== null &&
+			simProps.solverStartIndex !== cellIndex
+		) {
+			simProps.generator = null;
+			simProps.solver = new MazeSolver(
+				simProps.grid,
+				simProps.solverStartIndex,
+				cellIndex
+			);
+			simProps.solverStartIndex = null;
+		} else {
+			simProps.solverStartIndex = cellIndex;
+			simProps.solver = null;
+		}
+	});
+}
+
 function simulationLoop(simProps: SimulationProperties, _: number) {
 	requestAnimationFrame(simulationLoop.bind(null, simProps));
 
@@ -241,8 +281,11 @@ function simulationLoop(simProps: SimulationProperties, _: number) {
 	if (!simProps.isPaused || simProps.performStep || simProps.performSkip) {
 		do {
 			if (simProps.generator) simProps.generator.step();
-			else if (simProps.solver) simProps.solver.step();
+			if (simProps.solver) simProps.solver.step();
 		} while (simProps.performSkip && !simProps.isAlgoComplete);
+
+		// if (simProps.generator?.isComplete) simProps.generator = null;
+		// else if (simProps.solver?.isComplete) simProps.solver = null;
 	}
 
 	// DRAW
@@ -256,10 +299,33 @@ function simulationLoop(simProps: SimulationProperties, _: number) {
 	if (simProps.generator) simProps.generator.draw(simProps.ctx);
 	else if (simProps.solver) simProps.solver.draw(simProps.ctx);
 
+	// Draw solve starter cell
+	if (simProps.solverStartIndex !== null) {
+		const cell = simProps.grid.cells[simProps.solverStartIndex];
+		simProps.ctx.fillStyle = "#00f";
+		simProps.ctx.fillRect(
+			simProps.grid.offsetX + cell.screenX,
+			simProps.grid.offsetY + cell.screenY,
+			simProps.grid.cellSize,
+			simProps.grid.cellSize
+		);
+	}
+
 	simProps.grid.drawWalls(simProps.ctx);
 
 	if (simProps.performStep) simProps.performStep = false;
 	if (simProps.performSkip) simProps.performSkip = false;
+}
+
+function initialize() {
+	const canvas = HTML.getOne<HTMLCanvasElement>("canvas")!;
+	setUpCanvasResize(canvas);
+
+	const simulationProperties = new SimulationProperties(canvas);
+	setUpSimulationControls(simulationProperties);
+	setUpAlgorithmSelection(simulationProperties);
+	setUpSolverStarter(simulationProperties);
+	simulationLoop(simulationProperties, 0);
 }
 
 initialize();
