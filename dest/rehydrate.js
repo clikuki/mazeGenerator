@@ -42,17 +42,26 @@ function getDropdownHeight(content) {
     content.style.height = "";
     return elHeight;
 }
-const menus = Array.from(document.body.getElementsByClassName("menu"));
-menus.forEach((menu) => setupMenu(menu));
-function setupMenu(menu) {
-    const position = { x: NaN, y: NaN };
-    const size = { w: NaN, h: NaN };
-    const grabOffset = { x: NaN, y: NaN };
-    setupMenuToggle(menu);
-    setupInputs(menu);
-    updateMenuData(menu, position, size);
-    setupMenuDragging(menu, position, size, grabOffset);
-    setupMenuDropdowns(menu, position, size);
+function setupMenus(menus) {
+    for (const menu of menus) {
+        const position = { x: NaN, y: NaN };
+        const size = { w: NaN, h: NaN };
+        const grabOffset = { x: NaN, y: NaN };
+        updateMenuData(menu, position, size); // Initialize on first appearance
+        setupMenuToggle(menu);
+        setupInputs(menu);
+        setupMenuRepositionOnWindowResize(menu, position, size);
+        setupMenuDragging(menu, menus, position, size, grabOffset);
+        setupMenuDropdowns(menu, position, size);
+    }
+}
+function setupMenuRepositionOnWindowResize(menu, position, size) {
+    window.addEventListener("resize", () => {
+        position.x = clamp(position.x, minimumVisibleMenu - size.w, innerWidth - minimumVisibleMenu);
+        position.y = clamp(position.y, minimumVisibleMenu - size.h, innerHeight - minimumVisibleMenu);
+        menu.style.left = `${position.x}px`;
+        menu.style.top = `${position.y}px`;
+    });
 }
 function setupMenuToggle(menu) {
     let isOpen = menu.hasAttribute("data-open");
@@ -76,7 +85,7 @@ function setupMenuToggle(menu) {
         });
     });
 }
-function setupMenuDragging(menu, position, size, grabOffset) {
+function setupMenuDragging(menu, menus, position, size, grabOffset) {
     menu.addEventListener("mousemove", () => {
         if (!(grabbedMenu instanceof Object)) {
             grabOffset.x = mouse.x - position.x;
@@ -93,11 +102,11 @@ function setupMenuDragging(menu, position, size, grabOffset) {
         const isInvalidTarget = targetExists && invalidTargets.includes(e.target.tagName);
         if (grabbedMenu === 0 /* GrabStates.WAITING */ && !isInvalidTarget) {
             grabbedMenu = { menu, position, size, offset: grabOffset };
-            moveToTopOfStack(menu);
+            moveToTopOfStack(menus, menu);
         }
     });
 }
-function moveToTopOfStack(menu) {
+function moveToTopOfStack(menus, menu) {
     const oldIndex = menus.findIndex((v) => v === menu);
     menus.splice(oldIndex, 1);
     menus.push(menu);
@@ -212,4 +221,5 @@ function setupInputs(menu) {
         });
     }
 }
+setupMenus(Array.from(document.getElementsByClassName("menu")));
 //# sourceMappingURL=rehydrate.js.map

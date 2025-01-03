@@ -48,6 +48,7 @@ function updateGrabbedPosition(grabbed: Grabbed): void {
 		minimumVisibleMenu - grabbed.size.h,
 		innerHeight - minimumVisibleMenu
 	);
+
 	grabbed.menu.style.left = `${grabbed.position.x}px`;
 	grabbed.menu.style.top = `${grabbed.position.y}px`;
 }
@@ -75,21 +76,41 @@ function getDropdownHeight(content: HTMLElement): number {
 	return elHeight;
 }
 
-const menus = Array.from(
-	document.body.getElementsByClassName("menu")
-) as HTMLElement[];
-menus.forEach((menu) => setupMenu(menu));
+function setupMenus(menus: HTMLElement[]): void {
+	for (const menu of menus) {
+		const position = { x: NaN, y: NaN };
+		const size = { w: NaN, h: NaN };
+		const grabOffset = { x: NaN, y: NaN };
+		updateMenuData(menu, position, size); // Initialize on first appearance
 
-function setupMenu(menu: HTMLElement): void {
-	const position = { x: NaN, y: NaN };
-	const size = { w: NaN, h: NaN };
-	const grabOffset = { x: NaN, y: NaN };
+		setupMenuToggle(menu);
+		setupInputs(menu);
+		setupMenuRepositionOnWindowResize(menu, position, size);
+		setupMenuDragging(menu, menus, position, size, grabOffset);
+		setupMenuDropdowns(menu, position, size);
+	}
+}
 
-	setupMenuToggle(menu);
-	setupInputs(menu);
-	updateMenuData(menu, position, size);
-	setupMenuDragging(menu, position, size, grabOffset);
-	setupMenuDropdowns(menu, position, size);
+function setupMenuRepositionOnWindowResize(
+	menu: HTMLElement,
+	position: { x: number; y: number },
+	size: { w: number; h: number }
+) {
+	window.addEventListener("resize", () => {
+		position.x = clamp(
+			position.x,
+			minimumVisibleMenu - size.w,
+			innerWidth - minimumVisibleMenu
+		);
+		position.y = clamp(
+			position.y,
+			minimumVisibleMenu - size.h,
+			innerHeight - minimumVisibleMenu
+		);
+
+		menu.style.left = `${position.x}px`;
+		menu.style.top = `${position.y}px`;
+	});
 }
 
 function setupMenuToggle(menu: HTMLElement): void {
@@ -118,6 +139,7 @@ function setupMenuToggle(menu: HTMLElement): void {
 
 function setupMenuDragging(
 	menu: HTMLElement,
+	menus: HTMLElement[],
 	position: { x: number; y: number },
 	size: { w: number; h: number },
 	grabOffset: { x: number; y: number }
@@ -140,12 +162,12 @@ function setupMenuDragging(
 			targetExists && invalidTargets.includes(e.target.tagName);
 		if (grabbedMenu === GrabStates.WAITING && !isInvalidTarget) {
 			grabbedMenu = { menu, position, size, offset: grabOffset };
-			moveToTopOfStack(menu);
+			moveToTopOfStack(menus, menu);
 		}
 	});
 }
 
-function moveToTopOfStack(menu: HTMLElement): void {
+function moveToTopOfStack(menus: HTMLElement[], menu: HTMLElement): void {
 	const oldIndex = menus.findIndex((v) => v === menu);
 	menus.splice(oldIndex, 1);
 	menus.push(menu);
@@ -281,3 +303,7 @@ function setupInputs(menu: HTMLElement) {
 		});
 	}
 }
+
+setupMenus(
+	Array.from(document.getElementsByClassName("menu")) as HTMLElement[]
+);
