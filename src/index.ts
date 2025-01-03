@@ -4,7 +4,7 @@ import {
 	GeneratorStructure,
 } from "./mazeGenerator.js";
 import { SolverConstructor, SolverStructure } from "./mazeSolver.js";
-import { HTML } from "./utils.js";
+import { convertGridToGraph, GraphNode, HTML } from "./utils.js";
 import { Grid } from "./grid.js";
 
 /*
@@ -143,13 +143,83 @@ function setUpSimulationControls(simProps: SimulationProperties) {
 	const graphExportBtn = HTML.getOne(".exports .graph", optionsMenu);
 
 	imageExportBtn?.addEventListener("click", () => {
-		// TODO: reimplement image export
+		if (!simProps.isAlgoComplete) return;
+
+		// Disable offsets temporarily
+		const offsetX = simProps.grid.offsetX;
+		const offsetY = simProps.grid.offsetY;
+		simProps.grid.offsetX = 0;
+		simProps.grid.offsetY = 0;
+
+		// Shrink canvas to exact grid size
+		simProps.canvas.width = simProps.grid.cellSize * simProps.grid.colCnt;
+		simProps.canvas.height = simProps.grid.cellSize * simProps.grid.rowCnt;
+
+		// Get image of only the walls
+		simProps.ctx.fillStyle = "black";
+		simProps.ctx.fillRect(0, 0, simProps.canvas.width, simProps.canvas.height);
+		simProps.grid.drawWalls(simProps.ctx);
+		const imgUrl = simProps.canvas.toDataURL();
+		window.open(imgUrl, "_blank");
+
+		// Reenable offsets
+		simProps.grid.offsetX = offsetX;
+		simProps.grid.offsetY = offsetY;
+
+		// Reset canvas size
+		simProps.canvas.width = innerWidth;
+		simProps.canvas.height = innerHeight;
 	});
 	gridExportBtn?.addEventListener("click", () => {
-		// TODO: reimplement grid export
+		if (!simProps.isAlgoComplete) return;
+
+		const simplifiedGrid = simProps.grid.cells.map((cell) => ({
+			x: cell.x,
+			y: cell.y,
+			top: cell.walls[0],
+			right: cell.walls[1],
+			bottom: cell.walls[2],
+			left: cell.walls[3],
+		}));
+
+		const file = new File(
+			[JSON.stringify(simplifiedGrid)],
+			`maze_grid_${new Date().getTime()}.json`,
+			{ type: "application/json" }
+		);
+		const fileLink = URL.createObjectURL(file);
+		window.open(fileLink, "_blank");
+		URL.revokeObjectURL(fileLink);
 	});
 	graphExportBtn?.addEventListener("click", () => {
-		// TODO: reimplement graph export
+		if (!simProps.isAlgoComplete) return;
+
+		const graph = convertGridToGraph(simProps.grid);
+		const simplifiedGraph: { [key: string]: string[] } = {};
+
+		let idCounter = 0;
+		const nodeIdMap = new Map<GraphNode, string>();
+		function getNodeId(node: GraphNode) {
+			let id = nodeIdMap.get(node);
+			if (!id) {
+				id = String(++idCounter);
+				nodeIdMap.set(node, id);
+			}
+			return id;
+		}
+		for (const [, node] of graph) {
+			const id = getNodeId(node);
+			simplifiedGraph[id] = node.neighbors.map((neighbor) => getNodeId(neighbor));
+		}
+
+		const file = new File(
+			[JSON.stringify(simplifiedGraph)],
+			`maze_graph_${new Date().getTime()}.json`,
+			{ type: "application/json" }
+		);
+		const fileLink = URL.createObjectURL(file);
+		window.open(fileLink, "_blank");
+		URL.revokeObjectURL(fileLink);
 	});
 }
 
