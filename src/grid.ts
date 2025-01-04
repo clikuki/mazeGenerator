@@ -53,12 +53,12 @@ export class Grid {
 				if (walls[i]) {
 					switch (i) {
 						case 0: // Top
-							if (y <= 0) break;
+							if (y < 0) break;
 							ctx.moveTo(screenX + this.offsetX, screenY + this.offsetY);
 							ctx.lineTo(screenX + this.offsetX + cellSize, screenY + this.offsetY);
 							break;
 						case 1: // Right
-							if (x >= this.colCnt - 1) break;
+							if (x >= this.colCnt) break;
 							ctx.moveTo(screenX + this.offsetX + cellSize, screenY + this.offsetY);
 							ctx.lineTo(
 								screenX + this.offsetX + cellSize,
@@ -66,7 +66,7 @@ export class Grid {
 							);
 							break;
 						case 2: // Bottom
-							if (y >= this.rowCnt - 1) break;
+							if (y >= this.rowCnt) break;
 							ctx.moveTo(
 								screenX + this.offsetX + cellSize,
 								screenY + this.offsetY + cellSize
@@ -74,7 +74,7 @@ export class Grid {
 							ctx.lineTo(screenX + this.offsetX, screenY + this.offsetY + cellSize);
 							break;
 						case 3: // Left
-							if (x <= 0) break;
+							if (x < 0) break;
 							ctx.moveTo(screenX + this.offsetX, screenY + this.offsetY + cellSize);
 							ctx.lineTo(screenX + this.offsetX, screenY + this.offsetY);
 							break;
@@ -83,26 +83,8 @@ export class Grid {
 			}
 		}
 		ctx.strokeStyle = "white";
-		ctx.lineWidth = 1;
-		ctx.lineCap = "square";
+		ctx.lineWidth = 2;
+		ctx.lineCap = "butt";
 		ctx.stroke();
-	}
-	drawGrayedCells(ctx: CanvasRenderingContext2D) {
-		const cellSize = this.cellSize;
-		ctx.beginPath();
-		for (const { walls, screenX: x, screenY: y, open } of this.cells) {
-			if (!open) {
-				// Do all this to fix the spaces between cells on larger grids
-				const w = Math.ceil(cellSize + (walls[1] ? 0 : 1));
-				const h = Math.ceil(cellSize + (walls[2] ? 0 : 1));
-				ctx.moveTo(x + this.offsetX, y + this.offsetY);
-				ctx.lineTo(x + this.offsetX + w, y + this.offsetY);
-				ctx.lineTo(x + this.offsetX + w, y + this.offsetY + h);
-				ctx.lineTo(x + this.offsetX, y + this.offsetY + h);
-				ctx.moveTo(x + this.offsetX, y + this.offsetY);
-			}
-		}
-		ctx.fillStyle = "#222";
-		ctx.fill();
 	}
 }

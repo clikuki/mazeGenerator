@@ -117,8 +117,7 @@ function setUpSimulationControls(simProps) {
         simProps.canvas.width = simProps.grid.cellSize * simProps.grid.colCnt;
         simProps.canvas.height = simProps.grid.cellSize * simProps.grid.rowCnt;
         // Get image of only the walls
-        simProps.ctx.fillStyle = "black";
-        simProps.ctx.fillRect(0, 0, simProps.canvas.width, simProps.canvas.height);
+        simProps.ctx.clearRect(0, 0, simProps.canvas.width, simProps.canvas.height);
         simProps.grid.drawWalls(simProps.ctx);
         const imgUrl = simProps.canvas.toDataURL();
         window.open(imgUrl, "_blank");
@@ -220,7 +219,6 @@ function simulationLoop(simProps, _) {
     // TODO: improve drawing/rendering
     // Clear screen
     simProps.ctx.clearRect(0, 0, simProps.canvas.width, simProps.canvas.height);
-    simProps.grid.drawGrayedCells(simProps.ctx);
     // Draw algorithm visualization
     if (simProps.generator)
         simProps.generator.draw(simProps.ctx);
