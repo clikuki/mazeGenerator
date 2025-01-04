@@ -46,6 +46,9 @@ class SimulationProperties {
 		this.grid = new Grid(this.width, this.height, canvas);
 		this.canvas = canvas;
 		this.ctx = canvas.getContext("2d")!;
+
+		// TODO: remove at some point
+		this.getSolver = MazeSolver;
 	}
 
 	get canExecute() {
@@ -67,7 +70,7 @@ function setUpAlgorithmSelection(simProps: SimulationProperties) {
 
 		const Generator = generatorKeyMap.get(generatorKey);
 		if (Generator) {
-			simProps.grid.reset();
+			simProps.grid = new Grid(simProps.width, simProps.height, simProps.canvas);
 
 			simProps.getGenerator = Generator;
 			simProps.generator = new Generator(simProps.grid);
@@ -97,14 +100,12 @@ function setUpSimulationControls(simProps: SimulationProperties) {
 		simProps.performSkip = true;
 	});
 	restartBtn?.addEventListener("click", () => {
-		if (!simProps.canExecute) return;
-
 		// Only reset algorithms if they and their constructor exist
 		if (simProps.generator && simProps.getGenerator) {
-			simProps.grid.reset();
+			simProps.grid = new Grid(simProps.width, simProps.height, simProps.canvas);
 			simProps.generator = new simProps.getGenerator!(simProps.grid);
 		} else if (simProps.solver && simProps.getSolver) {
-			simProps.solver = new simProps.getSolver!(
+			simProps.solver = new simProps.getSolver(
 				simProps.grid,
 				simProps.solver.from,
 				simProps.solver.dest
@@ -116,25 +117,42 @@ function setUpSimulationControls(simProps: SimulationProperties) {
 	const columnCountInput = HTML.getOne<HTMLInputElement>(
 		"#columnCount",
 		optionsMenu
-	);
-	const rowCountInput = HTML.getOne<HTMLInputElement>("#rowCount", optionsMenu);
+	)!;
+	const rowCountInput = HTML.getOne<HTMLInputElement>("#rowCount", optionsMenu)!;
 	const minimumSize = 2;
 	const maximumSize = 1000;
 
-	columnCountInput?.addEventListener("change", () => {
+	columnCountInput.valueAsNumber = simProps.width;
+	rowCountInput.valueAsNumber = simProps.height;
+
+	function resetAfterResize() {
+		simProps.grid = new Grid(simProps.width, simProps.height, simProps.canvas);
+		simProps.solverStartIndex = null;
+
+		simProps.solver = null;
+		if (simProps.getGenerator) {
+			simProps.generator = new simProps.getGenerator(simProps.grid);
+		}
+	}
+
+	columnCountInput.addEventListener("change", () => {
 		const newWidth = columnCountInput.valueAsNumber;
+
 		if (isNaN(newWidth)) {
 			columnCountInput.valueAsNumber = simProps.width;
-		} else if (newWidth > minimumSize && newWidth < maximumSize) {
+		} else if (newWidth >= minimumSize && newWidth <= maximumSize) {
 			simProps.width = newWidth;
+			resetAfterResize();
 		}
 	});
-	rowCountInput?.addEventListener("change", () => {
+	rowCountInput.addEventListener("change", () => {
 		const newHeight = rowCountInput.valueAsNumber;
+
 		if (isNaN(newHeight)) {
 			rowCountInput.valueAsNumber = simProps.height;
-		} else if (newHeight > minimumSize && newHeight < maximumSize) {
+		} else if (newHeight >= minimumSize && newHeight <= maximumSize) {
 			simProps.height = newHeight;
+			resetAfterResize();
 		}
 	});
 
@@ -237,6 +255,7 @@ function setUpCanvasResize(canvas: HTMLCanvasElement) {
 function setUpSolverStarter(simProps: SimulationProperties) {
 	simProps.canvas.addEventListener("click", (e) => {
 		if (!simProps.isAlgoComplete) return;
+		if (!simProps.getSolver) return;
 
 		const cellX = Math.floor(
 			(e.x - simProps.grid.offsetX) / simProps.grid.cellSize
@@ -260,7 +279,7 @@ function setUpSolverStarter(simProps: SimulationProperties) {
 			simProps.solverStartIndex !== cellIndex
 		) {
 			simProps.generator = null;
-			simProps.solver = new MazeSolver(
+			simProps.solver = new simProps.getSolver(
 				simProps.grid,
 				simProps.solverStartIndex,
 				cellIndex

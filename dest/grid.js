@@ -5,7 +5,9 @@ export class Grid {
     cells = [];
     offsetX;
     offsetY;
+    canvas;
     constructor(colCnt, rowCnt, canvas) {
+        this.canvas = canvas;
         this.colCnt = colCnt;
         this.rowCnt = rowCnt;
         // Cell size should fit to smallest screen side
@@ -14,10 +16,6 @@ export class Grid {
         // Center maze on screen
         this.offsetX = (canvas.width - colCnt * this.cellSize) / 2;
         this.offsetY = (canvas.height - rowCnt * this.cellSize) / 2;
-        // Instantiate all cells
-        this.reset();
-    }
-    reset() {
         for (let y = 0; y < this.rowCnt; y++) {
             for (let x = 0; x < this.colCnt; x++) {
                 this.cells[y * this.colCnt + x] = {

@@ -15,7 +15,9 @@ export class Grid {
 	cells: Cell[] = [];
 	offsetX: number;
 	offsetY: number;
+	canvas: HTMLCanvasElement;
 	constructor(colCnt: number, rowCnt: number, canvas: HTMLCanvasElement) {
+		this.canvas = canvas;
 		this.colCnt = colCnt;
 		this.rowCnt = rowCnt;
 
@@ -30,10 +32,6 @@ export class Grid {
 		this.offsetX = (canvas.width - colCnt * this.cellSize) / 2;
 		this.offsetY = (canvas.height - rowCnt * this.cellSize) / 2;
 
-		// Instantiate all cells
-		this.reset();
-	}
-	reset() {
 		for (let y = 0; y < this.rowCnt; y++) {
 			for (let x = 0; x < this.colCnt; x++) {
 				this.cells[y * this.colCnt + x] = {
