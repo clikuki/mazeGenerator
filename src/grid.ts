@@ -21,6 +21,10 @@ export class Grid {
 
 		// Cell size should fit to smallest screen side
 		this.cellSize = Math.min(canvas.width / colCnt, canvas.height / rowCnt);
+		this.cellSize = Math.min(
+			Math.floor(canvas.width / colCnt),
+			Math.floor(canvas.height / rowCnt)
+		);
 
 		// Center maze on screen
 		this.offsetX = (canvas.width - colCnt * this.cellSize) / 2;
@@ -36,8 +40,8 @@ export class Grid {
 					index: y * this.colCnt + x,
 					x,
 					y,
-					screenX: Math.floor(x * this.cellSize),
-					screenY: Math.floor(y * this.cellSize),
+					screenX: x * this.cellSize,
+					screenY: y * this.cellSize,
 					open: false,
 					walls: [true, true, true, true],
 				};
@@ -50,41 +54,49 @@ export class Grid {
 		for (const { walls, x, y, screenX, screenY, open } of this.cells) {
 			if (!open) continue;
 			for (let i = 0; i < 4; i++) {
-				if (walls[i]) {
-					switch (i) {
-						case 0: // Top
-							if (y < 0) break;
-							ctx.moveTo(screenX + this.offsetX, screenY + this.offsetY);
-							ctx.lineTo(screenX + this.offsetX + cellSize, screenY + this.offsetY);
-							break;
-						case 1: // Right
-							if (x >= this.colCnt) break;
-							ctx.moveTo(screenX + this.offsetX + cellSize, screenY + this.offsetY);
-							ctx.lineTo(
-								screenX + this.offsetX + cellSize,
-								screenY + this.offsetY + cellSize
-							);
-							break;
-						case 2: // Bottom
-							if (y >= this.rowCnt) break;
-							ctx.moveTo(
-								screenX + this.offsetX + cellSize,
-								screenY + this.offsetY + cellSize
-							);
-							ctx.lineTo(screenX + this.offsetX, screenY + this.offsetY + cellSize);
-							break;
-						case 3: // Left
-							if (x < 0) break;
-							ctx.moveTo(screenX + this.offsetX, screenY + this.offsetY + cellSize);
-							ctx.lineTo(screenX + this.offsetX, screenY + this.offsetY);
-							break;
-					}
+				if (!walls[i]) continue;
+				let fromX, fromY, toX, toY;
+
+				switch (i) {
+					case 0: // Top
+						if (y < 0) continue;
+						fromX = screenX + this.offsetX;
+						fromY = screenY + this.offsetY;
+						toX = screenX + this.offsetX + cellSize;
+						toY = screenY + this.offsetY;
+						break;
+					case 1: // Right
+						if (x >= this.colCnt) continue;
+						fromX = screenX + this.offsetX + cellSize;
+						fromY = screenY + this.offsetY;
+						toX = screenX + this.offsetX + cellSize;
+						toY = screenY + this.offsetY + cellSize;
+						break;
+					case 2: // Bottom
+						if (y >= this.rowCnt) continue;
+						fromX = screenX + this.offsetX + cellSize;
+						fromY = screenY + this.offsetY + cellSize;
+						toX = screenX + this.offsetX;
+						toY = screenY + this.offsetY + cellSize;
+						break;
+					case 3: // Left
+						if (x < 0) continue;
+						fromX = screenX + this.offsetX;
+						fromY = screenY + this.offsetY + cellSize;
+						toX = screenX + this.offsetX;
+						toY = screenY + this.offsetY;
+						break;
+					default:
+						throw Error("Invalid wall index");
 				}
+
+				ctx.moveTo(Math.floor(fromX), Math.floor(fromY));
+				ctx.lineTo(Math.floor(toX), Math.floor(toY));
 			}
 		}
 		ctx.strokeStyle = "white";
-		ctx.lineWidth = 2;
 		ctx.lineCap = "butt";
+		ctx.lineWidth = 2;
 		ctx.stroke();
 	}
 }
