@@ -21,8 +21,7 @@ export class Grid {
 		this.colCnt = colCnt;
 		this.rowCnt = rowCnt;
 
-		// Cell size should fit to smallest screen side
-		this.cellSize = Math.min(canvas.width / colCnt, canvas.height / rowCnt);
+		// Cell size should fit to smallest integer screen side
 		this.cellSize = Math.min(
 			Math.floor(canvas.width / colCnt),
 			Math.floor(canvas.height / rowCnt)
@@ -97,5 +96,67 @@ export class Grid {
 		ctx.lineCap = "butt";
 		ctx.lineWidth = 2;
 		ctx.stroke(path);
+	}
+	paintCell(ctx: CanvasRenderingContext2D, i: number, clr: string) {
+		const cell = this.cells[i];
+		ctx.fillStyle = clr;
+		ctx.fillRect(
+			Math.floor(this.offsetX + cell.screenX),
+			Math.floor(this.offsetY + cell.screenY),
+			this.cellSize,
+			this.cellSize
+		);
+	}
+	paintCircle(ctx: CanvasRenderingContext2D, i: number, clr: string) {
+		const cell = this.cells[i];
+		ctx.fillStyle = clr;
+		ctx.beginPath();
+		ctx.ellipse(
+			this.offsetX + cell.screenX + this.cellSize / 2,
+			this.offsetY + cell.screenY + this.cellSize / 2,
+			this.cellSize / 3,
+			this.cellSize / 3,
+			0,
+			0,
+			Math.PI * 2
+		);
+		ctx.fill();
+	}
+	paintPath(ctx: CanvasRenderingContext2D, path: number[], clr: string) {
+		ctx.beginPath();
+
+		let isPathStart = true;
+		for (const i of path) {
+			const cell = this.cells[i];
+			const x = this.offsetX + cell.screenX + this.cellSize / 2;
+			const y = this.offsetY + cell.screenY + this.cellSize / 2;
+
+			if (isPathStart) ctx.moveTo(x, y);
+			else ctx.lineTo(x, y);
+
+			isPathStart = false;
+		}
+
+		ctx.strokeStyle = clr;
+		ctx.lineWidth = 4;
+		ctx.lineCap = "round";
+		ctx.stroke();
+	}
+	paintText(
+		ctx: CanvasRenderingContext2D,
+		i: number,
+		text: string,
+		clr: string
+	) {
+		const cell = this.cells[i];
+		ctx.fillStyle = clr;
+		ctx.font = `${this.cellSize / 3}px monospace`;
+		ctx.textAlign = "center";
+		ctx.textBaseline = "middle";
+		ctx.fillText(
+			text,
+			Math.floor(this.offsetX + cell.screenX + this.cellSize / 2),
+			Math.floor(this.offsetY + cell.screenY + this.cellSize / 2)
+		);
 	}
 }

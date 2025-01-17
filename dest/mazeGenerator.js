@@ -75,15 +75,7 @@ export class AldousBroder {
     draw(ctx) {
         if (this.isComplete)
             return;
-        ctx.save();
-        ctx.translate(this.grid.offsetX + this.grid.cellSize / 2, this.grid.offsetY + this.grid.cellSize / 2);
-        ctx.beginPath();
-        const headCell = this.grid.cells[this.index];
-        const cellSize = this.grid.cellSize;
-        ctx.ellipse(headCell.screenX, headCell.screenY, cellSize / 4, cellSize / 4, 0, 0, Math.PI * 2);
-        ctx.fillStyle = "rgb(0, 255, 0)";
-        ctx.fill();
-        ctx.restore();
+        this.grid.paintCircle(ctx, this.index, "#00ff00");
     }
 }
 export class Wilsons {
@@ -98,24 +90,23 @@ export class Wilsons {
         this.startIndex = walkerStartIndex;
         this.index = walkerStartIndex;
         this.grid = grid;
+        // Initialized random cell as the seed
         if (!grid.cells.some(({ open }) => open)) {
             const starterIndex = Math.floor(Math.random() * grid.cells.length);
             grid.cells[starterIndex].open = true;
         }
+        this.walkedCells.add(this.index);
     }
     step() {
         if (this.isComplete)
             return;
         // Get valid directions
         const directions = findValidDirections(this.grid, this.index);
-        const direction = randomItemInArray(directions);
-        // const direction = directions[0];
-        // Set direction of current head
-        this.cellDirection[this.index] = direction;
-        this.walkedCells.add(this.index);
         // Pick new head
-        const newHead = this.grid.cells[(this.index += direction)];
-        if (newHead.open) {
+        const direction = randomItemInArray(directions);
+        this.cellDirection[this.index] = direction;
+        this.walkedCells.add((this.index += direction));
+        if (this.grid.cells[this.index].open) {
             // Connect path back to body
             let prevCell;
             let prevOffset;
@@ -149,46 +140,25 @@ export class Wilsons {
     draw(ctx) {
         if (this.isComplete)
             return;
-        const cellSize = this.grid.cellSize;
-        // Full path
+        // All traversed cells
         for (const index of this.walkedCells) {
-            const cell = this.grid.cells[index];
-            ctx.fillStyle = "rgb(255, 0, 0)";
-            ctx.fillRect(Math.floor(cell.screenX + this.grid.offsetX), Math.floor(cell.screenY + this.grid.offsetY), cellSize, cellSize);
+            this.grid.paintCell(ctx, index, "#ff0000");
         }
-        ctx.save();
-        ctx.translate(this.grid.offsetX, this.grid.offsetY);
-        // True path
-        const path = new Path2D();
+        // Mark actual path with line
+        const truePath = [];
         let pathIndex = this.startIndex;
-        let isFirst = true;
         while (true) {
-            const { screenX, screenY } = this.grid.cells[pathIndex];
-            const fromX = Math.floor(screenX + cellSize / 2);
-            const fromY = Math.floor(screenY + cellSize / 2);
-            if (isFirst)
-                path.moveTo(fromX, fromY);
-            else
-                path.lineTo(fromX, fromY);
-            // Break if on index
+            truePath.push(pathIndex);
+            // Break if on head
             if (pathIndex === this.index)
                 break;
-            isFirst = false;
             if (this.cellDirection[pathIndex]) {
                 pathIndex += this.cellDirection[pathIndex];
             }
         }
-        ctx.lineWidth = cellSize > 26 ? 5 : 2;
-        ctx.strokeStyle = "rgb(0, 255, 0)";
-        ctx.lineCap = "round";
-        ctx.stroke(path);
+        this.grid.paintPath(ctx, truePath, "#00ff00");
         // Head
-        ctx.beginPath();
-        const headCell = this.grid.cells[this.index];
-        ctx.ellipse(headCell.screenX + this.grid.cellSize / 2, headCell.screenY + this.grid.cellSize / 2, this.grid.cellSize / 4, this.grid.cellSize / 4, 0, 0, Math.PI * 2);
-        ctx.fillStyle = "rgb(0, 255, 0)";
-        ctx.fill();
-        ctx.restore();
+        this.grid.paintCircle(ctx, this.index, "#00ff00");
     }
 }
 export class RecursiveBacktracking {
@@ -235,20 +205,13 @@ export class RecursiveBacktracking {
     draw(ctx) {
         if (this.isComplete || !this.stack.length)
             return;
-        ctx.save();
-        ctx.translate(this.grid.offsetX, this.grid.offsetY);
-        ctx.fillStyle = "#f004";
-        const cellSize = this.grid.cellSize;
-        for (const { cell: { screenX, screenY }, } of this.stack) {
-            ctx.fillRect(screenX, screenY, cellSize, cellSize);
+        // Current stack/path
+        for (const { cell } of this.stack) {
+            this.grid.paintCell(ctx, cell.index, "#aa0000");
         }
-        ctx.translate(this.grid.cellSize / 2, this.grid.cellSize / 2);
-        ctx.beginPath();
-        const headCell = this.stack[this.stack.length - 1].cell;
-        ctx.ellipse(headCell.screenX, headCell.screenY, this.grid.cellSize / 4, this.grid.cellSize / 4, 0, 0, Math.PI * 2);
-        ctx.fillStyle = "rgb(0, 255, 0)";
-        ctx.fill();
-        ctx.restore();
+        // Head
+        const headIndex = this.stack.at(-1).cell.index;
+        this.grid.paintCircle(ctx, headIndex, "#00ff00");
     }
 }
 export class RecursiveDivision {
@@ -348,15 +311,12 @@ export class RecursiveDivision {
     draw(ctx) {
         if (this.isComplete)
             return;
-        ctx.save();
-        ctx.translate(this.grid.offsetX, this.grid.offsetY);
-        const chamber = this.chambers[this.useBfs ? 0 : this.chambers.length - 1];
-        if (!chamber)
+        const index = this.useBfs ? 0 : this.chambers.length - 1;
+        if (!this.chambers[index])
             return;
-        ctx.fillStyle = "#f00a";
-        const cellSize = this.grid.cellSize;
-        ctx.fillRect(chamber[0] * cellSize, chamber[1] * cellSize, chamber[2] * cellSize, chamber[3] * cellSize);
-        ctx.restore();
+        const [x, y, w, h] = this.chambers[index];
+        ctx.fillStyle = "#aa0000";
+        ctx.fillRect(this.grid.offsetX + x * this.grid.cellSize, this.grid.offsetY + y * this.grid.cellSize, w * this.grid.cellSize, h * this.grid.cellSize);
     }
 }
 export class AldousBroderWilsonHybrid {
@@ -445,13 +405,7 @@ export class BinaryTree {
     draw(ctx) {
         if (this.isComplete)
             return;
-        ctx.save();
-        ctx.translate(this.grid.offsetX, this.grid.offsetY);
-        ctx.fillStyle = "#0a0";
-        const cell = this.grid.cells[this.index];
-        const cellSize = this.grid.cellSize;
-        ctx.fillRect(cell.screenX, cell.screenY, cellSize, cellSize);
-        ctx.restore();
+        this.grid.paintCell(ctx, this.index, "#00aa00");
     }
 }
 function findTreeRoot(node) {
@@ -501,16 +455,15 @@ export class Kruskals {
         }
         this.edges = shuffle(this.edges);
     }
-    iterCnt = 0;
     step() {
         if (this.isComplete)
             return;
         this.curEdge = this.edges.pop();
         const [index, dir] = this.curEdge;
-        let node1 = this.cellNodes[index];
-        let node2 = this.cellNodes[index + dir];
-        let root1 = findTreeRoot(node1);
-        let root2 = findTreeRoot(node2);
+        const node1 = this.cellNodes[index];
+        const node2 = this.cellNodes[index + dir];
+        const root1 = findTreeRoot(node1);
+        const root2 = findTreeRoot(node2);
         if (root1 !== root2) {
             carveWall(this.grid.cells[node1.index], this.grid.cells[node2.index], dir);
             // Not needed technically, I could just pick one tree to always take precedence
@@ -537,9 +490,6 @@ export class Kruskals {
     draw(ctx) {
         if (this.isComplete)
             return;
-        ctx.save();
-        ctx.translate(this.grid.offsetX, this.grid.offsetY);
-        const cellSize = this.grid.cellSize;
         // Tree colors
         const allVisited = new Set();
         for (const tree of this.cellNodes) {
@@ -550,10 +500,9 @@ export class Kruskals {
                 root = root.parent;
             }
             const [r, g, b] = this.cellClrs[root.index];
+            const clrStr = `rgb(${r},${g},${b})`;
             for (const { index } of visited) {
-                const { screenX, screenY } = this.grid.cells[index];
-                ctx.fillStyle = `rgb(${r},${g},${b})`;
-                ctx.fillRect(screenX, screenY, cellSize, cellSize);
+                this.grid.paintCell(ctx, index, clrStr);
             }
             visited.forEach((t) => allVisited.add(t));
         }
@@ -561,39 +510,28 @@ export class Kruskals {
         if (this.curEdge) {
             const [index, dir] = this.curEdge;
             const cell = this.grid.cells[index];
-            let wallIndex;
+            let wallIndex = 0;
+            ctx.save();
+            ctx.translate(this.grid.offsetX + cell.screenX + this.grid.cellSize / 2, this.grid.offsetY + cell.screenY + this.grid.cellSize / 2);
             ctx.beginPath();
-            for (const i of [-1, 1]) {
-                switch (dir) {
-                    case -this.grid.colCnt: // Top
-                        ctx.moveTo(cell.screenX, cell.screenY + i);
-                        ctx.lineTo(cell.screenX + cellSize, cell.screenY + i);
-                        wallIndex = 0;
-                        break;
-                    case 1: // Right
-                        ctx.moveTo(cell.screenX + cellSize + i, cell.screenY);
-                        ctx.lineTo(cell.screenX + cellSize + i, cell.screenY + cellSize);
-                        wallIndex = 1;
-                        break;
-                    case this.grid.colCnt: // Bottom
-                        ctx.moveTo(cell.screenX + cellSize, cell.screenY + cellSize - i);
-                        ctx.lineTo(cell.screenX, cell.screenY + cellSize - i);
-                        wallIndex = 2;
-                        break;
-                    case -1: // Left
-                        ctx.moveTo(cell.screenX - i, cell.screenY + cellSize);
-                        ctx.lineTo(cell.screenX - i, cell.screenY);
-                        wallIndex = 3;
-                        break;
-                    default:
-                        throw "Impossible direction";
-                }
+            switch (dir) {
+                case 1: // Right
+                    ctx.rotate(Math.PI / 2);
+                    wallIndex = 1;
+                    break;
+                case this.grid.colCnt: // Bottom
+                    ctx.rotate(Math.PI);
+                    wallIndex = 2;
+                    break;
+                case -1: // Left
+                    ctx.rotate((Math.PI / 4) * 3);
+                    wallIndex = 3;
+                    break;
             }
-            ctx.strokeStyle = cell.walls[wallIndex] ? "#a00" : "#0a0";
-            ctx.lineWidth = 5;
-            ctx.stroke();
+            ctx.fillStyle = cell.walls[wallIndex] ? "#a00" : "#0a0";
+            ctx.fillRect(-this.grid.cellSize / 2, -this.grid.cellSize / 2 - 6, this.grid.cellSize, 12);
+            ctx.restore();
         }
-        ctx.restore();
     }
 }
 export class Prims {
@@ -629,15 +567,9 @@ export class Prims {
     draw(ctx) {
         if (this.isComplete)
             return;
-        ctx.save();
-        ctx.translate(this.grid.offsetX, this.grid.offsetY);
-        const cellSize = this.grid.cellSize;
         for (const index of this.frontier) {
-            const { screenX, screenY } = this.grid.cells[index];
-            ctx.fillStyle = `#a00a`;
-            ctx.fillRect(screenX, screenY, cellSize, cellSize);
+            this.grid.paintCell(ctx, index, "#aa0000");
         }
-        ctx.restore();
     }
 }
 export class Ellers {
@@ -756,47 +688,30 @@ export class Ellers {
     draw(ctx) {
         if (this.isComplete)
             return;
-        ctx.save();
-        ctx.translate(this.grid.offsetX, this.grid.offsetY);
         const cellSize = this.grid.cellSize;
-        // // Row
-        // const y = Math.floor(this.index / this.grid.colCnt);
-        // ctx.fillStyle = "#a00a";
-        // ctx.fillRect(0, y * cellSize, this.grid.colCnt * cellSize, cellSize);
+        // Row
+        const y = Math.floor(this.index / this.grid.colCnt);
+        ctx.fillStyle = "#a00a";
+        ctx.fillRect(this.grid.offsetX, this.grid.offsetY + y * cellSize, this.grid.colCnt * cellSize, cellSize);
         // Current cell
-        const curCell = this.grid.cells[this.index];
-        if (curCell) {
-            ctx.fillStyle = this.phase === 1 ? "#00aa" : "#0a0a";
-            ctx.fillRect(curCell.screenX, curCell.screenY, cellSize, cellSize);
+        if (this.grid.cells[this.index]) {
+            this.grid.paintCell(ctx, this.index, this.phase === 1 ? "#0000aa" : "#00aa00");
         }
         // Cell ids
         for (let i = 0; i < this.idList.length; i++) {
             const id = this.idList[i];
             if (id !== undefined) {
-                const { screenX, screenY } = this.grid.cells[i];
-                const x = screenX + cellSize / 2;
-                const y = screenY + cellSize / 2;
-                ctx.fillStyle = "#fff";
-                ctx.font = `${cellSize / 3}px monospace`;
-                ctx.textAlign = "center";
-                ctx.textBaseline = "middle";
-                ctx.fillText(String(id), x, y);
+                this.grid.paintText(ctx, i, String(id), "#fff");
             }
         }
-        // // Bridges
-        // for (let i = 0; i < this.grid.cells.length; i++) {
-        // 	if (this.bridgeDown[i]) {
-        // 		const curCell = this.grid.cells[i];
-        // 		ctx.fillStyle = '#00a';
-        // 		ctx.fillRect(
-        // 			curCell.screenX,
-        // 			curCell.screenY + (cellSize / 4) * 3,
-        // 			cellSize,
-        // 			cellSize / 2,
-        // 		);
-        // 	}
-        // }
-        ctx.restore();
+        // Bridges
+        for (let i = 0; i < this.grid.cells.length; i++) {
+            if (this.bridgeDown[i] && !this.grid.cells[i].walls[2]) {
+                const curCell = this.grid.cells[i];
+                ctx.fillStyle = "#0000aa";
+                ctx.fillRect(this.grid.offsetX + curCell.screenX + cellSize / 2 - 2, this.grid.offsetY + curCell.screenY + (cellSize / 4) * 3, 4, cellSize / 2);
+            }
+        }
     }
 }
 export class Sidewinder {
@@ -841,13 +756,7 @@ export class Sidewinder {
     draw(ctx) {
         if (this.isComplete)
             return;
-        ctx.save();
-        ctx.translate(this.grid.offsetX, this.grid.offsetY);
-        // Current cell
-        const cell = this.grid.cells[this.index];
-        ctx.fillStyle = "#55ff55";
-        ctx.fillRect(cell.screenX, cell.screenY, this.grid.cellSize, this.grid.cellSize);
-        ctx.restore();
+        this.grid.paintCell(ctx, this.index, "#00ff00");
     }
 }
 export class HuntAndKill {
@@ -921,14 +830,9 @@ export class HuntAndKill {
     draw(ctx) {
         if (this.isComplete)
             return;
-        ctx.save();
-        ctx.translate(this.grid.offsetX, this.grid.offsetY);
-        const curCell = this.grid.cells[this.index];
-        if (curCell) {
-            ctx.fillStyle = this.phase === 0 ? "#0a0a" : "#a00a";
-            ctx.fillRect(curCell.screenX, curCell.screenY, this.grid.cellSize, this.grid.cellSize);
+        if (this.grid.cells[this.index]) {
+            this.grid.paintCell(ctx, this.index, this.phase === 0 ? "#00aa00" : "#aa0000");
         }
-        ctx.restore();
     }
 }
 export class GrowingTree {
@@ -992,25 +896,11 @@ export class GrowingTree {
     draw(ctx) {
         if (this.isComplete)
             return;
-        ctx.save();
-        ctx.translate(this.grid.offsetX, this.grid.offsetY);
-        const cellSize = this.grid.cellSize;
         for (let i = 0; i < this.bag.length; i++) {
             const index = this.bag[i];
-            // Cell clr
-            const { screenX, screenY } = this.grid.cells[index];
-            ctx.fillStyle = "#f004";
-            ctx.fillRect(screenX, screenY, cellSize, cellSize);
-            // Age
-            const x = screenX + cellSize / 2;
-            const y = screenY + cellSize / 2;
-            ctx.fillStyle = "#fff";
-            ctx.font = `${cellSize / 3}px monospace`;
-            ctx.textAlign = "center";
-            ctx.textBaseline = "middle";
-            ctx.fillText(String(i), x, y);
+            this.grid.paintCell(ctx, index, "#ff0000");
+            this.grid.paintText(ctx, index, String(i), "#ff0000");
         }
-        ctx.restore();
     }
 }
 export class ClusterDivision {
@@ -1131,22 +1021,16 @@ export class ClusterDivision {
     draw(ctx) {
         if (this.isComplete)
             return;
-        ctx.save();
-        ctx.translate(this.grid.offsetX, this.grid.offsetY);
-        const cellSize = this.grid.cellSize;
         // subregion coloring
         for (const [subregion, clr] of [
-            [this.subregionA, "#00f"],
-            [this.subregionB, "#f00"],
+            [this.subregionA, "#0000ff"],
+            [this.subregionB, "#ff0000"],
         ]) {
             for (const index of subregion) {
-                const { screenX, screenY } = this.grid.cells[index];
                 const opacity = this.bag.includes(index) ? "a" : "4";
-                ctx.fillStyle = clr + opacity;
-                ctx.fillRect(screenX, screenY, cellSize, cellSize);
+                this.grid.paintCell(ctx, index, clr + opacity);
             }
         }
-        ctx.restore();
     }
 }
 // DEBUG ONLY
