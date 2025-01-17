@@ -177,73 +177,66 @@ export class Wilsons implements GeneratorStructure {
 	draw(ctx: CanvasRenderingContext2D) {
 		if (this.isComplete) return;
 
-		ctx.save();
-		ctx.translate(this.grid.offsetX, this.grid.offsetY);
-
 		const cellSize = this.grid.cellSize;
 
 		// Full path
 		for (const index of this.walkedCells) {
 			const cell = this.grid.cells[index];
 			ctx.fillStyle = "rgb(255, 0, 0)";
-			ctx.fillRect(cell.screenX, cell.screenY, cellSize - 2, cellSize - 2);
+			ctx.fillRect(
+				Math.floor(cell.screenX + this.grid.offsetX),
+				Math.floor(cell.screenY + this.grid.offsetY),
+				cellSize,
+				cellSize
+			);
 		}
+
+		ctx.save();
+		ctx.translate(this.grid.offsetX, this.grid.offsetY);
 
 		// True path
+		const path = new Path2D();
 		let pathIndex = this.startIndex;
-		const truePath = new Set([this.index]);
+		let isFirst = true;
+
 		while (true) {
 			const { screenX, screenY } = this.grid.cells[pathIndex];
-			const dir = this.cellDirection[pathIndex];
-			if (dir === undefined || truePath.has(pathIndex)) break;
-			truePath.add(pathIndex);
-			pathIndex += dir;
 
-			// draw direction of cell
-			ctx.save();
-			ctx.translate(screenX + cellSize / 2, screenY + cellSize / 2);
-			let rot: number;
-			if (dir === -this.grid.colCnt) rot = 0;
-			else if (dir === 1) rot = Math.PI / 2;
-			else if (dir === this.grid.colCnt) rot = Math.PI;
-			else if (dir === -1) rot = -Math.PI / 2;
-			else throw "Impossible direction encountered!";
-			ctx.rotate(rot);
+			const fromX = Math.floor(screenX + cellSize / 2);
+			const fromY = Math.floor(screenY + cellSize / 2);
+			if (isFirst) path.moveTo(fromX, fromY);
+			else path.lineTo(fromX, fromY);
 
-			ctx.beginPath();
-			ctx.moveTo(0, cellSize / 4);
-			ctx.lineTo(0, -cellSize / 4);
-			ctx.moveTo(-cellSize / 4, 0);
-			ctx.lineTo(0, -cellSize / 4);
-			ctx.moveTo(cellSize / 4, 0);
-			ctx.lineTo(0, -cellSize / 4);
+			// Break if on index
+			if (pathIndex === this.index) break;
 
-			ctx.strokeStyle = "rgb(0, 255, 0)";
-			const prevLineWidth = ctx.lineWidth;
-			ctx.lineWidth = 5;
-			if (26 > cellSize) ctx.lineWidth = 2;
-			ctx.lineCap = "round";
-			ctx.stroke();
-			ctx.lineWidth = prevLineWidth;
-
-			ctx.restore();
+			isFirst = false;
+			if (this.cellDirection[pathIndex]) {
+				pathIndex += this.cellDirection[pathIndex];
+			}
 		}
 
+		ctx.lineWidth = cellSize > 26 ? 5 : 2;
+		ctx.strokeStyle = "rgb(0, 255, 0)";
+		ctx.lineCap = "round";
+		ctx.stroke(path);
+
 		// Head
-		ctx.translate(this.grid.cellSize / 2, this.grid.cellSize / 2);
 		ctx.beginPath();
 		const headCell = this.grid.cells[this.index];
 		ctx.ellipse(
-			headCell.screenX,
-			headCell.screenY,
+			headCell.screenX + this.grid.cellSize / 2,
+			headCell.screenY + this.grid.cellSize / 2,
 			this.grid.cellSize / 4,
 			this.grid.cellSize / 4,
 			0,
 			0,
 			Math.PI * 2
 		);
+
 		ctx.fillStyle = "rgb(0, 255, 0)";
 		ctx.fill();
+
 		ctx.restore();
 	}
 }

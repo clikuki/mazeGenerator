@@ -74,6 +74,9 @@ function setUpAlgorithmSelection(simProps: SimulationProperties) {
 
 			simProps.getGenerator = Generator;
 			simProps.generator = new Generator(simProps.grid);
+
+			// @ts-expect-error
+			window.gen = simProps.generator;
 		}
 	}
 

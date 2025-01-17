@@ -45,6 +45,8 @@ function setUpAlgorithmSelection(simProps) {
             simProps.grid = new Grid(simProps.width, simProps.height, simProps.canvas);
             simProps.getGenerator = Generator;
             simProps.generator = new Generator(simProps.grid);
+            // @ts-expect-error
+            window.gen = simProps.generator;
         }
     }
     generatorMenu.addEventListener("change", updateGenerator);

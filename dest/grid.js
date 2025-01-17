@@ -31,7 +31,7 @@ export class Grid {
         }
     }
     drawWalls(ctx) {
-        ctx.beginPath();
+        const path = new Path2D();
         const cellSize = this.cellSize;
         for (const { walls, x, y, screenX, screenY, open } of this.cells) {
             if (!open)
@@ -76,14 +76,14 @@ export class Grid {
                     default:
                         throw Error("Invalid wall index");
                 }
-                ctx.moveTo(Math.floor(fromX), Math.floor(fromY));
-                ctx.lineTo(Math.floor(toX), Math.floor(toY));
+                path.moveTo(Math.floor(fromX), Math.floor(fromY));
+                path.lineTo(Math.floor(toX), Math.floor(toY));
             }
         }
         ctx.strokeStyle = "white";
         ctx.lineCap = "butt";
         ctx.lineWidth = 2;
-        ctx.stroke();
+        ctx.stroke(path);
     }
 }
 //# sourceMappingURL=grid.js.map
