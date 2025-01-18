@@ -131,7 +131,6 @@ export class PriorityQueue<T> {
 	}
 }
 
-export type RGB = [number, number, number];
 export type Edge = [index: number, dir: number];
 export interface ListNode {
 	index: number;

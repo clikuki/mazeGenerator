@@ -4,7 +4,6 @@ import {
 	randIntBetween,
 	randomItemInArray,
 	shuffle,
-	RGB,
 	Edge,
 	ListNode,
 	findLastNode,
@@ -445,7 +444,7 @@ export class Kruskals implements GeneratorStructure {
 	grid: Grid;
 	isComplete = false;
 	cellNodes: ListNode[] = [];
-	cellClrs: RGB[] = []; // For presentation
+	cellClrs: string[] = []; // For presentation
 	edges: Edge[] = [];
 	curEdge: Edge | undefined;
 	constructor(grid: Grid) {
@@ -456,11 +455,11 @@ export class Kruskals implements GeneratorStructure {
 				index: cell.index,
 				next: null,
 			};
-			this.cellClrs[cell.index] = [
-				Math.floor(Math.random() * 256),
-				Math.floor(Math.random() * 256),
-				Math.floor(Math.random() * 256),
-			];
+
+			const r = randIntBetween(0, 255);
+			const g = randIntBetween(0, 255);
+			const b = randIntBetween(0, 255);
+			this.cellClrs[cell.index] = `rgb(${r},${g},${b}`;
 		}
 		for (let x = 0; x < grid.colCnt; x++) {
 			for (let y = 0; y < grid.rowCnt; y++) {
@@ -503,8 +502,7 @@ export class Kruskals implements GeneratorStructure {
 				root = root.next;
 			}
 
-			const [r, g, b] = this.cellClrs[root.index];
-			const clrStr = `rgb(${r},${g},${b})`;
+			const clrStr = this.cellClrs[root.index];
 			for (const { index } of visited) {
 				this.grid.paintRect(ctx, index, 1, 1, clrStr);
 			}
@@ -701,6 +699,12 @@ export class Ellers implements GeneratorStructure {
 	}
 	draw(ctx: CanvasRenderingContext2D) {
 		if (this.isComplete) return;
+
+		let clr = "#0f0";
+		if (this.mode === 1) clr = "#f00";
+		else if (this.mode === 2) clr = "#00f";
+
+		this.grid.paintRect(ctx, this.index, 1, 1, clr);
 	}
 }
 
