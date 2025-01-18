@@ -1,5 +1,9 @@
 import { Cell, Grid } from "./grid";
 
+export function randIntBetween(min: number, max: number) {
+	return Math.floor(Math.random() * (max - min + 1)) + min;
+}
+
 export function randomItemInArray<T>(arr: T[]) {
 	if (arr.length === 1) return arr[0];
 	const index = Math.floor(Math.random() * arr.length);
@@ -117,6 +121,15 @@ export class PriorityQueue<T> {
 			node = maxChild;
 		}
 	}
+}
+
+export type RGB = [number, number, number];
+export type Edge = [index: number, dir: number];
+export interface TreeNode {
+	index: number;
+	parent: TreeNode | null;
+	// Children is only needed for finding the branch size
+	children: TreeNode[];
 }
 
 export const HTML = {

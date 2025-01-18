@@ -1,5 +1,5 @@
 import { settings } from "./settings.js";
-import { randomItemInArray, shuffle } from "./utils.js";
+import { randIntBetween, randomItemInArray, shuffle, } from "./utils.js";
 // Does not check whether the two cells are actually neighbors
 // Don't know if I need to fix that :|
 function carveWall(prevCell, curCell, offset) {
@@ -42,9 +42,6 @@ function findValidDirections(grid, index) {
             return;
         return true;
     });
-}
-function randIntBetween(min, max) {
-    return Math.floor(Math.random() * (max - min + 1)) + min;
 }
 export class AldousBroder {
     index;
@@ -571,18 +568,12 @@ export class Prims {
         }
     }
 }
-// TODO: analyze for possible last row bug
+// TODO: fix last row bug
 export class Ellers {
     isComplete = false;
     grid;
     index = 0;
-    idList = [];
-    sets = [];
-    idsInUse = new Set();
-    bridgeDown = [];
     mergeChance;
-    phase = 0;
-    idCounter = 1;
     constructor(grid) {
         this.grid = grid;
         this.mergeChance = settings.get("carveChance") ?? 0.5;
@@ -590,127 +581,10 @@ export class Ellers {
     step() {
         if (this.isComplete)
             return;
-        const index = this.index++;
-        const atRightEdge = (index + 1) % this.grid.colCnt === 0;
-        switch (this.phase) {
-            case 0:
-                // Group cells in their own sets, but randomly merge some together
-                {
-                    if (this.idList[index] === undefined) {
-                        const newId = this.idCounter++;
-                        this.idList[index] = newId;
-                        this.idsInUse.add(newId);
-                        this.sets[newId] = [index];
-                    }
-                    const id = this.idList[index];
-                    const cell = this.grid.cells[index];
-                    cell.open = true;
-                    if (atRightEdge) {
-                        this.phase = 1;
-                        // Return index to start of row
-                        const y = Math.floor(index / this.grid.colCnt);
-                        this.index = y * this.grid.colCnt;
-                        // Pick bridges ahead of time to make it look better
-                        const idsInRow = new Set();
-                        for (let i = this.index; i < (y + 1) * this.grid.colCnt; i++) {
-                            const id = this.idList[i];
-                            idsInRow.add(id);
-                        }
-                        for (const id of idsInRow) {
-                            const indicesInRow = this.sets[id].filter((i) => i / this.grid.colCnt >= y);
-                            const bridgeIndex = randomItemInArray(indicesInRow);
-                            this.bridgeDown[bridgeIndex] = true;
-                        }
-                    }
-                    else if (Math.random() < this.mergeChance) {
-                        const nextIndex = index + 1;
-                        const nextCell = this.grid.cells[nextIndex];
-                        const nextId = this.idList[nextIndex];
-                        if (nextId === undefined) {
-                            this.grid.cells[nextIndex].open = true;
-                            this.idList[nextIndex] = id;
-                            this.sets[id].push(nextIndex);
-                        }
-                        else {
-                            // Merge next to current
-                            const nextSet = this.sets[nextId];
-                            this.sets[id] = this.sets[id].concat(nextSet);
-                            for (const i of nextSet) {
-                                this.idList[i] = id;
-                            }
-                            // Remove merged set
-                            delete this.sets[nextId];
-                            this.idsInUse.delete(nextId);
-                        }
-                        carveWall(cell, nextCell, 1);
-                    }
-                }
-                break;
-            case 1:
-                // Connect current row to next row
-                {
-                    if (this.bridgeDown[index]) {
-                        const curCell = this.grid.cells[index];
-                        const curId = this.idList[index];
-                        const nextIndex = index + this.grid.colCnt;
-                        const nextCell = this.grid.cells[nextIndex];
-                        nextCell.open = true;
-                        this.idList[nextIndex] = curId;
-                        this.sets[curId].push(nextIndex);
-                        carveWall(curCell, nextCell, this.grid.colCnt);
-                    }
-                    if (atRightEdge) {
-                        const nextRowIsLast = (index + 1) / this.grid.colCnt >= this.grid.rowCnt - 1;
-                        if (nextRowIsLast)
-                            this.phase = 2;
-                        else
-                            this.phase = 0;
-                    }
-                }
-                break;
-            case 2:
-                // Connect every cell in last row together
-                {
-                    const curCell = this.grid.cells[index];
-                    curCell.open = true;
-                    if (atRightEdge)
-                        this.isComplete = true;
-                    else {
-                        const nextCell = this.grid.cells[index + 1];
-                        carveWall(curCell, nextCell, 1);
-                    }
-                }
-                break;
-            default:
-                break;
-        }
     }
     draw(ctx) {
         if (this.isComplete)
             return;
-        const cellSize = this.grid.cellSize;
-        // Row
-        const x = this.index - (this.index % this.grid.colCnt);
-        this.grid.paintRect(ctx, x, this.grid.colCnt, 1, "#a00a");
-        // Current cell
-        if (this.grid.cells[this.index]) {
-            this.grid.paintRect(ctx, this.index, 1, 1, this.phase === 1 ? "#0000aa" : "#00aa00");
-        }
-        // Cell ids
-        for (let i = 0; i < this.idList.length; i++) {
-            const id = this.idList[i];
-            if (id !== undefined) {
-                this.grid.paintText(ctx, i, String(id), "#fff");
-            }
-        }
-        // Bridges
-        for (let i = 0; i < this.grid.cells.length; i++) {
-            if (this.bridgeDown[i] && !this.grid.cells[i].walls[2]) {
-                const curCell = this.grid.cells[i];
-                ctx.fillStyle = "#0000aa";
-                ctx.fillRect(this.grid.offsetX + curCell.screenX + cellSize / 2 - 2, this.grid.offsetY + curCell.screenY + (cellSize / 4) * 3, 4, cellSize / 2);
-            }
-        }
     }
 }
 export class Sidewinder {

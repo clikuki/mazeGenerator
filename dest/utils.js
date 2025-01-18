@@ -1,3 +1,6 @@
+export function randIntBetween(min, max) {
+    return Math.floor(Math.random() * (max - min + 1)) + min;
+}
 export function randomItemInArray(arr) {
     if (arr.length === 1)
         return arr[0];
