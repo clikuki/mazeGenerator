@@ -84,10 +84,10 @@ export class Grid {
         ctx.lineWidth = 2;
         ctx.stroke(path);
     }
-    paintCell(ctx, i, clr) {
+    paintRect(ctx, i, w, h, clr) {
         const cell = this.cells[i];
         ctx.fillStyle = clr;
-        ctx.fillRect(Math.floor(this.offsetX + cell.screenX), Math.floor(this.offsetY + cell.screenY), this.cellSize, this.cellSize);
+        ctx.fillRect(Math.floor(this.offsetX + cell.screenX), Math.floor(this.offsetY + cell.screenY), w * this.cellSize, h * this.cellSize);
     }
     paintCircle(ctx, i, clr) {
         const cell = this.cells[i];

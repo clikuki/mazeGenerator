@@ -161,7 +161,7 @@ export class Wilsons implements GeneratorStructure {
 
 		// All traversed cells
 		for (const index of this.walkedCells) {
-			this.grid.paintCell(ctx, index, "#ff0000");
+			this.grid.paintRect(ctx, index, 1, 1, "#ff0000");
 		}
 
 		// Mark actual path with line
@@ -240,7 +240,7 @@ export class RecursiveBacktracking implements GeneratorStructure {
 
 		// Current stack/path
 		for (const { cell } of this.stack) {
-			this.grid.paintCell(ctx, cell.index, "#aa0000");
+			this.grid.paintRect(ctx, cell.index, 1, 1, "#aa0000");
 		}
 
 		// Head
@@ -340,13 +340,7 @@ export class RecursiveDivision implements GeneratorStructure {
 		const index = this.useBfs ? 0 : this.chambers.length - 1;
 		if (!this.chambers[index]) return;
 		const [x, y, w, h] = this.chambers[index];
-		ctx.fillStyle = "#aa0000";
-		ctx.fillRect(
-			this.grid.offsetX + x * this.grid.cellSize,
-			this.grid.offsetY + y * this.grid.cellSize,
-			w * this.grid.cellSize,
-			h * this.grid.cellSize
-		);
+		this.grid.paintRect(ctx, x + y * this.grid.rowCnt, w, h, "#aa0000");
 	}
 }
 
@@ -438,7 +432,7 @@ export class BinaryTree implements GeneratorStructure {
 	draw(ctx: CanvasRenderingContext2D) {
 		if (this.isComplete) return;
 
-		this.grid.paintCell(ctx, this.index, "#00aa00");
+		this.grid.paintRect(ctx, this.index, 1, 1, "#00aa00");
 	}
 }
 
@@ -545,7 +539,7 @@ export class Kruskals implements GeneratorStructure {
 			const [r, g, b] = this.cellClrs[root.index];
 			const clrStr = `rgb(${r},${g},${b})`;
 			for (const { index } of visited) {
-				this.grid.paintCell(ctx, index, clrStr);
+				this.grid.paintRect(ctx, index, 1, 1, clrStr);
 			}
 			visited.forEach((t) => allVisited.add(t));
 		}
@@ -634,11 +628,12 @@ export class Prims implements GeneratorStructure {
 		if (this.isComplete) return;
 
 		for (const index of this.frontier) {
-			this.grid.paintCell(ctx, index, "#aa0000");
+			this.grid.paintRect(ctx, index, 1, 1, "#aa0000");
 		}
 	}
 }
 
+// TODO: analyze for possible last row bug
 export class Ellers implements GeneratorStructure {
 	isComplete = false;
 	grid: Grid;
@@ -765,20 +760,16 @@ export class Ellers implements GeneratorStructure {
 		const cellSize = this.grid.cellSize;
 
 		// Row
-		const y = Math.floor(this.index / this.grid.colCnt);
-		ctx.fillStyle = "#a00a";
-		ctx.fillRect(
-			this.grid.offsetX,
-			this.grid.offsetY + y * cellSize,
-			this.grid.colCnt * cellSize,
-			cellSize
-		);
+		const x = this.index - (this.index % this.grid.colCnt);
+		this.grid.paintRect(ctx, x, this.grid.colCnt, 1, "#a00a");
 
 		// Current cell
 		if (this.grid.cells[this.index]) {
-			this.grid.paintCell(
+			this.grid.paintRect(
 				ctx,
 				this.index,
+				1,
+				1,
 				this.phase === 1 ? "#0000aa" : "#00aa00"
 			);
 		}
@@ -847,7 +838,7 @@ export class Sidewinder implements GeneratorStructure {
 	draw(ctx: CanvasRenderingContext2D) {
 		if (this.isComplete) return;
 
-		this.grid.paintCell(ctx, this.index, "#00ff00");
+		this.grid.paintRect(ctx, this.index, 1, 1, "#00ff00");
 	}
 }
 
@@ -926,9 +917,11 @@ export class HuntAndKill implements GeneratorStructure {
 		if (this.isComplete) return;
 
 		if (this.grid.cells[this.index]) {
-			this.grid.paintCell(
+			this.grid.paintRect(
 				ctx,
 				this.index,
+				1,
+				1,
 				this.phase === 0 ? "#00aa00" : "#aa0000"
 			);
 		}
@@ -1001,7 +994,7 @@ export class GrowingTree implements GeneratorStructure {
 
 		for (let i = 0; i < this.bag.length; i++) {
 			const index = this.bag[i];
-			this.grid.paintCell(ctx, index, "#ff0000");
+			this.grid.paintRect(ctx, index, 1, 1, "#ff0000");
 			this.grid.paintText(ctx, index, String(i), "#ff0000");
 		}
 	}
@@ -1132,7 +1125,7 @@ export class ClusterDivision implements GeneratorStructure {
 		] as const) {
 			for (const index of subregion) {
 				const opacity = this.bag.includes(index) ? "a" : "4";
-				this.grid.paintCell(ctx, index, clr + opacity);
+				this.grid.paintRect(ctx, index, 1, 1, clr + opacity);
 			}
 		}
 	}

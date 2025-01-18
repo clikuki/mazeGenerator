@@ -97,14 +97,20 @@ export class Grid {
 		ctx.lineWidth = 2;
 		ctx.stroke(path);
 	}
-	paintCell(ctx: CanvasRenderingContext2D, i: number, clr: string) {
+	paintRect(
+		ctx: CanvasRenderingContext2D,
+		i: number,
+		w: number,
+		h: number,
+		clr: string
+	) {
 		const cell = this.cells[i];
 		ctx.fillStyle = clr;
 		ctx.fillRect(
 			Math.floor(this.offsetX + cell.screenX),
 			Math.floor(this.offsetY + cell.screenY),
-			this.cellSize,
-			this.cellSize
+			w * this.cellSize,
+			h * this.cellSize
 		);
 	}
 	paintCircle(ctx: CanvasRenderingContext2D, i: number, clr: string) {
