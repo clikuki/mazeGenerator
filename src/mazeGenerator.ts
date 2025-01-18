@@ -6,7 +6,8 @@ import {
 	shuffle,
 	RGB,
 	Edge,
-	TreeNode,
+	ListNode,
+	findLastNode,
 } from "./utils.js";
 
 // Does not check whether the two cells are actually neighbors
@@ -438,24 +439,11 @@ export class BinaryTree implements GeneratorStructure {
 		this.grid.paintRect(ctx, this.index, 1, 1, "#00aa00");
 	}
 }
-function findTreeRoot(node: TreeNode) {
-	while (node.parent) {
-		node = node.parent;
-	}
-	return node;
-}
-function findBranchSize(node: TreeNode): number {
-	let nodes = [node];
-	for (let i = 0; i < nodes.length; i++) {
-		const node = nodes[i];
-		nodes.push(...node.children);
-	}
-	return nodes.length;
-}
+
 export class Kruskals implements GeneratorStructure {
 	grid: Grid;
 	isComplete = false;
-	cellNodes: TreeNode[] = [];
+	cellNodes: ListNode[] = [];
 	cellClrs: RGB[] = []; // For presentation
 	edges: Edge[] = [];
 	curEdge: Edge | undefined;
@@ -465,8 +453,7 @@ export class Kruskals implements GeneratorStructure {
 			cell.open = true;
 			this.cellNodes[cell.index] = {
 				index: cell.index,
-				parent: null,
-				children: [],
+				next: null,
 			};
 			this.cellClrs[cell.index] = [
 				Math.floor(Math.random() * 256),
@@ -490,27 +477,12 @@ export class Kruskals implements GeneratorStructure {
 		const [index, dir] = this.curEdge;
 		const node1 = this.cellNodes[index];
 		const node2 = this.cellNodes[index + dir];
-		const root1 = findTreeRoot(node1);
-		const root2 = findTreeRoot(node2);
+		const root1 = findLastNode(node1);
+		const root2 = findLastNode(node2);
 		if (root1 !== root2) {
 			carveWall(this.grid.cells[node1.index], this.grid.cells[node2.index], dir);
 
-			// Not needed technically, I could just pick one tree to always take precedence
-			// But during animation, the color change causes big flashes when a big tree's color changes
-			const size1 = findBranchSize(root1);
-			const size2 = findBranchSize(root2);
-			if (size1 > size2) {
-				root2.parent = node1;
-				node1.children.push(root2);
-			} else {
-				root1.parent = node2;
-				node2.children.push(root1);
-			}
-
-			if (size1 + size2 === this.grid.cells.length) {
-				this.isComplete = true;
-				return;
-			}
+			root2.next = node1;
 		}
 
 		if (this.edges.length === 0) {
@@ -521,13 +493,13 @@ export class Kruskals implements GeneratorStructure {
 		if (this.isComplete) return;
 
 		// Tree colors
-		const allVisited = new Set<TreeNode>();
+		const allVisited = new Set<ListNode>();
 		for (const tree of this.cellNodes) {
-			const visited = new Set<TreeNode>([tree]);
+			const visited = new Set<ListNode>([tree]);
 			let root = tree;
-			while (root.parent) {
+			while (root.next) {
 				visited.add(root);
-				root = root.parent;
+				root = root.next;
 			}
 
 			const [r, g, b] = this.cellClrs[root.index];
@@ -633,9 +605,14 @@ export class Ellers implements GeneratorStructure {
 	grid: Grid;
 	index = 0;
 	mergeChance: number;
+	nodes: ListNode[];
 	constructor(grid: Grid) {
 		this.grid = grid;
 		this.mergeChance = settings.get("carveChance") ?? 0.5;
+
+		// this.nodes = grid.cells.map((cell, i)=> ({
+
+		// }))
 	}
 	step() {
 		if (this.isComplete) return;

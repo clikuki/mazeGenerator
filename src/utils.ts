@@ -125,11 +125,15 @@ export class PriorityQueue<T> {
 
 export type RGB = [number, number, number];
 export type Edge = [index: number, dir: number];
-export interface TreeNode {
+export interface ListNode {
 	index: number;
-	parent: TreeNode | null;
-	// Children is only needed for finding the branch size
-	children: TreeNode[];
+	next: ListNode | null;
+}
+export function findLastNode(node: ListNode) {
+	while (node.next) {
+		node = node.next;
+	}
+	return node;
 }
 
 export const HTML = {

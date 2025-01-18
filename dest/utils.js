@@ -95,6 +95,12 @@ export class PriorityQueue {
         }
     }
 }
+export function findLastNode(node) {
+    while (node.next) {
+        node = node.next;
+    }
+    return node;
+}
 export const HTML = {
     getOne(selectors, base = document.body) {
         return base.querySelector(selectors);
