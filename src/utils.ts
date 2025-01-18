@@ -10,6 +10,14 @@ export function randomItemInArray<T>(arr: T[]) {
 	return arr[index];
 }
 
+export function* range(to: number, from = 0, step = 1) {
+	let i = from;
+	while (from < to ? i < to : i > to) {
+		yield i;
+		i += step;
+	}
+}
+
 export interface GraphNode {
 	cell: Cell;
 	neighbors: GraphNode[];

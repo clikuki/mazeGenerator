@@ -7,6 +7,13 @@ export function randomItemInArray(arr) {
     const index = Math.floor(Math.random() * arr.length);
     return arr[index];
 }
+export function* range(to, from = 0, step = 1) {
+    let i = from;
+    while (from < to ? i < to : i > to) {
+        yield i;
+        i += step;
+    }
+}
 export function convertGridToGraph(grid, start = grid.cells[0]) {
     const directions = [-grid.colCnt, 1, grid.colCnt, -1];
     const visited = new Set();

@@ -8,6 +8,7 @@ import {
 	Edge,
 	ListNode,
 	findLastNode,
+	range,
 } from "./utils.js";
 
 // Does not check whether the two cells are actually neighbors
@@ -599,23 +600,103 @@ export class Prims implements GeneratorStructure {
 	}
 }
 
-// TODO: fix last row bug
 export class Ellers implements GeneratorStructure {
 	isComplete = false;
 	grid: Grid;
-	index = 0;
-	mergeChance: number;
-	nodes: ListNode[];
+	carveChance: number;
+
+	mode = 0;
+	x = 0;
+	y = 0;
+	row: ListNode[] = [];
+	nextRow: ListNode[] = [];
 	constructor(grid: Grid) {
 		this.grid = grid;
-		this.mergeChance = settings.get("carveChance") ?? 0.5;
-
-		// this.nodes = grid.cells.map((cell, i)=> ({
-
-		// }))
+		this.carveChance = settings.get("carveChance") ?? 0.5;
+	}
+	get index() {
+		return this.x + this.y * this.grid.colCnt;
+	}
+	get isAtLastRow() {
+		return this.y + 1 >= this.grid.rowCnt;
 	}
 	step() {
 		if (this.isComplete) return;
+		// console.log(this.index);
+
+		if (this.mode === 0) {
+			if (!this.row[this.x]) {
+				this.grid.cells[this.index].open = true;
+				this.row[this.x] = {
+					index: this.index,
+					next: null,
+				};
+			}
+		} else if (this.mode === 1) {
+			const isLastCell = this.x >= this.grid.colCnt - 1;
+			if (!isLastCell) {
+				const curNodeRoot = findLastNode(this.row[this.x]);
+				const adjNodeRoot = findLastNode(this.row[this.x + 1]);
+				const isDisjoint = curNodeRoot !== adjNodeRoot;
+				const chanceHit = Math.random() <= this.carveChance;
+
+				if (isDisjoint && (chanceHit || this.isAtLastRow)) {
+					carveWall(this.grid.cells[this.index], this.grid.cells[this.index + 1], 1);
+					curNodeRoot.next = adjNodeRoot;
+				}
+			}
+		} else if (this.mode === 2) {
+			if (this.nextRow[this.x]) {
+				const adjIndex = this.index + this.grid.colCnt;
+				this.grid.cells[adjIndex].open = true;
+				carveWall(
+					this.grid.cells[this.index],
+					this.grid.cells[adjIndex],
+					this.grid.colCnt
+				);
+			}
+		}
+
+		// Move to next mode
+		if (++this.x >= this.grid.colCnt) {
+			this.x = 0;
+			this.mode = (this.mode + 1) % 3;
+
+			if (this.mode === 2) {
+				// Decide verticals ahead of time
+				const connectedSets = new Set<ListNode>();
+				const columns = shuffle(Array.from(range(this.grid.colCnt)));
+
+				for (const x of columns) {
+					const root = findLastNode(this.row[x]);
+					const hasCarved = connectedSets.has(root);
+					// TODO: use separate probability
+					const chanceHit = Math.random() <= this.carveChance;
+
+					if (!hasCarved || chanceHit) {
+						connectedSets.add(root);
+
+						const curIndex = x + this.y * this.grid.colCnt;
+						const adjIndex = curIndex + this.grid.colCnt;
+
+						this.nextRow[x] = {
+							index: adjIndex,
+							next: root,
+						};
+					}
+				}
+			}
+
+			if (this.mode === 0) {
+				this.y++;
+				this.row = this.nextRow;
+				this.nextRow = [];
+			}
+			if (this.mode === 2 && this.isAtLastRow) {
+				this.isComplete = true;
+				return;
+			}
+		}
 	}
 	draw(ctx: CanvasRenderingContext2D) {
 		if (this.isComplete) return;
