@@ -32,6 +32,7 @@ const settingMap = new Map([
     ["verticalCarve", "southCarve"],
     ["horizontalCarve", "eastCarve"],
     ["carveChance", 0.5],
+    ["verticalChance", 0.5],
     ["heuristicDistance", "taxicab"],
     ["pickNewest", 1],
     ["pickRandom", 1],

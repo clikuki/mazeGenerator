@@ -604,6 +604,7 @@ export class Ellers implements GeneratorStructure {
 	isComplete = false;
 	grid: Grid;
 	carveChance: number;
+	verticalChance: number;
 
 	mode = 0;
 	x = 0;
@@ -613,6 +614,7 @@ export class Ellers implements GeneratorStructure {
 	constructor(grid: Grid) {
 		this.grid = grid;
 		this.carveChance = settings.get("carveChance") ?? 0.5;
+		this.verticalChance = settings.get("verticalChance") ?? 0.5;
 	}
 	get index() {
 		return this.x + this.y * this.grid.colCnt;
@@ -670,8 +672,7 @@ export class Ellers implements GeneratorStructure {
 				for (const x of columns) {
 					const root = findLastNode(this.row[x]);
 					const hasCarved = connectedSets.has(root);
-					// TODO: use separate probability
-					const chanceHit = Math.random() <= this.carveChance;
+					const chanceHit = Math.random() <= this.verticalChance;
 
 					if (!hasCarved || chanceHit) {
 						connectedSets.add(root);
