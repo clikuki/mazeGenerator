@@ -286,6 +286,8 @@ function initialize() {
     setUpAlgorithmSelection(simulationProperties);
     setUpSolverStarter(simulationProperties);
     simulationLoop(simulationProperties, 0);
+    // @ts-expect-error NOTE: remove later
+    window.simProps = simulationProperties;
 }
 initialize();
 //# sourceMappingURL=index.js.map
