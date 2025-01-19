@@ -131,6 +131,8 @@ export class PriorityQueue<T> {
 	}
 }
 
+export type NullOr<T> = null | T;
+
 export type Edge = [index: number, dir: number];
 export interface ListNode {
 	index: number;

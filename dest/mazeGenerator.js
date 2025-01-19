@@ -971,7 +971,7 @@ export class ClusterDivision {
 // 	step() {}
 // 	draw() {}
 // }
-export const generatorKeyMap = new Map([
+export const GeneratorKeyMap = new Map([
     ["recursiveBacktracking", RecursiveBacktracking],
     ["recursiveDivision", RecursiveDivision],
     ["clusterDivision", ClusterDivision],

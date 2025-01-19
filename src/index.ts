@@ -1,14 +1,14 @@
 import {
 	GeneratorConstructor,
-	generatorKeyMap,
+	GeneratorKeyMap,
 	GeneratorStructure,
 } from "./mazeGenerator.js";
 import {
-	MazeSolver,
+	solverKeyMap,
 	SolverConstructor,
 	SolverStructure,
 } from "./mazeSolver.js";
-import { convertGridToGraph, GraphNode, HTML } from "./utils.js";
+import { convertGridToGraph, GraphNode, HTML, NullOr } from "./utils.js";
 import { Grid } from "./grid.js";
 
 /*
@@ -27,7 +27,6 @@ begin loop
 
 */
 
-type NullOr<T> = null | T;
 class SimulationProperties {
 	width = 10;
 	height = 10;
@@ -46,9 +45,6 @@ class SimulationProperties {
 		this.grid = new Grid(this.width, this.height, canvas);
 		this.canvas = canvas;
 		this.ctx = canvas.getContext("2d")!;
-
-		// TODO: remove at some point
-		this.getSolver = MazeSolver;
 	}
 
 	get canExecute() {
@@ -63,25 +59,43 @@ class SimulationProperties {
 
 function setUpAlgorithmSelection(simProps: SimulationProperties) {
 	const generatorMenu = HTML.getOne(".menu.generator")!;
+	const solverMenu = HTML.getOne(".menu.solver")!;
 
 	function updateGenerator() {
 		const generatorKey = generatorMenu.getAttribute("data-value");
 		if (!generatorKey) return;
 
-		const Generator = generatorKeyMap.get(generatorKey);
+		const Generator = GeneratorKeyMap.get(generatorKey);
 		if (Generator) {
 			simProps.grid = new Grid(simProps.width, simProps.height, simProps.canvas);
 
 			simProps.getGenerator = Generator;
 			simProps.generator = new Generator(simProps.grid);
+		}
+	}
 
-			// @ts-expect-error
-			window.gen = simProps.generator;
+	function updateSolver() {
+		const solverKey = solverMenu.getAttribute("data-value");
+		if (!solverKey) return;
+
+		const Solver = solverKeyMap.get(solverKey);
+		if (Solver) {
+			simProps.getSolver = Solver;
+
+			if (simProps.solver) {
+				simProps.solver = new Solver(
+					simProps.grid,
+					simProps.solver.from,
+					simProps.solver.to
+				);
+			}
 		}
 	}
 
 	generatorMenu.addEventListener("change", updateGenerator);
+	solverMenu.addEventListener("change", updateSolver);
 	updateGenerator();
+	updateSolver();
 }
 
 function setUpSimulationControls(simProps: SimulationProperties) {
@@ -111,7 +125,7 @@ function setUpSimulationControls(simProps: SimulationProperties) {
 			simProps.solver = new simProps.getSolver(
 				simProps.grid,
 				simProps.solver.from,
-				simProps.solver.dest
+				simProps.solver.to
 			);
 		}
 	});

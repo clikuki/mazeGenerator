@@ -1059,7 +1059,7 @@ export class ClusterDivision implements GeneratorStructure {
 // 	draw() {}
 // }
 
-export const generatorKeyMap = new Map<string, GeneratorConstructor>([
+export const GeneratorKeyMap = new Map<string, GeneratorConstructor>([
 	["recursiveBacktracking", RecursiveBacktracking],
 	["recursiveDivision", RecursiveDivision],
 	["clusterDivision", ClusterDivision],

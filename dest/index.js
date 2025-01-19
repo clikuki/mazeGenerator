@@ -1,7 +1,22 @@
-import { generatorKeyMap, } from "./mazeGenerator.js";
-import { MazeSolver, } from "./mazeSolver.js";
+import { GeneratorKeyMap, } from "./mazeGenerator.js";
+import { solverKeyMap, } from "./mazeSolver.js";
 import { convertGridToGraph, HTML } from "./utils.js";
 import { Grid } from "./grid.js";
+/*
+
+initialize states
+    canvas
+    simulation values
+    generator
+    solver
+
+begin loop
+    execute algorithms
+    draw
+        maze
+        visualizations
+
+*/
 class SimulationProperties {
     width = 10;
     height = 10;
@@ -20,8 +35,6 @@ class SimulationProperties {
         this.grid = new Grid(this.width, this.height, canvas);
         this.canvas = canvas;
         this.ctx = canvas.getContext("2d");
-        // TODO: remove at some point
-        this.getSolver = MazeSolver;
     }
     get canExecute() {
         return !!(this.generator || this.solver);
@@ -36,21 +49,34 @@ class SimulationProperties {
 }
 function setUpAlgorithmSelection(simProps) {
     const generatorMenu = HTML.getOne(".menu.generator");
+    const solverMenu = HTML.getOne(".menu.solver");
     function updateGenerator() {
         const generatorKey = generatorMenu.getAttribute("data-value");
         if (!generatorKey)
             return;
-        const Generator = generatorKeyMap.get(generatorKey);
+        const Generator = GeneratorKeyMap.get(generatorKey);
         if (Generator) {
             simProps.grid = new Grid(simProps.width, simProps.height, simProps.canvas);
             simProps.getGenerator = Generator;
             simProps.generator = new Generator(simProps.grid);
-            // @ts-expect-error
-            window.gen = simProps.generator;
+        }
+    }
+    function updateSolver() {
+        const solverKey = solverMenu.getAttribute("data-value");
+        if (!solverKey)
+            return;
+        const Solver = solverKeyMap.get(solverKey);
+        if (Solver) {
+            simProps.getSolver = Solver;
+            if (simProps.solver) {
+                simProps.solver = new Solver(simProps.grid, simProps.solver.from, simProps.solver.to);
+            }
         }
     }
     generatorMenu.addEventListener("change", updateGenerator);
+    solverMenu.addEventListener("change", updateSolver);
     updateGenerator();
+    updateSolver();
 }
 function setUpSimulationControls(simProps) {
     const optionsMenu = HTML.getOne(".menu.options");
@@ -77,7 +103,7 @@ function setUpSimulationControls(simProps) {
             simProps.generator = new simProps.getGenerator(simProps.grid);
         }
         else if (simProps.solver && simProps.getSolver) {
-            simProps.solver = new simProps.getSolver(simProps.grid, simProps.solver.from, simProps.solver.dest);
+            simProps.solver = new simProps.getSolver(simProps.grid, simProps.solver.from, simProps.solver.to);
         }
     });
     // Column-Row inputs
