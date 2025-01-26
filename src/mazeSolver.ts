@@ -45,7 +45,6 @@ export class GraphSearch implements SolverStructure {
 		this.checkList = [from];
 
 		this.useBfs = settings.get("graphTraversalSolve") === "bfs";
-		console.log(this.useBfs);
 	}
 
 	step(): void {

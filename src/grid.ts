@@ -131,16 +131,17 @@ export class Grid {
 	paintPath(ctx: CanvasRenderingContext2D, path: number[], clr: string) {
 		ctx.beginPath();
 
-		let isPathStart = true;
+		const startCell = this.cells[path[0]];
+		const startX = this.offsetX + startCell.screenX + this.cellSize / 2;
+		const startY = this.offsetY + startCell.screenY + this.cellSize / 2;
+		ctx.moveTo(startX, startY);
+
 		for (const i of path) {
 			const cell = this.cells[i];
 			const x = this.offsetX + cell.screenX + this.cellSize / 2;
 			const y = this.offsetY + cell.screenY + this.cellSize / 2;
 
-			if (isPathStart) ctx.moveTo(x, y);
-			else ctx.lineTo(x, y);
-
-			isPathStart = false;
+			ctx.lineTo(x, y);
 		}
 
 		ctx.strokeStyle = clr;

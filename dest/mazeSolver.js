@@ -28,7 +28,6 @@ export class GraphSearch {
         this.cellMap[from] = NaN;
         this.checkList = [from];
         this.useBfs = settings.get("graphTraversalSolve") === "bfs";
-        console.log(this.useBfs);
     }
     step() {
         if (this.isComplete)
