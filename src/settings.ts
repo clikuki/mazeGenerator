@@ -42,5 +42,7 @@ const settingMap = new Map<string, any>([
 	["pickRandom", 1],
 	["pickOldest", 0],
 	["pickMiddle", 0],
+
+	["graphTraversalSolve", "bfs"],
 ]);
 const observerList = new Map<string, ObserverCallback<any>[]>();

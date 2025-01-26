@@ -38,6 +38,7 @@ const settingMap = new Map([
     ["pickRandom", 1],
     ["pickOldest", 0],
     ["pickMiddle", 0],
+    ["graphTraversalSolve", "bfs"],
 ]);
 const observerList = new Map();
 //# sourceMappingURL=settings.js.map

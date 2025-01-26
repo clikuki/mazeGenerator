@@ -1,70 +1,83 @@
+import { settings } from "./settings.js";
 function getAdjacentCells(grid, index) {
     const cell = grid.cells[index];
     const adj = [];
     if (!cell.walls[0])
-        adj.push(grid.cells[index - grid.colCnt]);
+        adj.push(index - grid.colCnt);
     if (!cell.walls[1])
-        adj.push(grid.cells[index + 1]);
+        adj.push(index + 1);
     if (!cell.walls[2])
-        adj.push(grid.cells[index + grid.colCnt]);
+        adj.push(index + grid.colCnt);
     if (!cell.walls[3])
-        adj.push(grid.cells[index - 1]);
+        adj.push(index - 1);
     return adj;
 }
-export class DepthFirstSearch {
+export class GraphSearch {
     isComplete;
     from;
     to;
     grid;
+    useBfs;
     path;
-    neighbors;
+    checkList;
+    cellMap = [];
     constructor(grid, from, to) {
         this.grid = grid;
         this.from = from;
         this.to = to;
-        this.path = [from];
-        this.neighbors = [getAdjacentCells(grid, from)];
+        this.cellMap[from] = NaN;
+        this.checkList = [from];
+        this.useBfs = settings.get("graphTraversalSolve") === "bfs";
+        console.log(this.useBfs);
     }
     step() {
         if (this.isComplete)
             return;
-        const head = this.path.at(-1);
-        if (head === undefined || head === this.to) {
+        if (!this.checkList.length) {
             this.isComplete = true;
             return;
         }
-        const curNeighbors = this.neighbors.at(-1);
-        const neighbor = curNeighbors.pop();
-        if (!neighbor) {
-            // All adjacents tried / none exist, backtrack
-            this.path.pop();
-            this.neighbors.pop();
+        const cell = this.useBfs ? this.checkList.shift() : this.checkList.pop();
+        if (cell === this.to) {
+            this.isComplete = true;
+            this.path = [];
+            let head = this.to;
+            while (!isNaN(head)) {
+                this.path.push(head);
+                head = this.cellMap[head];
+            }
+            this.path.push(this.from);
             return;
         }
-        // Prepare next head
-        this.path.push(neighbor.index);
-        this.neighbors.push(getAdjacentCells(this.grid, neighbor.index).filter((a) => !this.path.includes(a.index)));
+        const neighbors = getAdjacentCells(this.grid, cell);
+        for (const neighbor of neighbors) {
+            if (this.cellMap[neighbor] !== undefined)
+                continue;
+            this.cellMap[neighbor] = cell;
+            this.checkList.push(neighbor);
+        }
     }
     draw(ctx) {
-        this.grid.paintPath(ctx, this.path, "#0f0");
-    }
-}
-export class BreadthFirstSearch {
-    isComplete;
-    path;
-    from;
-    to;
-    grid;
-    stack;
-    constructor(grid, from, to) {
-        this.grid = grid;
-        this.from = from;
-        this.to = to;
-    }
-    step() { }
-    draw(ctx) {
-        if (this.isComplete)
+        if (this.isComplete) {
+            this.grid.paintPath(ctx, this.path, "#0f0");
             return;
+        }
+        ctx.save();
+        ctx.translate(this.grid.offsetX + this.grid.cellSize / 2, this.grid.offsetY + this.grid.cellSize / 2);
+        ctx.beginPath();
+        for (let i = 0; i < this.cellMap.length; i++) {
+            if (isNaN(this.cellMap[i]))
+                continue;
+            const from = this.grid.cells[i];
+            const to = this.grid.cells[this.cellMap[i]];
+            ctx.moveTo(from.screenX, from.screenY);
+            ctx.lineTo(to.screenX, to.screenY);
+        }
+        ctx.strokeStyle = "#f90";
+        ctx.lineWidth = 4;
+        ctx.lineCap = "round";
+        ctx.stroke();
+        ctx.restore();
     }
 }
 // NOTE: Test purposes, delete later
@@ -78,9 +91,9 @@ function search(grid, to, path) {
         return true;
     const adjCells = getAdjacentCells(grid, current);
     for (const adj of adjCells) {
-        if (path.at(-2) === adj.index)
+        if (path.at(-2) === adj)
             continue;
-        path.push(adj.index);
+        path.push(adj);
         const res = search(grid, to, path);
         if (res)
             return true;
@@ -89,7 +102,6 @@ function search(grid, to, path) {
     return false;
 }
 export const solverKeyMap = new Map([
-    ["dfs", DepthFirstSearch],
-    ["bfs", BreadthFirstSearch],
+    ["graphSearch", GraphSearch],
 ]);
 //# sourceMappingURL=mazeSolver.js.map
