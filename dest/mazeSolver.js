@@ -79,7 +79,98 @@ export class GraphSearch {
         ctx.restore();
     }
 }
+export class DeadEndFilling {
+    isComplete;
+    failed = false;
+    from;
+    to;
+    grid;
+    mode = 0;
+    path;
+    head;
+    filledIn = new Set();
+    adjacencies;
+    constructor(grid, from, to) {
+        this.grid = grid;
+        this.from = from;
+        this.to = to;
+        this.head = 0;
+        this.path = [from];
+        this.adjacencies = grid.cells.map((c) => getAdjacentCells(grid, c.index));
+    }
+    isDeadEnd(index) {
+        if (this.filledIn.has(index))
+            return false;
+        if (index === this.from)
+            return false;
+        if (index === this.to)
+            return false;
+        const neighbors = this.adjacencies[index].filter((d) => !this.filledIn.has(d));
+        return neighbors.length <= 1;
+    }
+    step() {
+        if (this.isComplete)
+            return;
+        if (this.mode === 0) {
+            // Search for dead ends
+            if (this.isDeadEnd(this.head)) {
+                this.mode = 1;
+            }
+            else if (++this.head >= this.grid.cells.length) {
+                this.mode = 2;
+                this.head = this.from;
+            }
+        }
+        else if (this.mode === 1) {
+            // Follow dead end
+            this.filledIn.add(this.head);
+            const neighbors = this.adjacencies[this.head];
+            this.mode = 0;
+            this.head = 0;
+            for (const neighbor of neighbors) {
+                if (this.isDeadEnd(neighbor)) {
+                    this.head = neighbor;
+                    this.mode = 1;
+                }
+            }
+        }
+        else if (this.mode === 2) {
+            // Walk through unfilled cells
+            if (this.head === this.to) {
+                this.isComplete = true;
+                return;
+            }
+            for (const neighbor of this.adjacencies[this.head]) {
+                if (this.filledIn.has(neighbor))
+                    continue;
+                if (this.path.includes(neighbor))
+                    continue;
+                this.head = neighbor;
+                this.path.push(this.head);
+                return;
+            }
+            this.isComplete = this.failed = true;
+            throw Error("Could not find path");
+        }
+    }
+    draw(ctx) {
+        if (this.mode === 2) {
+            const clr = this.failed ? "#f00" : "#0f0";
+            this.grid.paintPath(ctx, this.path, clr);
+        }
+        if (this.isComplete)
+            return;
+        for (const cell of this.filledIn) {
+            this.grid.paintRect(ctx, cell, 1, 1, "#333");
+        }
+        if (this.mode === 2)
+            this.grid.paintCircle(ctx, this.head, "#0a0");
+        else
+            this.grid.paintRect(ctx, this.head, 1, 1, "#0a0");
+    }
+}
 export const solverKeyMap = new Map([
     ["graphSearch", GraphSearch],
+    ["deadend", DeadEndFilling],
 ]);
 //# sourceMappingURL=mazeSolver.js.map
