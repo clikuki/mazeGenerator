@@ -79,27 +79,6 @@ export class GraphSearch {
         ctx.restore();
     }
 }
-// NOTE: Test purposes, delete later
-// @ts-expect-error
-window.search = search;
-function search(grid, to, path) {
-    const current = path.at(-1);
-    if (current === undefined)
-        throw Error("No path found");
-    if (current === to)
-        return true;
-    const adjCells = getAdjacentCells(grid, current);
-    for (const adj of adjCells) {
-        if (path.at(-2) === adj)
-            continue;
-        path.push(adj);
-        const res = search(grid, to, path);
-        if (res)
-            return true;
-        path.pop();
-    }
-    return false;
-}
 export const solverKeyMap = new Map([
     ["graphSearch", GraphSearch],
 ]);
