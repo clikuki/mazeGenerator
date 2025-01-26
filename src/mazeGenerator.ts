@@ -1030,8 +1030,8 @@ export class ClusterDivision implements GeneratorStructure {
 
 		// subregion coloring
 		for (const [subregion, clr] of [
-			[this.subregionA, "#0000ff"],
-			[this.subregionB, "#ff0000"],
+			[this.subregionA, "#00f"],
+			[this.subregionB, "#f00"],
 		] as const) {
 			for (const index of subregion) {
 				const opacity = this.bag.includes(index) ? "a" : "4";

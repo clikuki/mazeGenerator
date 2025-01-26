@@ -944,8 +944,8 @@ export class ClusterDivision {
             return;
         // subregion coloring
         for (const [subregion, clr] of [
-            [this.subregionA, "#0000ff"],
-            [this.subregionB, "#ff0000"],
+            [this.subregionA, "#00f"],
+            [this.subregionB, "#f00"],
         ]) {
             for (const index of subregion) {
                 const opacity = this.bag.includes(index) ? "a" : "4";
