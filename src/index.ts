@@ -334,10 +334,10 @@ function simulationLoop(simProps: SimulationProperties, _: number) {
 
 	// Draw solver endpoints
 	if (simProps.solverStartIndex !== null) {
-		simProps.grid.paintCircle(simProps.ctx, simProps.solverStartIndex, "#fa0");
+		simProps.grid.paintCircle(simProps.ctx, simProps.solverStartIndex, "#d20");
 	}
 	if (simProps.solver) {
-		simProps.grid.paintCircle(simProps.ctx, simProps.solver.from, "#fa0");
+		simProps.grid.paintCircle(simProps.ctx, simProps.solver.from, "#d20");
 		simProps.grid.paintCircle(simProps.ctx, simProps.solver.to, "#03d");
 	}
 

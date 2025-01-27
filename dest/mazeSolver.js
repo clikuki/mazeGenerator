@@ -1,4 +1,5 @@
 import { settings } from "./settings.js";
+import { randomItemInArray } from "./utils.js";
 function getAdjacentCells(grid, index) {
     const cell = grid.cells[index];
     const adj = [];
@@ -169,8 +170,70 @@ export class DeadEndFilling {
             this.grid.paintRect(ctx, this.head, 1, 1, "#0a0");
     }
 }
+export class RandomWalk {
+    isComplete;
+    failed = false;
+    from;
+    to;
+    grid;
+    path;
+    head;
+    cellMap = [];
+    constructor(grid, from, to) {
+        this.grid = grid;
+        this.from = from;
+        this.to = to;
+        this.head = from;
+    }
+    step() {
+        if (this.isComplete)
+            return;
+        const neighbors = getAdjacentCells(this.grid, this.head);
+        const neighbor = randomItemInArray(neighbors);
+        this.cellMap[this.head] = neighbor;
+        this.head = neighbor;
+        if (this.head === this.to) {
+            this.isComplete = true;
+            this.path = [];
+            let head = this.from;
+            while (head !== this.to) {
+                this.path.push(head);
+                head = this.cellMap[head];
+            }
+            this.path.push(this.to);
+        }
+    }
+    draw(ctx) {
+        if (this.isComplete) {
+            this.grid.paintPath(ctx, this.path, "#0f0");
+            return;
+        }
+        // Path
+        ctx.save();
+        ctx.translate(this.grid.offsetX + this.grid.cellSize / 2, this.grid.offsetY + this.grid.cellSize / 2);
+        ctx.beginPath();
+        const visited = new Set();
+        let head = this.from;
+        while (head !== this.to) {
+            const from = this.grid.cells[head];
+            const to = this.grid.cells[this.cellMap[head]];
+            if (!to || visited.has(head))
+                break;
+            visited.add(head);
+            ctx.moveTo(from.screenX, from.screenY);
+            ctx.lineTo(to.screenX, to.screenY);
+            head = this.cellMap[head];
+        }
+        ctx.strokeStyle = "#f90";
+        ctx.lineWidth = 4;
+        ctx.lineCap = "round";
+        ctx.stroke();
+        ctx.restore();
+    }
+}
 export const solverKeyMap = new Map([
     ["graphSearch", GraphSearch],
     ["deadend", DeadEndFilling],
+    ["randomWalk", RandomWalk],
 ]);
 //# sourceMappingURL=mazeSolver.js.map
