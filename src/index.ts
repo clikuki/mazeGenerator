@@ -332,16 +332,13 @@ function simulationLoop(simProps: SimulationProperties, _: number) {
 	if (simProps.generator) simProps.generator.draw(simProps.ctx);
 	else if (simProps.solver) simProps.solver.draw(simProps.ctx);
 
-	// Draw solve starter cell
+	// Draw solver endpoints
 	if (simProps.solverStartIndex !== null) {
-		const cell = simProps.grid.cells[simProps.solverStartIndex];
-		simProps.ctx.fillStyle = "#00f";
-		simProps.ctx.fillRect(
-			simProps.grid.offsetX + cell.screenX,
-			simProps.grid.offsetY + cell.screenY,
-			simProps.grid.cellSize,
-			simProps.grid.cellSize
-		);
+		simProps.grid.paintCircle(simProps.ctx, simProps.solverStartIndex, "#fa0");
+	}
+	if (simProps.solver) {
+		simProps.grid.paintCircle(simProps.ctx, simProps.solver.from, "#fa0");
+		simProps.grid.paintCircle(simProps.ctx, simProps.solver.to, "#03d");
 	}
 
 	simProps.grid.drawWalls(simProps.ctx);
