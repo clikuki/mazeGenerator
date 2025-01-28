@@ -55,53 +55,6 @@ export function shuffle(arr) {
     }
     return shuffled;
 }
-export function swap(arr, i, j) {
-    [arr[i], arr[j]] = [arr[j], arr[i]];
-    return arr;
-}
-export class PriorityQueue {
-    heap;
-    isGreater;
-    constructor(comparator, init = []) {
-        this.heap = init;
-        this.isGreater = (a, b) => comparator(init[a], init[b]) > 0;
-    }
-    get size() {
-        return this.heap.length;
-    }
-    peek() {
-        return this.heap[0];
-    }
-    add(value) {
-        this.heap.push(value);
-        this.#siftUp();
-    }
-    poll(heap = this.heap, value = heap[0], length = heap.length) {
-        if (length)
-            swap(heap, 0, length - 1);
-        heap.pop();
-        this.#siftDown();
-        return value;
-    }
-    #siftUp(node = this.size - 1, parent = ((node + 1) >>> 1) - 1) {
-        for (; node && this.isGreater(node, parent); node = parent, parent = ((node + 1) >>> 1) - 1) {
-            swap(this.heap, node, parent);
-        }
-    }
-    #siftDown(size = this.size, node = 0, isGreater = this.isGreater) {
-        while (true) {
-            const leftNode = (node << 1) + 1;
-            const rightNode = leftNode + 1;
-            if ((leftNode >= size || isGreater(node, leftNode)) &&
-                (rightNode >= size || isGreater(node, rightNode))) {
-                break;
-            }
-            const maxChild = rightNode < size && isGreater(rightNode, leftNode) ? rightNode : leftNode;
-            swap(this.heap, node, maxChild);
-            node = maxChild;
-        }
-    }
-}
 export function findLastNode(node) {
     while (node.next) {
         node = node.next;

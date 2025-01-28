@@ -231,9 +231,101 @@ export class RandomWalk {
         ctx.restore();
     }
 }
+export class AStar {
+    isComplete;
+    from;
+    to;
+    grid;
+    path;
+    cellMap = [];
+    distanceMap;
+    estimatedCostMap;
+    frontier;
+    adjacencies;
+    constructor(grid, from, to) {
+        this.grid = grid;
+        this.from = from;
+        this.to = to;
+        this.frontier = new Set([from]);
+        this.distanceMap = grid.cells.map(() => Infinity);
+        this.estimatedCostMap = grid.cells.map(() => Infinity);
+        this.adjacencies = grid.cells.map((c) => getAdjacentCells(grid, c.index));
+        this.distanceMap[from] = 0;
+        this.estimatedCostMap[from] = this.distanceFromEnd(from);
+    }
+    get #nextFrontier() {
+        let bestCost = Infinity;
+        let bestIndex = NaN;
+        for (const index of this.frontier) {
+            const estimatedCost = this.estimatedCostMap[index];
+            if (estimatedCost < bestCost) {
+                bestCost = estimatedCost;
+                bestIndex = index;
+            }
+        }
+        return bestIndex;
+    }
+    distanceFromEnd(i) {
+        const ca = this.grid.cells[i];
+        const cb = this.grid.cells[this.to];
+        return Math.abs(ca.x - cb.x) + Math.abs(ca.y - cb.y);
+    }
+    step() {
+        if (this.isComplete)
+            return;
+        const head = this.#nextFrontier;
+        if (head === this.to) {
+            this.path = [];
+            let head = this.to;
+            while (head !== this.from) {
+                this.path.push(head);
+                head = this.cellMap[head];
+            }
+            this.path.push(this.from);
+            this.isComplete = true;
+            return;
+        }
+        this.frontier.delete(head);
+        for (const neighbor of this.adjacencies[head]) {
+            const distance = this.distanceMap[head] + 1;
+            if (distance < this.distanceMap[neighbor]) {
+                this.cellMap[neighbor] = head;
+                this.distanceMap[neighbor] = distance;
+                this.estimatedCostMap[neighbor] = distance + this.distanceFromEnd(neighbor);
+                this.frontier.add(neighbor);
+            }
+        }
+    }
+    draw(ctx) {
+        if (this.isComplete) {
+            this.grid.paintPath(ctx, this.path, "#0f0");
+            return;
+        }
+        for (const index of this.frontier) {
+            this.grid.paintRect(ctx, index, 1, 1, "#a00");
+        }
+        ctx.save();
+        ctx.translate(this.grid.offsetX + this.grid.cellSize / 2, this.grid.offsetY + this.grid.cellSize / 2);
+        ctx.beginPath();
+        for (let i = 0; i < this.cellMap.length; i++) {
+            if (isNaN(this.cellMap[i]))
+                continue;
+            const from = this.grid.cells[i];
+            const to = this.grid.cells[this.cellMap[i]];
+            ctx.moveTo(from.screenX, from.screenY);
+            ctx.lineTo(to.screenX, to.screenY);
+        }
+        ctx.strokeStyle = "#f90";
+        ctx.lineWidth = 4;
+        ctx.lineCap = "round";
+        ctx.stroke();
+        ctx.restore();
+    }
+}
 export const solverKeyMap = new Map([
     ["graphSearch", GraphSearch],
     ["deadend", DeadEndFilling],
     ["randomWalk", RandomWalk],
+    ["astar", AStar],
 ]);
 //# sourceMappingURL=mazeSolver.js.map
