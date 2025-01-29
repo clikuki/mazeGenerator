@@ -231,7 +231,32 @@ export class RandomWalk implements SolverStructure {
 			return;
 		}
 
-		this.grid.paintConnections(ctx, this.cellMap, "#f90");
+		ctx.save();
+		ctx.translate(
+			this.grid.offsetX + this.grid.cellSize / 2,
+			this.grid.offsetY + this.grid.cellSize / 2
+		);
+		ctx.beginPath();
+
+		const visited = new Set<number>();
+		let head = this.from;
+		while (head !== this.to) {
+			const from = this.grid.cells[head];
+			const to = this.grid.cells[this.cellMap[head]];
+			if (!to || visited.has(head)) break;
+
+			visited.add(head);
+			ctx.moveTo(from.screenX, from.screenY);
+			ctx.lineTo(to.screenX, to.screenY);
+
+			head = this.cellMap[head];
+		}
+
+		ctx.strokeStyle = "#f90";
+		ctx.lineWidth = 4;
+		ctx.lineCap = "round";
+		ctx.stroke();
+		ctx.restore();
 	}
 }
 
