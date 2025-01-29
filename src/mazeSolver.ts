@@ -241,6 +241,8 @@ export class AStar implements SolverStructure {
 	to: number;
 	grid: Grid;
 
+	distanceFunction: string;
+
 	path: number[];
 	cellMap: number[] = [];
 	distanceMap: number[];
@@ -251,6 +253,8 @@ export class AStar implements SolverStructure {
 		this.grid = grid;
 		this.from = from;
 		this.to = to;
+
+		this.distanceFunction = settings.get("heuristicDistance") ?? "taxicab";
 
 		this.frontier = new Set([from]);
 		this.distanceMap = grid.cells.map(() => Infinity);
@@ -276,7 +280,16 @@ export class AStar implements SolverStructure {
 	distanceFromEnd(i: number): number {
 		const ca = this.grid.cells[i];
 		const cb = this.grid.cells[this.to];
-		return Math.abs(ca.x - cb.x) + Math.abs(ca.y - cb.y);
+
+		switch (this.distanceFunction) {
+			case "euclidean":
+				return Math.sqrt((cb.x - ca.x) ** 2 + (cb.y - ca.y) ** 2);
+			case "chebyshev":
+				return Math.max(Math.abs(ca.x - cb.x), Math.abs(ca.y - cb.y));
+			case "taxicab":
+			default:
+				return Math.abs(ca.x - cb.x) + Math.abs(ca.y - cb.y);
+		}
 	}
 	step(): void {
 		if (this.isComplete) return;

@@ -201,6 +201,7 @@ export class AStar {
     from;
     to;
     grid;
+    distanceFunction;
     path;
     cellMap = [];
     distanceMap;
@@ -211,6 +212,7 @@ export class AStar {
         this.grid = grid;
         this.from = from;
         this.to = to;
+        this.distanceFunction = settings.get("heuristicDistance") ?? "taxicab";
         this.frontier = new Set([from]);
         this.distanceMap = grid.cells.map(() => Infinity);
         this.estimatedCostMap = grid.cells.map(() => Infinity);
@@ -233,7 +235,15 @@ export class AStar {
     distanceFromEnd(i) {
         const ca = this.grid.cells[i];
         const cb = this.grid.cells[this.to];
-        return Math.abs(ca.x - cb.x) + Math.abs(ca.y - cb.y);
+        switch (this.distanceFunction) {
+            case "euclidean":
+                return Math.sqrt((cb.x - ca.x) ** 2 + (cb.y - ca.y) ** 2);
+            case "chebyshev":
+                return Math.max(Math.abs(ca.x - cb.x), Math.abs(ca.y - cb.y));
+            case "taxicab":
+            default:
+                return Math.abs(ca.x - cb.x) + Math.abs(ca.y - cb.y);
+        }
     }
     step() {
         if (this.isComplete)
