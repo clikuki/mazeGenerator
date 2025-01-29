@@ -113,6 +113,21 @@ export class Grid {
         ctx.lineCap = "round";
         ctx.stroke();
     }
+    paintConnections(ctx, indexMapping, clr) {
+        ctx.beginPath();
+        for (let i = 0; i < indexMapping.length; i++) {
+            if (isNaN(indexMapping[i]))
+                continue;
+            const from = this.cells[i];
+            const to = this.cells[indexMapping[i]];
+            ctx.moveTo(from.screenX + this.offsetX + this.cellSize / 2, from.screenY + this.offsetY + this.cellSize / 2);
+            ctx.lineTo(to.screenX + +this.offsetX + this.cellSize / 2, to.screenY + +this.offsetY + this.cellSize / 2);
+        }
+        ctx.strokeStyle = clr;
+        ctx.lineWidth = 4;
+        ctx.lineCap = "round";
+        ctx.stroke();
+    }
     paintText(ctx, i, text, clr) {
         const cell = this.cells[i];
         ctx.fillStyle = clr;

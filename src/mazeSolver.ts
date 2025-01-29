@@ -85,27 +85,7 @@ export class GraphSearch implements SolverStructure {
 			return;
 		}
 
-		ctx.save();
-		ctx.translate(
-			this.grid.offsetX + this.grid.cellSize / 2,
-			this.grid.offsetY + this.grid.cellSize / 2
-		);
-		ctx.beginPath();
-		for (let i = 0; i < this.cellMap.length; i++) {
-			if (isNaN(this.cellMap[i])) continue;
-
-			const from = this.grid.cells[i];
-			const to = this.grid.cells[this.cellMap[i]];
-
-			ctx.moveTo(from.screenX, from.screenY);
-			ctx.lineTo(to.screenX, to.screenY);
-		}
-
-		ctx.strokeStyle = "#f90";
-		ctx.lineWidth = 4;
-		ctx.lineCap = "round";
-		ctx.stroke();
-		ctx.restore();
+		this.grid.paintConnections(ctx, this.cellMap, "#f90");
 	}
 }
 
@@ -251,33 +231,7 @@ export class RandomWalk implements SolverStructure {
 			return;
 		}
 
-		// Path
-		ctx.save();
-		ctx.translate(
-			this.grid.offsetX + this.grid.cellSize / 2,
-			this.grid.offsetY + this.grid.cellSize / 2
-		);
-		ctx.beginPath();
-
-		const visited = new Set<number>();
-		let head = this.from;
-		while (head !== this.to) {
-			const from = this.grid.cells[head];
-			const to = this.grid.cells[this.cellMap[head]];
-			if (!to || visited.has(head)) break;
-
-			visited.add(head);
-			ctx.moveTo(from.screenX, from.screenY);
-			ctx.lineTo(to.screenX, to.screenY);
-
-			head = this.cellMap[head];
-		}
-
-		ctx.strokeStyle = "#f90";
-		ctx.lineWidth = 4;
-		ctx.lineCap = "round";
-		ctx.stroke();
-		ctx.restore();
+		this.grid.paintConnections(ctx, this.cellMap, "#f90");
 	}
 }
 
@@ -363,27 +317,7 @@ export class AStar implements SolverStructure {
 			this.grid.paintRect(ctx, index, 1, 1, "#a00");
 		}
 
-		ctx.save();
-		ctx.translate(
-			this.grid.offsetX + this.grid.cellSize / 2,
-			this.grid.offsetY + this.grid.cellSize / 2
-		);
-		ctx.beginPath();
-		for (let i = 0; i < this.cellMap.length; i++) {
-			if (isNaN(this.cellMap[i])) continue;
-
-			const from = this.grid.cells[i];
-			const to = this.grid.cells[this.cellMap[i]];
-
-			ctx.moveTo(from.screenX, from.screenY);
-			ctx.lineTo(to.screenX, to.screenY);
-		}
-
-		ctx.strokeStyle = "#f90";
-		ctx.lineWidth = 4;
-		ctx.lineCap = "round";
-		ctx.stroke();
-		ctx.restore();
+		this.grid.paintConnections(ctx, this.cellMap, "#f90");
 	}
 }
 
