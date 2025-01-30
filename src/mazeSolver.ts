@@ -460,10 +460,7 @@ export class Tremaux implements SolverStructure {
 
 			if (markIndex % 2 !== 0) ctx.rotate(-Math.PI / 2);
 
-			if (numOfMarks === 1) {
-				ctx.fillStyle = "#22f";
-				ctx.fillRect(-3, this.grid.cellSize / 2 - 10, 6, 20);
-			} else {
+			if (numOfMarks >= 2) {
 				ctx.fillStyle = "#d00";
 				ctx.translate(0, this.grid.cellSize / 2);
 
@@ -472,6 +469,9 @@ export class Tremaux implements SolverStructure {
 
 				ctx.rotate(-Math.PI / 2);
 				ctx.fillRect(-3, -10, 6, 20);
+			} else if (!this.isComplete) {
+				ctx.fillStyle = "#22f";
+				ctx.fillRect(-3, this.grid.cellSize / 2 - 10, 6, 20);
 			}
 
 			ctx.restore();

@@ -391,17 +391,17 @@ export class Tremaux {
             ctx.translate(this.grid.offsetX + this.grid.cellSize / 2 + cell.screenX, this.grid.offsetY + this.grid.cellSize / 2 + cell.screenY);
             if (markIndex % 2 !== 0)
                 ctx.rotate(-Math.PI / 2);
-            if (numOfMarks === 1) {
-                ctx.fillStyle = "#22f";
-                ctx.fillRect(-3, this.grid.cellSize / 2 - 10, 6, 20);
-            }
-            else {
+            if (numOfMarks >= 2) {
                 ctx.fillStyle = "#d00";
                 ctx.translate(0, this.grid.cellSize / 2);
                 ctx.rotate(Math.PI / 4);
                 ctx.fillRect(-3, -10, 6, 20);
                 ctx.rotate(-Math.PI / 2);
                 ctx.fillRect(-3, -10, 6, 20);
+            }
+            else if (!this.isComplete) {
+                ctx.fillStyle = "#22f";
+                ctx.fillRect(-3, this.grid.cellSize / 2 - 10, 6, 20);
             }
             ctx.restore();
         }
