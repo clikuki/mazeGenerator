@@ -313,38 +313,46 @@ function simulationLoop(simProps: SimulationProperties, _: number) {
 	requestAnimationFrame(simulationLoop.bind(null, simProps));
 
 	// Run algorithm
-	if (!simProps.isPaused || simProps.performStep || simProps.performSkip) {
-		do {
-			if (simProps.generator) simProps.generator.step();
-			if (simProps.solver) simProps.solver.step();
-		} while (simProps.performSkip && !simProps.isAlgoComplete);
+	try {
+		if (!simProps.isPaused || simProps.performStep || simProps.performSkip) {
+			do {
+				if (simProps.generator) simProps.generator.step();
+				if (simProps.solver) simProps.solver.step();
+			} while (simProps.performSkip && !simProps.isAlgoComplete);
 
-		// if (simProps.generator?.isComplete) simProps.generator = null;
-		// else if (simProps.solver?.isComplete) simProps.solver = null;
+			// if (simProps.generator?.isComplete) simProps.generator = null;
+			// else if (simProps.solver?.isComplete) simProps.solver = null;
+		}
+
+		// DRAW
+		// TODO: improve drawing/rendering
+		// Clear screen
+		simProps.ctx.clearRect(0, 0, simProps.canvas.width, simProps.canvas.height);
+
+		// Draw algorithm visualization
+		if (simProps.generator) simProps.generator.draw(simProps.ctx);
+		else if (simProps.solver) simProps.solver.draw(simProps.ctx);
+
+		// Draw solver endpoints
+		if (simProps.solverStartIndex !== null) {
+			simProps.grid.paintCircle(simProps.ctx, simProps.solverStartIndex, "#d20");
+		}
+		if (simProps.solver) {
+			simProps.grid.paintCircle(simProps.ctx, simProps.solver.from, "#d20");
+			simProps.grid.paintCircle(simProps.ctx, simProps.solver.to, "#03d");
+		}
+
+		simProps.grid.drawWalls(simProps.ctx);
+
+		if (simProps.performStep) simProps.performStep = false;
+		if (simProps.performSkip) simProps.performSkip = false;
+	} catch (error) {
+		// PANIC; disable everything
+		simProps.generator = null;
+		simProps.solver = null;
+		simProps.isPaused = true;
+		throw error;
 	}
-
-	// DRAW
-	// TODO: improve drawing/rendering
-	// Clear screen
-	simProps.ctx.clearRect(0, 0, simProps.canvas.width, simProps.canvas.height);
-
-	// Draw algorithm visualization
-	if (simProps.generator) simProps.generator.draw(simProps.ctx);
-	else if (simProps.solver) simProps.solver.draw(simProps.ctx);
-
-	// Draw solver endpoints
-	if (simProps.solverStartIndex !== null) {
-		simProps.grid.paintCircle(simProps.ctx, simProps.solverStartIndex, "#d20");
-	}
-	if (simProps.solver) {
-		simProps.grid.paintCircle(simProps.ctx, simProps.solver.from, "#d20");
-		simProps.grid.paintCircle(simProps.ctx, simProps.solver.to, "#03d");
-	}
-
-	simProps.grid.drawWalls(simProps.ctx);
-
-	if (simProps.performStep) simProps.performStep = false;
-	if (simProps.performSkip) simProps.performSkip = false;
 }
 
 function initialize() {
