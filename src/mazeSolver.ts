@@ -359,9 +359,130 @@ export class AStar implements SolverStructure {
 	}
 }
 
+export class Tremaux implements SolverStructure {
+	isComplete: boolean;
+	from: number;
+	to: number;
+	grid: Grid;
+
+	fail = false;
+	path: number[];
+	head: number;
+	marks: number[];
+	adjacencies: number[][];
+	constructor(grid: Grid, from: number, to: number) {
+		this.grid = grid;
+		this.from = from;
+		this.to = to;
+
+		this.head = from;
+		this.marks = Array(grid.cells.length * 2).fill(0);
+		this.adjacencies = grid.cells.map((c) => getAdjacentCells(grid, c.index));
+	}
+	#getMarkIndex(a: number, b: number): number {
+		const cellIndex = Math.min(a, b);
+		const markIndex = cellIndex * 2 + +(Math.abs(b - a) === 1);
+		return markIndex;
+	}
+	#addMark(a: number, b: number): void {
+		const markIndex = this.#getMarkIndex(a, b);
+		this.marks[markIndex]++;
+	}
+	#getMark(a: number, b: number): number {
+		const markIndex = this.#getMarkIndex(a, b);
+		return this.marks[markIndex];
+	}
+	step(): void {
+		if (this.isComplete) return;
+
+		if (this.head === this.to) {
+			this.isComplete = true;
+
+			this.path = [];
+			while (this.head !== this.from) {
+				if (this.path.includes(this.head)) {
+					// Somethings gone wrong...
+					this.fail = true;
+					console.error("Could not find solution!");
+					break;
+				}
+
+				this.path.push(this.head);
+
+				// Find any one mark neighbor
+				for (const index of this.adjacencies[this.head]) {
+					if (!this.path.includes(index) && this.#getMark(this.head, index) === 1) {
+						this.head = index;
+						break;
+					}
+				}
+			}
+			if (!this.fail) this.path.push(this.from);
+
+			return;
+		}
+
+		let neighbors: number[] = [];
+		let lowestMarks = Infinity;
+		for (const index of this.adjacencies[this.head]) {
+			const numOfMarks = this.#getMark(this.head, index);
+			if (numOfMarks < lowestMarks) {
+				neighbors = [index];
+				lowestMarks = numOfMarks;
+			} else if (numOfMarks === lowestMarks) {
+				neighbors.push(index);
+			}
+		}
+
+		const prev = this.head;
+		this.head = randomItemInArray(neighbors);
+
+		this.#addMark(prev, this.head);
+	}
+	draw(ctx: CanvasRenderingContext2D): void {
+		if (this.isComplete) {
+			const clr = this.fail ? "#fa0" : "#0f0";
+			this.grid.paintPath(ctx, this.path, clr);
+		} else this.grid.paintRect(ctx, this.head, 1, 1, "#0a0");
+
+		for (let markIndex = 0; markIndex < this.marks.length; markIndex++) {
+			const numOfMarks = this.marks[markIndex];
+			if (numOfMarks === 0) continue;
+
+			const cellIndex = Math.floor(markIndex / 2);
+			const cell = this.grid.cells[cellIndex];
+
+			ctx.save();
+			ctx.translate(
+				this.grid.offsetX + this.grid.cellSize / 2 + cell.screenX,
+				this.grid.offsetY + this.grid.cellSize / 2 + cell.screenY
+			);
+
+			if (markIndex % 2 !== 0) ctx.rotate(-Math.PI / 2);
+
+			if (numOfMarks === 1) {
+				ctx.fillStyle = "#22f";
+				ctx.fillRect(-3, this.grid.cellSize / 2 - 10, 6, 20);
+			} else {
+				ctx.fillStyle = "#d00";
+				ctx.translate(0, this.grid.cellSize / 2);
+
+				ctx.rotate(Math.PI / 4);
+				ctx.fillRect(-3, -10, 6, 20);
+
+				ctx.rotate(-Math.PI / 2);
+				ctx.fillRect(-3, -10, 6, 20);
+			}
+
+			ctx.restore();
+		}
+	}
+}
+
 export const solverKeyMap = new Map<string, SolverConstructor>([
 	["graphSearch", GraphSearch],
 	["deadend", DeadEndFilling],
 	["randomWalk", RandomWalk],
 	["astar", AStar],
+	["tremaux", Tremaux],
 ]);
