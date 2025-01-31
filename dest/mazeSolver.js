@@ -306,8 +306,9 @@ export class Tremaux {
     from;
     to;
     grid;
-    fail = false;
-    path;
+    traceMode = false;
+    failed = false;
+    path = [];
     head;
     marks;
     adjacencies;
@@ -336,47 +337,52 @@ export class Tremaux {
         if (this.isComplete)
             return;
         if (this.head === this.to) {
-            this.isComplete = true;
-            this.path = [];
-            while (this.head !== this.from) {
-                if (this.path.includes(this.head)) {
-                    // Somethings gone wrong...
-                    this.fail = true;
-                    console.error("Could not find solution!");
+            this.traceMode = true;
+        }
+        if (this.traceMode) {
+            if (this.path.includes(this.head)) {
+                // Could not find path
+                console.error("Could not find solution!");
+                this.isComplete = true;
+                this.failed = true;
+                return;
+            }
+            this.path.push(this.head);
+            if (this.head === this.from) {
+                // Trace finished
+                this.isComplete = true;
+                return;
+            }
+            // Add any one-mark neighbor
+            for (const index of this.adjacencies[this.head]) {
+                if (!this.path.includes(index) && this.#getMark(this.head, index) === 1) {
+                    this.head = index;
                     break;
                 }
-                this.path.push(this.head);
-                // Find any one mark neighbor
-                for (const index of this.adjacencies[this.head]) {
-                    if (!this.path.includes(index) && this.#getMark(this.head, index) === 1) {
-                        this.head = index;
-                        break;
-                    }
+            }
+        }
+        else {
+            // Move to cell with least marks
+            let neighbors = [];
+            let lowestMarks = Infinity;
+            for (const index of this.adjacencies[this.head]) {
+                const numOfMarks = this.#getMark(this.head, index);
+                if (numOfMarks < lowestMarks) {
+                    neighbors = [index];
+                    lowestMarks = numOfMarks;
+                }
+                else if (numOfMarks === lowestMarks) {
+                    neighbors.push(index);
                 }
             }
-            if (!this.fail)
-                this.path.push(this.from);
-            return;
+            const prev = this.head;
+            this.head = randomItemInArray(neighbors);
+            this.#addMark(prev, this.head);
         }
-        let neighbors = [];
-        let lowestMarks = Infinity;
-        for (const index of this.adjacencies[this.head]) {
-            const numOfMarks = this.#getMark(this.head, index);
-            if (numOfMarks < lowestMarks) {
-                neighbors = [index];
-                lowestMarks = numOfMarks;
-            }
-            else if (numOfMarks === lowestMarks) {
-                neighbors.push(index);
-            }
-        }
-        const prev = this.head;
-        this.head = randomItemInArray(neighbors);
-        this.#addMark(prev, this.head);
     }
     draw(ctx) {
-        if (this.isComplete) {
-            const clr = this.fail ? "#fa0" : "#0f0";
+        if (this.path.length) {
+            const clr = this.failed ? "#fa0" : "#0f0";
             this.grid.paintPath(ctx, this.path, clr);
         }
         else
