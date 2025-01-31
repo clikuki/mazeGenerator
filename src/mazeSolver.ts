@@ -484,10 +484,120 @@ export class Tremaux implements SolverStructure {
 	}
 }
 
+export class HandOnWall implements SolverStructure {
+	isComplete: boolean;
+	from: number;
+	to: number;
+	grid: Grid;
+
+	path: number[];
+	cellMap: number[] = [];
+	head: number;
+	offsets: number[];
+	offsetIndex = 0;
+	requiredStep = false;
+	constructor(grid: Grid, from: number, to: number) {
+		this.grid = grid;
+		this.from = from;
+		this.to = to;
+
+		this.head = from;
+		this.offsets = [-grid.colCnt, 1, grid.colCnt, -1];
+	}
+	step(): void {
+		if (this.isComplete) return;
+
+		if (this.head === this.to) {
+			this.path = [];
+			this.head = this.from;
+			while (this.head !== this.to) {
+				this.path.push(this.head);
+				this.head = this.cellMap[this.head];
+			}
+			this.path.push(this.to);
+
+			this.isComplete = true;
+			return;
+		}
+
+		const headCell = this.grid.cells[this.head];
+		let performedTurn = false;
+
+		if (!this.requiredStep) {
+			if (!headCell.walls[(this.offsetIndex + 1) % 4]) {
+				// Wall turns outward
+				performedTurn = true;
+				this.requiredStep = true;
+				this.offsetIndex = (this.offsetIndex + 1) % 4;
+			} else if (headCell.walls[this.offsetIndex]) {
+				// Wall turns inward
+				performedTurn = true;
+				this.offsetIndex = (this.offsetIndex + 3) % 4;
+			}
+		}
+
+		if (!performedTurn) {
+			const prev = this.head;
+			this.head += this.offsets[this.offsetIndex];
+			this.cellMap[prev] = this.head;
+
+			this.requiredStep = false;
+		}
+	}
+	draw(ctx: CanvasRenderingContext2D): void {
+		if (this.isComplete) {
+			this.grid.paintPath(ctx, this.path, "#0f0");
+			return;
+		}
+
+		ctx.save();
+		ctx.translate(
+			this.grid.offsetX + this.grid.cellSize / 2,
+			this.grid.offsetY + this.grid.cellSize / 2
+		);
+
+		// Draw incomplete path
+		ctx.beginPath();
+		const visited = new Set<number>();
+		let head = this.from;
+		while (head !== this.head) {
+			const from = this.grid.cells[head];
+			const to = this.grid.cells[this.cellMap[head]];
+			if (!to || visited.has(head)) break;
+
+			visited.add(head);
+			ctx.moveTo(from.screenX, from.screenY);
+			ctx.lineTo(to.screenX, to.screenY);
+
+			head = this.cellMap[head];
+		}
+		ctx.strokeStyle = "#fa0";
+		ctx.stroke();
+
+		// Draw head
+		const headCell = this.grid.cells[this.head];
+		ctx.translate(headCell.screenX, headCell.screenY);
+
+		for (let _ = 0; _ < this.offsetIndex; _++) {
+			ctx.rotate(Math.PI / 2);
+		}
+
+		ctx.beginPath();
+		ctx.moveTo(0, -this.grid.cellSize / 4);
+		ctx.lineTo(20, this.grid.cellSize / 4);
+		ctx.lineTo(-20, this.grid.cellSize / 4);
+
+		ctx.fillStyle = "#fa0";
+		ctx.fill();
+		ctx.restore();
+	}
+}
+
 export const solverKeyMap = new Map<string, SolverConstructor>([
 	["graphSearch", GraphSearch],
 	["deadend", DeadEndFilling],
 	["randomWalk", RandomWalk],
 	["astar", AStar],
 	["tremaux", Tremaux],
+	["handOnWall", HandOnWall],
 ]);
