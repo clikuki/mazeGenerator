@@ -34,6 +34,7 @@ class SimulationProperties {
 	isPaused = true;
 	performStep = false;
 	performSkip = false;
+	speedExponent = 0;
 	canvas: HTMLCanvasElement;
 	ctx: CanvasRenderingContext2D;
 	grid: Grid;
@@ -172,6 +173,32 @@ function setUpSimulationControls(simProps: SimulationProperties) {
 			resetAfterResize();
 		}
 	});
+
+	// Speed controls
+	const speedDecreaseBtn = HTML.getOne<HTMLButtonElement>(
+		".simulSpeed .decrease",
+		optionsMenu
+	)!;
+	const speedIncreaseBtn = HTML.getOne<HTMLButtonElement>(
+		".simulSpeed .increase",
+		optionsMenu
+	)!;
+	const speedDisplay = HTML.getOne<HTMLInputElement>(
+		".simulSpeed .display",
+		optionsMenu
+	)!;
+	function updateSpeedDisplay(change: number) {
+		if (Math.abs(simProps.speedExponent + change) > 4) return;
+
+		simProps.speedExponent += change;
+
+		const numerator = simProps.speedExponent < 0 ? "1/" : "";
+		const expoVal = 2 ** Math.abs(simProps.speedExponent);
+		speedDisplay.value = `${numerator}${expoVal}×`;
+	}
+	speedDecreaseBtn.addEventListener("click", updateSpeedDisplay.bind(null, -1));
+	speedIncreaseBtn.addEventListener("click", updateSpeedDisplay.bind(null, 1));
+	updateSpeedDisplay(0);
 
 	// Maze exports
 	const imageExportBtn = HTML.getOne(".exports .image", optionsMenu);
@@ -325,7 +352,6 @@ function simulationLoop(simProps: SimulationProperties, _: number) {
 		}
 
 		// DRAW
-		// TODO: improve drawing/rendering
 		// Clear screen
 		simProps.ctx.clearRect(0, 0, simProps.canvas.width, simProps.canvas.height);
 

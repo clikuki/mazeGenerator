@@ -24,6 +24,7 @@ class SimulationProperties {
     isPaused = true;
     performStep = false;
     performSkip = false;
+    speedExponent = 0;
     canvas;
     ctx;
     grid;
@@ -141,6 +142,21 @@ function setUpSimulationControls(simProps) {
             resetAfterResize();
         }
     });
+    // Speed controls
+    const speedDecreaseBtn = HTML.getOne(".simulSpeed .decrease", optionsMenu);
+    const speedIncreaseBtn = HTML.getOne(".simulSpeed .increase", optionsMenu);
+    const speedDisplay = HTML.getOne(".simulSpeed .display", optionsMenu);
+    function updateSpeedDisplay(change) {
+        if (Math.abs(simProps.speedExponent + change) > 4)
+            return;
+        simProps.speedExponent += change;
+        const numerator = simProps.speedExponent < 0 ? "1/" : "";
+        const expoVal = 2 ** Math.abs(simProps.speedExponent);
+        speedDisplay.value = `${numerator}${expoVal}×`;
+    }
+    speedDecreaseBtn.addEventListener("click", updateSpeedDisplay.bind(null, -1));
+    speedIncreaseBtn.addEventListener("click", updateSpeedDisplay.bind(null, 1));
+    updateSpeedDisplay(0);
     // Maze exports
     const imageExportBtn = HTML.getOne(".exports .image", optionsMenu);
     const gridExportBtn = HTML.getOne(".exports .grid", optionsMenu);
@@ -259,7 +275,6 @@ function simulationLoop(simProps, _) {
             // else if (simProps.solver?.isComplete) simProps.solver = null;
         }
         // DRAW
-        // TODO: improve drawing/rendering
         // Clear screen
         simProps.ctx.clearRect(0, 0, simProps.canvas.width, simProps.canvas.height);
         // Draw algorithm visualization
