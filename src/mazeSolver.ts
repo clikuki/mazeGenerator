@@ -12,7 +12,6 @@ function getAdjacentCells(grid: Grid, index: number) {
 	return adj;
 }
 
-// TODO: split and create multiple solver algorithms
 export interface SolverStructure {
 	from: number;
 	to: number;
