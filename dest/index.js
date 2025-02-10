@@ -25,6 +25,7 @@ class SimulationProperties {
     performStep = false;
     performSkip = false;
     speedExponent = 0;
+    frameCount = 0;
     canvas;
     ctx;
     grid;
@@ -47,6 +48,8 @@ class SimulationProperties {
             return false;
         return true;
     }
+    step() { }
+    draw() { }
 }
 function setUpAlgorithmSelection(simProps) {
     const generatorMenu = HTML.getOne(".menu.generator");
@@ -265,14 +268,21 @@ function simulationLoop(simProps, _) {
     // Run algorithm
     try {
         if (!simProps.isPaused || simProps.performStep || simProps.performSkip) {
-            do {
-                if (simProps.generator)
-                    simProps.generator.step();
-                if (simProps.solver)
-                    simProps.solver.step();
-            } while (simProps.performSkip && !simProps.isAlgoComplete);
-            // if (simProps.generator?.isComplete) simProps.generator = null;
-            // else if (simProps.solver?.isComplete) simProps.solver = null;
+            const frameLimit = 2 ** Math.abs(simProps.speedExponent);
+            const speedUp = simProps.speedExponent > 0;
+            const slowDown = simProps.speedExponent < 0;
+            if (!slowDown || ++simProps.frameCount >= frameLimit) {
+                do {
+                    if (simProps.generator)
+                        simProps.generator.step();
+                    if (simProps.solver)
+                        simProps.solver.step();
+                } while (!simProps.isAlgoComplete &&
+                    (simProps.performSkip || (speedUp && ++simProps.frameCount < frameLimit)));
+            }
+            if (speedUp || (slowDown && simProps.frameCount >= frameLimit)) {
+                simProps.frameCount = 0;
+            }
         }
         // DRAW
         // Clear screen
