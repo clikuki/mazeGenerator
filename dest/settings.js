@@ -27,7 +27,7 @@ export const settings = {
 };
 // Initialize some values
 const settingMap = new Map([
-    ["graphTraversal", "dfs"],
+    ["graphTraversal", "bfs"],
     ["maximumRoomSize", 3],
     ["verticalCarve", "southCarve"],
     ["horizontalCarve", "eastCarve"],

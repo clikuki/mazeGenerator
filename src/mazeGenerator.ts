@@ -964,8 +964,11 @@ export class ClusterDivision implements GeneratorStructure {
 				carveWall(this.grid.cells[index], this.grid.cells[index + dir], dir);
 				this.edges.length = 0;
 
+				// Remove old region
+				if (this.useBfs) this.regions.shift();
+				else this.regions.pop();
+
 				// Add subregions to stack
-				this.regions.length--;
 				for (const subregion of [this.subregionA, this.subregionB]) {
 					// Stop subdividing when region is smaller than given threshold
 					if (subregion.size > this.roomMaxSize) {
@@ -982,7 +985,7 @@ export class ClusterDivision implements GeneratorStructure {
 			}
 
 			// Choose subregion starting points
-			const region = this.regions[this.useBfs ? 0 : this.regions.length - 1];
+			const region = this.regions.at(this.useBfs ? 0 : -1)!;
 			let a = randomItemInArray(region);
 			let b;
 			do {
@@ -994,7 +997,7 @@ export class ClusterDivision implements GeneratorStructure {
 			this.subregionB.add(b);
 			this.bag.push(a, b);
 		} else {
-			// Take out random item from bag
+			// Get random frontier cell
 			const bagIndex = randIntBetween(0, this.bag.length - 1);
 			const index = this.bag[bagIndex];
 			const last = this.bag.length - 1;

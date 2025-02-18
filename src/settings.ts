@@ -31,7 +31,7 @@ export const settings = {
 
 // Initialize some values
 const settingMap = new Map<string, any>([
-	["graphTraversal", "dfs"],
+	["graphTraversal", "bfs"],
 	["maximumRoomSize", 3],
 	["verticalCarve", "southCarve"],
 	["horizontalCarve", "eastCarve"],
